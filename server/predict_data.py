@@ -1,0 +1,109 @@
+import pandas as pd
+from datetime import datetime
+import pickle
+import logging
+
+logger = logging.getLogger('my_app')
+class prediction_data:
+    def __init__(self):
+        self.fahrpläne = {}
+        self.fahrplan_basepath = 'data/streckendaten/'
+
+        try:
+            with open(self.fahrplan_basepath + 'missing_fahrpläne', 'rb') as fp:
+                self.missing_fahrpläne = pickle.load(fp)
+        except:
+            logger.warning('missing_fahrpläne not found in ' + self.fahrplan_basepath)
+            self.missing_fahrpläne = []
+    
+    def get_pred_data(self, bhf, zugname, date):
+        zugname = zugname.replace(' ', '_')
+        fahrplan = self.load_fahrplan(zugname)
+        try:
+            if (fahrplan == False):
+                return False
+        except ValueError:
+            pass
+        if not bhf in fahrplan.index:
+            logger.warning("\x1b[1;31mBhf not in Timetable "+ bhf + "\x1b[0m")
+            #if we don't have the bhf in the timetable, we can't get the data
+            return False
+
+        data = {'month': 0,
+                'dayofweek': 0,
+                'hour': 0,
+                'track_length_since_start': 0,
+                'time_since_first_station': 0,
+                'station_number': 0,
+                'lat': 0,
+                'lon': 0,
+                'track_length': 0,
+                'stay_time': 0,
+                'time_since_last_station': 0,
+                'start_lat': 0,
+                'start_lon': 0,
+                'destination_lat': 0,
+                'destination_lon': 0,
+                'total_lenth': 0,
+                'total_time': 0,
+                'delta_lon': 0,
+                'delta_lat': 0}
+
+        data['month'] = date.month
+        data['dayofweek'] = date.weekday()
+        data['hour'] = date.hour
+        try:
+            data['track_length_since_start'] = fahrplan.at[bhf,'track_length_since_start']
+            data['time_since_last_station'] = fahrplan.at[bhf,'time_since_last_station']
+            data['station_number'] = fahrplan.at[bhf,'station_number']
+            data['lon'] = fahrplan.at[bhf,'lon']
+            data['lat'] = fahrplan.at[bhf,'lat']
+            data['track_length'] = fahrplan.at[bhf,'track_length']
+            data['stay_time'] = fahrplan.at[bhf,'stay_time']
+            data['start_lat'] = fahrplan.at[bhf,'start_lat']
+            data['start_lon'] = fahrplan.at[bhf,'start_lon']
+            data['destination_lat'] = fahrplan.at[bhf,'destination_lat']
+            data['destination_lon'] = fahrplan.at[bhf,'destination_lon']
+            data['total_lenth'] = fahrplan.at[bhf,'total_lenth']
+            data['total_time'] = fahrplan.at[bhf,'total_time']
+            data['delta_lon'] = fahrplan.at[bhf,'delta_lon']
+            data['delta_lat'] = fahrplan.at[bhf,'delta_lat']
+        except KeyError:
+            logger.warning("\x1b[1;31mFor some reason"+ zugname + " has a key error \x1b[0m")
+
+        try:#sometimes data['stay_time'] is kind of an array.
+            #I don't know why, but we catch it anyway.
+            if pd.isna(data['stay_time']):
+                data['stay_time'] = 0
+        except ValueError:
+            return False
+        data['time_since_first_station'] = fahrplan.at[bhf,'time_since_first_station']
+        
+        return data
+
+
+    def load_fahrplan(self, zugname):
+        try:
+            fahrplan = self.fahrpläne[zugname]
+            return fahrplan
+        except KeyError:
+            #if the fahrplan is not in memory, try to load it from disk
+            try:
+                fahrplan = pd.read_csv(self.fahrplan_basepath + zugname + '.csv',
+                                    sep=",",
+                                    index_col=False,
+                                    engine='c')#c engine is a little faster
+                fahrplan = fahrplan.set_index('bhf')
+                self.fahrpläne[zugname] = fahrplan
+                #print('loaded timetable for ' + zugname)
+                return fahrplan
+            except (FileNotFoundError, UnicodeDecodeError):
+                #If the file was not found we save the zugname to later get the timetable
+                if not zugname in self.missing_fahrpläne:
+                    self.missing_fahrpläne.append(zugname)
+                    with open(self.fahrplan_basepath + 'missing_fahrpläne', 'wb') as fp:
+                        pickle.dump(self.missing_fahrpläne, fp)
+
+                logger.warning("\x1b[1;31mNo Timetable for "+ zugname + "\x1b[0m")
+                return False
+

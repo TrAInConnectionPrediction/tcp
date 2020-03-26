@@ -1,0 +1,102 @@
+/* Required height of parents */
+
+html, body, header, .view {
+  height: 100%;
+}
+
+/* Desing for mobile pages */
+
+@media (max-width: 740px) {
+  .full-page-intro {
+    height: 1000px;
+  }
+}
+
+@media (max-width: 740px) {
+  h2 {
+    font-size: 5vw;
+  }
+}
+
+/* Navbar animation */
+
+.navbar {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.top-nav-collapse {
+  background-color: #202020;
+}
+
+/* Adding color to the Navbar on mobile */
+
+@media only screen and (max-width: 768px) {
+  .navbar {
+    background-color: #202020;
+  }
+}
+
+/* Footer color for sake of consistency with Navbar */
+
+.page-footer {
+  background-color: #202020;
+}
+
+@media (max-width: 740px) {
+  html, body, header, .view {
+    height: 1000px;
+  }
+}
+
+@media (min-width: 800px) and (max-width: 850px) {
+  html, body, header, .view {
+    height: 650px;
+  }
+}
+
+/* Progressbar space */
+
+#pgr_bar {
+  margin: 5px;
+  height: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 800px) and (max-width: 850px) {
+  .navbar:not(.top-nav-collapse) {
+    background: #1C2331 !important;
+  }
+}
+
+.autocomplete-suggestions {
+  border: 1px solid #FFFFFF00;
+  background: #212529;
+  overflow: auto;
+  color: #FFF;
+}
+
+.autocomplete-suggestion {
+  padding: 2px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.autocomplete-selected {
+  background: #000;
+}
+
+.autocomplete-suggestions strong {
+  font-weight: normal;
+  color: #3399FF;
+}
+
+.autocomplete-group {
+  padding: 2px 5px;
+}
+
+.autocomplete-group strong {
+  display: block;
+  border-bottom: 1px solid #FFF;
+}
+

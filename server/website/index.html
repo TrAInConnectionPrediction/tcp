@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>TrAIn Connection Prediction</title>
+    <meta name="description" content="Predict Train Delays using machine learning for the Deutsche Bahn.
+
+Find rated connections using Random Forests">
+    <link rel="icon" type="image/svg+xml" sizes="654x394" href="assets/img/ice.svg">
+    <link rel="icon" type="image/svg+xml" sizes="654x394" href="assets/img/ice.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/css/mdb.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <link rel="stylesheet" href="assets/css/styles.min.css">
+</head>
+
+<body style="background-color: #000000;">
+    <nav class="navbar navbar-dark navbar-expand-lg fixed-top scrolling-navbar" style="opacity: 1;">
+        <div class="container-fluid"><a class="navbar-brand" href="#">TrAIn_Connection_Prediction: TCP<br></a><button data-toggle="collapse" class="navbar-toggler" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div
+                class="collapse navbar-collapse" id="navcol-1">
+                <ul class="nav navbar-nav">
+                    <li class="nav-item" role="presentation"><a class="nav-link active" href="#">Home</a></li>
+                    <li class="nav-item" role="presentation" id="about_button"><a class="nav-link" href="#about">About TCP</a></li>
+                </ul>
+        </div>
+        </div>
+    </nav>
+    <div id="intro" class="view shadow" style="background-image: url(&quot;assets/img/ice.jpg&quot;);background-position: center;background-repeat: no-repeat;background-size: cover;background-attachment: fixed;">
+        <div class="d-flex justify-content-center align-items-center mask" style="background-color: rgba(0, 0, 0, 0.1);">
+            <div class="container">
+                <div class="row wow fadeIn">
+                    <div class="col col-md-6 mb-4 white-text text-center text-md-left">
+                        <h2 style="font-weight: bold;font-style: weight;">TrAIn_Connection_Prediction: TCP<br></h2>
+                        <hr class="hr-light">
+                        <p><strong>Ihre&nbsp;Verbindungsvorhersage<br></strong></p>
+                    </div>
+                    <div class="col col-md-6 col-xl-5 mb-4">
+                        <div class="card">
+                            <div class="card-body bg-dark">
+                                <form id="input" method="post"><!-- Heading -->
+<h3 class="white-text text-center">
+<strong>Verbindung finden:</strong>
+</h3>
+<hr>
+<!-- Start Bhf Form-->
+<div class="md-form">
+    <i class="fas fa-train prefix grey-text"></i>
+    <label class="form-control-label" for="startbhf">Start Bahnhof</label>
+    <input class="form-control white-text typeahead" id="startbhf" name="startbhf" type="text" value="">
+</div>
+<!-- End Bhf Form -->
+<div class="md-form">
+    <i class="fas fa-train prefix grey-text"></i>
+    <label class="form-control-label" for="zielbhf">Ziel Bahnhof</label>
+    <input class="form-control white-text typeahead" id="zielbhf" name="zielbhf" type="text" value="">
+</div>
+<!-- Date Form -->
+<div class="md-form">
+    <i class="fas fa-calendar prefix grey-text"></i>
+    <label class="form-control-label" for="datetime">Datum</label>
+    <input class="form-control white-text" type="text" id="datetime" name="datetime">
+</div>
+<!-- Submit Button -->
+<div class="text-center">
+    <input class="btn btn-indigo" id="" name="submit" type="submit" value="Send">
+</div></form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <main class="d-none" id="main" style="margin-top: 0px;">
+        <div class="container">
+            <section class="wow fadeIn m-5">
+                <div id="erg" role="tablist" aria-multiselectable="true"></div>
+                <div class="row d-none" id="pgr_bar"></div>
+            </section>
+            <section class="d-none" id="about" style="color: lightgray;">
+                <h3 class="text-center h3 mb-5">About TCP</h3>
+                <p class="text-justify">Die Bahn bietet auf ihrer Webseite eine statische Reiseplanung an, die auf den Zeiten im Fahrplan basiert. Gerade die Fernzüge der Bahn sind aber oft verspätet, so dass man einen Anschlusszug nicht erreicht. Für Bahnfahrer ist es wichtig
+                    zu wissen, ob eine gewählte Verbindung wahrscheinlich funktionieren wird und man wie geplant am Ziel ankommt.&nbsp; Unsere Künstliche Intelligenz sagt auf Basis der historischen Zugverlaufsdaten und potentiell relevanter Information
+                    wie Feriendaten oder Wetter vorher, ob man mit einer möglichen Zugverbindung auch wirklich ankommt. Eine solche Vorhersage ist nicht nur interessant für die Fahrgäste, sondern auch für die Bahn selber, da sie die Information nutzen
+                    könnte, um die Fahrpläne zu verbessern. Als Vision ließe sich mit unserem Zugverbindungsvorhersagesystem also der öffentliche Verkehr verlässlicher machen und somit den Umstieg für mehr Menschen attraktiver.<br>Um eine verlässliche
+                    Vorhersage zu ermöglichen, haben wir eine Vielzahl unterschiedlicher Daten zusammengetragen, was viel komplexer war als ursprünglich vermutet. Zum Beispiel gibt es kaum historische Wetterdaten, für die man nicht zahlen muss,&nbsp;
+                    und viele undokumentierte und nicht funktionierende APIs der Bahn.<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Zu den von uns gesammelten Daten zählen:<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; •&nbsp;
+                    &nbsp; Historische Zugdaten und Daten aus Fahrplänen<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; •&nbsp; &nbsp; Ferien und Feiertage<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; •&nbsp; &nbsp; Wetterdaten<br>&nbsp;
+                    &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; •&nbsp; &nbsp; Breiten/Längengrade und Abstände zwischen den Bahnhöfen<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Auf Basis dieser Daten haben wir verschiedene Regressionsmodelle
+                    und Classifier trainiert. Besonders der Random Forrest Classifier konnte gut verschiedene Verspätungsintervalle vorhersagen. Über eine Weboberfläche sucht der Nutzer gewünschte Verbindungen heraus und der Classifier sagt die Verspätungsintervalle
+                    vorher. Diese werden&nbsp; analysiert, zu einer Verbindungswahrscheinlichkeit kombiniert und die Verbindungen dann entsprechend farblich dargestellt.<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Das Projekt ist aber noch
+                    lange nicht fertig: Uns fehlen&nbsp; Informationen zu Nahverkehrszügen und wir berücksichtigen noch keine zugrundeliegende Gründe von Verspätung (wie z.B. Signalstörung). Der Prototyp ist aber voll funktionsfähig und bietet so eine
+                    gute Grundlage für weitere Arbeit an diesem spannenden Problem.<br></p>
+            </section>
+        </div>
+    </main>
+    <footer class="text-center page-footer wow fadeIn mt-4" style="margin-top: 0px!important;">
+        <hr style="margin-top: 0px;">
+        <div class="d-flex justify-content-center align-items-xl-center pb-4"><a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px;"><img src="https://www.meteoblue.com/favicon.ico" width="24" height="24"></a><div style="margin: 5px">Wetterdaten von Meteoblue</div><a href="https://github.com/mariusdkm" target="_blank" style="margin: 5px;"><i class="fab fa-github"></i></a></div>
+        <div
+            class="footer-copyright py-3">© 2020 Copyright: <a href="mailto:marius@kepi.de">_®<br /></a></div>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.11.0/js/mdb.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.devbridge-autocomplete/1.4.10/jquery.autocomplete.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.0.1/progressbar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="assets/js/script.min.js"></script>
+</body>
+
+</html>

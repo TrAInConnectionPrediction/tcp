@@ -1,0 +1,17 @@
+db_server = ''
+db_database = ''
+db_username = ''
+db_password = ''
+
+bahn_api_headers = {
+    'Accept': 'application/json',
+    'Authorization': 'Bearer ',
+} 
+
+zugfinder_cookie = ''
+
+tor_password = ''
+website_secret = ''
+
+
+meteoblue_apikey = ''
