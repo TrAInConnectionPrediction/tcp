@@ -1,4 +1,4 @@
-# TrAIn_Connection_Prediction: TCP
+# TrAIn_Connection_Prediction: TCP [kepiserver.de/tcp](http://http://kepiserver.de/tcp/)
 ```
                             ╔═══╗
    ╔════════════════════════╩═══╩════════════════════════╗
@@ -16,10 +16,13 @@ TrAIn_Connection_Prediction ║   ║
           Service           ║   ║
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^╜   ╙^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
+
+
+
 ## TODOS:
 
-Zu den [ToDo's](https://github.com/users/mariusdkm/projects/1) geht's [hier](https://github.com/users/mariusdkm/projects/1)
-
+[Here](https://github.com/orgs/TrAInConnectionPrediction/projects/1) are the [ToDo's](https://github.com/orgs/TrAInConnectionPrediction/projects/1).
+ 
 ## Credits:
 
   - Marius De Kuthy Meurers aka [kuthy](https://github.com/mariusdkm)
