@@ -11,13 +11,9 @@ import concurrent.futures
 from helpers import file_lisa, station_phillip
 from speed import to_unix, parse_plan, fill_unknown_data, xml_parser, concat_changes, parse_realtime, unix_date
 
-# TODO add config.py data
-server =''
-database = ''
-username = ''
-password =  ''
+from config import db_database, db_password, db_server, db_username
 
-engine = sqlalchemy.create_engine('postgresql://'+ username +':' + password + '@' + server + '/' + database + '?sslmode=require')
+engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
 
 # import cProfile, pstats, io
 
@@ -236,6 +232,8 @@ def prepare_plan_for_upload(plan):
 
 # @profile
 def parse_full_day(date):
+    global engine
+    engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
     fl = file_lisa()
     stations = station_phillip()
 
@@ -313,6 +311,7 @@ def parse_full_day(date):
             # delete the files that are no longer used (the parsed plan and real from two day ago)
             fl.delete_plan(station, date1)
             fl.delete_real(station, date2)
+    engine.dispose()
     bar.finish()
 
 station = 'Aachen Hbf'
