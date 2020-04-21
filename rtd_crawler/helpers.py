@@ -5,8 +5,16 @@ import random
 import xml.etree.ElementTree as ET
 
 class station_phillip:
-    def __init__(self):
-        self.station_df = pd.read_csv('stations.csv', index_col=False, engine='c')
+    def __init__(self, notebook=False):
+        if notebook:
+            self.station_df = pd.read_csv('../data/stations.csv', index_col=False, engine='c')
+            # self.station_df = pd.read_csv('../rtd_crawler/new_staions_for_streckennetz.csv', index_col=False, engine='c')
+            self.betriebsstellen = pd.read_csv('../data/betriebsstellen.csv', sep=';', index_col=False, engine='c')
+        else:
+            self.station_df = pd.read_csv('data/stations.csv', index_col=False, engine='c')
+            # self.station_df = pd.read_csv('rtd_crawler/new_staions_for_streckennetz.csv', index_col=False, engine='c')
+            self.betriebsstellen = pd.read_csv('data/betriebsstellen.csv', sep=';', index_col=False, engine='c')
+        self.station_df['eva'] = self.station_df['eva'].astype(int)
         self.name_index_stations = self.station_df.set_index('name')
         self.eva_index_stations = self.station_df.set_index('eva')
         self.ds100_index_stations = self.station_df.set_index('ds100')
@@ -49,6 +57,14 @@ class station_phillip:
             return self.eva_index_stations.at[eva, 'ds100']
         else:
             return None
+
+    def get_location(self, name=None, eva=None, ds100=None):
+        if name or ds100:
+            return self.get_location(eva=self.get_eva(name=name, ds100=ds100))
+        else:
+            return (self.eva_index_stations.at[eva, 'lon'],
+                    self.eva_index_stations.at[eva, 'lat'])
+
 
     def random_iter(self):
         random_sta_list = self.station_df['name'].tolist()

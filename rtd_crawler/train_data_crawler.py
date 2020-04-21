@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 import fancy_print_tcp
 import requests 
 import os
