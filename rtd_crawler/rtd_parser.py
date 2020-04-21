@@ -246,7 +246,7 @@ def parse_full_day(date):
     running_threads = []
     buffer = pd.DataFrame()
 
-    bar = Bar('parsing ' + str(date1), max = len(stations))
+    bar = Bar('parsing ' + str(date), max = len(stations))
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for station in stations:
             bar.next()

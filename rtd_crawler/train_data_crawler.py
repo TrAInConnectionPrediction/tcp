@@ -64,11 +64,11 @@ def get_save_real(station_id, date, station):
     except requests.exceptions.ConnectionError:
         pass
 
-def get_save_plan_batch(batch):
+def get_save_plan_batch(batch, date, hour, str_date):
     # set hour and date here so that they definetely don't change between gathering and saving
-    hour = (datetime.datetime.now() + datetime.timedelta(hours=1)).time().hour
-    str_date = datetime.datetime.now().strftime('%y%m%d')
-    date = unix_date(unix_now())
+    # hour = (datetime.datetime.now() + datetime.timedelta(hours=1)).time().hour
+    # str_date = datetime.datetime.now().strftime('%y%m%d')
+    # date = unix_date(unix_now())
 
     gather_xmls = {}
     running_threads = []
@@ -89,9 +89,9 @@ def get_save_plan_batch(batch):
             #fl.save_plan_xml(plan_xml, running_threads[0], date)
             del running_threads[0]
 
-def get_save_real_batch(batch):
+def get_save_real_batch(batch, date):
     # set these variables here so that they definetely don't change between gathering and saving
-    date = unix_date(unix_now())
+    # date = unix_date(unix_now())
 
     gather_xmls = {}
     running_threads = []
@@ -110,8 +110,12 @@ def get_save_real_batch(batch):
             del running_threads[0]
 
 def get_hourely_batch():
+    date = unix_date(unix_now())
+    hour = (datetime.datetime.now() + datetime.timedelta(hours=1)).time().hour
+    str_date = datetime.datetime.now().strftime('%y%m%d')
+
     station_list = list(station for station in stations.random_iter())
-    bar = Bar('crawling ' + str(unix_date(unix_now())), max = len(stations))
+    bar = Bar('crawling ' + str(datetime.datetime.now()), max = len(stations))
     i = 0
     old_eta = 1000000
     while i < len(station_list):
@@ -120,8 +124,8 @@ def get_hourely_batch():
         batch = station_list[i:i+batch_size]
         i += batch_size
         # don't put these two lines inside a try, as it slows down the process about 3 orders of magnitude. 
-        get_save_plan_batch(batch)
-        get_save_real_batch(batch)
+        get_save_plan_batch(batch, date, hour, str_date)
+        get_save_real_batch(batch, date)
 
         # print progress
         bar.next(n=batch_size)
