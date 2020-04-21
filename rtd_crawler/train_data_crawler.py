@@ -47,7 +47,6 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
 logHandler = handlers.TimedRotatingFileHandler('crawler.log', when='M', interval=1, backupCount=10)
 logHandler.setLevel(logging.INFO)
-# Here we set our logHandler's formatter
 logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
 
@@ -67,11 +66,6 @@ def get_save_real(station_id, date, station):
         pass
 
 def get_save_plan_batch(batch, date, hour, str_date):
-    # set hour and date here so that they definetely don't change between gathering and saving
-    # hour = (datetime.datetime.now() + datetime.timedelta(hours=1)).time().hour
-    # str_date = datetime.datetime.now().strftime('%y%m%d')
-    # date = unix_date(unix_now())
-
     gather_xmls = {}
     running_threads = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -87,14 +81,10 @@ def get_save_plan_batch(batch, date, hour, str_date):
         # save gathered xmls
         while running_threads:
             # running_threads[0] contains the station name
-            gather_xmls[running_threads[0]].result() # plan_xml = 
-            #fl.save_plan_xml(plan_xml, running_threads[0], date)
+            gather_xmls[running_threads[0]].result()
             del running_threads[0]
 
 def get_save_real_batch(batch, date):
-    # set these variables here so that they definetely don't change between gathering and saving
-    # date = unix_date(unix_now())
-
     gather_xmls = {}
     running_threads = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -107,8 +97,7 @@ def get_save_real_batch(batch, date):
         # save gathered xmls
         while running_threads:
             # running_threads[0] contains the station name
-            gather_xmls[running_threads[0]].result() #real_xml = 
-            # fl.save_real_xml(real_xml, running_threads[0], date)
+            gather_xmls[running_threads[0]].result()
             del running_threads[0]
 
 def get_hourely_batch():
@@ -129,9 +118,7 @@ def get_hourely_batch():
         get_save_plan_batch(batch, date, hour, str_date)
         get_save_real_batch(batch, date)
 
-        # print progress
         bar.next(n=batch_size)
-        # print(' eta: ', bar.eta_td, end='\r')
 
         # renew ip if the download slowed down
         if old_eta < bar.eta:
@@ -153,8 +140,6 @@ if (__name__ == '__main__'):
     last_hour = datetime.datetime.now().time().hour - 2
     parsed_last_day = False
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        # parser_process = executor.submit(parse_full_day, datetime.datetime.today())
-        # parser_process.result()
         while True:
             if last_hour == datetime.datetime.now().time().hour:
                 sleep(20)

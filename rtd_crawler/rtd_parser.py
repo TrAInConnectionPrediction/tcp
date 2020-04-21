@@ -180,7 +180,6 @@ def upload_data(df):
     Args:
         df(pd.DataFrame): fully parsed and prepared data
     """
-    # print('uploading date of lenght: ', len(df))
     df.to_sql('rtd', con=engine, if_exists='append', method='multi')
     #### TODO: Add some retrying if it does not work ####
 
@@ -252,8 +251,6 @@ def parse_full_day(date):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for station in stations:
             bar.next()
-            # print(' eta: ', bar.eta_td, end='\r')
-            # open xmls that need to be parsed
             # real1: real of the same day as plan
             # real2: real of the day before plan, as a train rolling at 0:10 probably has changes from the day before
             plan = fl.open_plan_xml(station, date1)
@@ -262,7 +259,6 @@ def parse_full_day(date):
 
             # check wether there is plan and or real data and parse it accordingly
             if plan is None:
-                # print('plan is None1')
                 continue
             elif real1 == None and real2 == None:
                 real = None
@@ -274,7 +270,6 @@ def parse_full_day(date):
                 real = fl.concat_xmls(real1, real2)
             plan = parse_station(plan, real)
             if plan is None:
-                # print('plan is None2')
                 continue
 
             plan = prepare_plan_for_upload(plan)
@@ -286,7 +281,6 @@ def parse_full_day(date):
 
             # upload the data as soon as it is longer than 1000 lines. This is more efficient than uploading each stations data individually
             if len(buffer) > 1000:
-                # start new thread
                 uploaders[station] = executor.submit(upload_data, buffer)
                 running_threads.append(station)
 
@@ -319,4 +313,3 @@ def parse_full_day(date):
 station = 'Aachen Hbf'
 if __name__ == '__main__':
     parse_full_day(datetime.datetime.today())
-    # prfl()

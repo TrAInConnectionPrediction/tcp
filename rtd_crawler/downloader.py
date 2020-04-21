@@ -15,7 +15,6 @@ class Tor:
                            'https': 'socks5://127.0.0.1:9050'}
         return session
 
-    # signal TOR for a new connection 
     def renew_connection(self):
         with Controller.from_port(port = 9051) as controller:
             controller.authenticate(password=tor_password)

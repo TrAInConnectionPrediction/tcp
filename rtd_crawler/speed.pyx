@@ -1,5 +1,5 @@
 # c#yt#ho#n: p#rofi#le=#Tr#ue
-# python setup.py build_ext --inplace
+# python3 setup.py build_ext --inplace
 
 cimport cython
 import datetime
