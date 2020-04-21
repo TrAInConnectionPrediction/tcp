@@ -1,6 +1,7 @@
 import requests
 from stem import Signal
 from stem.control import Controller
+from config import tor_password
 
 class Tor:
     def __init__(self):
@@ -17,8 +18,7 @@ class Tor:
     # signal TOR for a new connection 
     def renew_connection(self):
         with Controller.from_port(port = 9051) as controller:
-            # TODO add config.py data
-            controller.authenticate(password="")
+            controller.authenticate(password=tor_password)
             controller.signal(Signal.NEWNYM)
     
     def new_ip(self):
