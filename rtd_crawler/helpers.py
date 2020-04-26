@@ -3,17 +3,16 @@ import pandas as pd
 import os
 import random
 import xml.etree.ElementTree as ET
+import sqlalchemy
+from config import db_database, db_password, db_server, db_username
 
 class station_phillip:
     def __init__(self, notebook=False):
-        if notebook:
-            self.station_df = pd.read_csv('../data/stations.csv', index_col=False, engine='c')
-            # self.station_df = pd.read_csv('../rtd_crawler/new_staions_for_streckennetz.csv', index_col=False, engine='c')
-            self.betriebsstellen = pd.read_csv('../data/betriebsstellen.csv', sep=';', index_col=False, engine='c')
-        else:
-            self.station_df = pd.read_csv('data/stations.csv', index_col=False, engine='c')
-            # self.station_df = pd.read_csv('rtd_crawler/new_staions_for_streckennetz.csv', index_col=False, engine='c')
-            self.betriebsstellen = pd.read_csv('data/betriebsstellen.csv', sep=';', index_col=False, engine='c')
+        self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
+        self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
+        self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
+        self.engine.dispose()
+
         self.station_df['eva'] = self.station_df['eva'].astype(int)
         self.name_index_stations = self.station_df.set_index('name')
         self.eva_index_stations = self.station_df.set_index('eva')
