@@ -1,16 +1,57 @@
 import datetime
-import pandas as pd 
+import pandas as pd
+import numpy as np
 import os
 import random
 import xml.etree.ElementTree as ET
 import sqlalchemy
+import collections
 from config import db_database, db_password, db_server, db_username
 
-class station_phillip:
-    def __init__(self, notebook=False):
+class NoLocationError(Exception):
+    pass
+
+class BetriebsstellenBill:
+    def __init__(self):
+        self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
+        self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
+        self.engine.dispose()
+
+        self.name_index_betriebsstellen = self.betriebsstellen.set_index('name')
+        self.ds100_index_betriebsstellen = self.betriebsstellen.set_index('ds100')
+        self.NoLocationError = NoLocationError
+
+    def __len__(self):
+        return len(self.betriebsstellen)
+
+    def get_name(self, ds100):
+        return self.ds100_index_betriebsstellen.at[ds100, 'name']
+    
+    def get_ds100(self, name):
+        return self.name_index_betriebsstellen.at[name, 'ds100']
+
+    def get_location(self, name=None, ds100=None):
+        if name:
+            return self.get_location(ds100=self.get_ds100(name=name))
+        else:
+            lon = self.ds100_index_betriebsstellen.at[ds100, 'lon']
+            lat = self.ds100_index_betriebsstellen.at[ds100, 'lat']
+            # print(type(lon), type(lat))
+            if type(lon) == np.ndarray:
+                lon = lon[0]
+            if type(lat) == np.ndarray:
+                lat = lat[0]
+            # print(lon, lat)
+            if not lon or not lat:
+                raise self.NoLocationError
+            else:
+                return (lon,lat)
+
+class StationPhillip:
+    def __init__(self):
         self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
         self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
-        self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
+        # self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
         self.engine.dispose()
 
         self.station_df['eva'] = self.station_df['eva'].astype(int)
@@ -186,3 +227,7 @@ class file_lisa:
     def delete(self, path):
         if os.path.isfile(path):
             os.remove(path)
+
+if __name__ == '__main__':
+    stations = StationPhillip()
+    print('lol')
