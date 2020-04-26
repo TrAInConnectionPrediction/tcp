@@ -113,7 +113,7 @@ class StationPhillip:
         for sta in random_sta_list:
             yield sta
 
-class file_lisa:
+class FileLisa:
     def __init__(self):
         self.BASEPATH = 'rtd/'
 

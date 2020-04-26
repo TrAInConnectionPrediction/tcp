@@ -10,7 +10,7 @@ import sqlalchemy
 from progress.bar import Bar
 import concurrent.futures
 
-from helpers import file_lisa, station_phillip
+from helpers import FileLisa, StationPhillip
 from speed import to_unix, parse_plan, fill_unknown_data, xml_parser, concat_changes, parse_realtime, unix_date
 
 from config import db_database, db_password, db_server, db_username
@@ -235,8 +235,8 @@ def prepare_plan_for_upload(plan):
 def parse_full_day(date):
     global engine
     engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
-    fl = file_lisa()
-    stations = station_phillip()
+    fl = FileLisa()
+    stations = StationPhillip()
 
     date1 = unix_date(to_unix(date))
     date2 = unix_date(to_unix(date - datetime.timedelta(days = 1)))

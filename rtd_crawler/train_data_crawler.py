@@ -12,7 +12,7 @@ from time import sleep
 import logging
 import logging.handlers as handlers
 
-from helpers import file_lisa, station_phillip
+from helpers import FileLisa, StationPhillip
 from downloader import *
 from speed import unix_date, unix_now, to_unix
 from rtd_parser import parse_full_day
@@ -133,8 +133,8 @@ def get_hourely_batch():
 
 if (__name__ == '__main__'):
     dd = download_dave()
-    fl = file_lisa()
-    stations = station_phillip()
+    fl = FileLisa()
+    stations = StationPhillip()
 
     hour = datetime.datetime.now().time().hour
     last_hour = datetime.datetime.now().time().hour - 2
