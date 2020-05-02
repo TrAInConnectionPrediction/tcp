@@ -302,12 +302,12 @@ def parse_full_day(date):
             uploaders[running_threads[0]].result()
             del uploaders[running_threads[0]]
             del running_threads[0]
-
-        for station in stations:
-            # delete the files that are no longer used (the parsed plan and real from two day ago)
-            fl.delete_plan(station, date1)
-            fl.delete_real(station, date2)
+            
     engine.dispose()
+    for station in stations:
+        # delete the files that are no longer used (the parsed plan and real from two day ago)
+        fl.delete_plan(station, date1)
+        fl.delete_real(station, date2)
     bar.finish()
 
 station = 'Aachen Hbf'
