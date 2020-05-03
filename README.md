@@ -17,7 +17,7 @@ TrAIn_Connection_Prediction ║   ║
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^╜   ╙^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
-Winning project of the German National Artificial Intelligence Competition 2019 called [BWKI](bw-ki.de).
+Winning project of the German National Artificial Intelligence Competition 2019 called [BWKI](https://bw-ki.de).
 
 ## TODOS:
 
