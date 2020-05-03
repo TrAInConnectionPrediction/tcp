@@ -17,7 +17,7 @@ TrAIn_Connection_Prediction ║   ║
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^╜   ╙^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
-
+Winning project of the German National Artificial Intelligence Competition 2019 called [BWKI](bw-ki.de).
 
 ## TODOS:
 
@@ -27,3 +27,4 @@ TrAIn_Connection_Prediction ║   ║
 
   - Marius De Kuthy Meurers aka [kuthy](https://github.com/mariusdkm)
   - Theo Döllman aka [McToel](https://github.com/mctoel)
+  
