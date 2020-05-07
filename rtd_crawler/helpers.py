@@ -117,9 +117,12 @@ class FileLisa:
     def __init__(self):
         self.BASEPATH = 'rtd/'
 
+    def clean_station_name(self, station):
+        return station.strip().replace('/', 'slash')
+
     def get(self, station, date):
         try:
-            return pd.read_csv(self.BASEPATH + str(date) + '/' + station + '.csv', index_col=False,
+            return pd.read_csv(self.BASEPATH + str(date) + '/' + self.clean_station_name(station) + '.csv', index_col=False,
                                dtype={'pla_route': object, 'act_rout': object, 'message': object, 'arr_message': object, 'dep_message': object}, 
                                engine='c')
         except FileNotFoundError:
@@ -129,7 +132,7 @@ class FileLisa:
         directory = self.BASEPATH + str(date) + '/'
         if not os.path.exists(directory):
             os.makedirs(directory)
-        df.to_csv(directory + station + '.csv', index=False)
+        df.to_csv(directory + self.clean_station_name(station) + '.csv', index=False)
 
     def concat_xmls(self, xml1, xml2):
         # iter the elements to concat
@@ -165,12 +168,15 @@ class FileLisa:
             return None
 
     def save_plan_xml(self, xml, station, date):
-        directory = self.BASEPATH + station + '/'
+        directory = self.BASEPATH + self.clean_station_name(station) + '/'
         file_name = str(date) + '_' + 'plan.xml'
         if xml != 'None' or xml != None or not xml:
             old_xml = self.open_xml(directory + file_name)
             if old_xml == None:
-                self.save_xml(xml, directory, file_name)
+                try:
+                    self.save_xml(xml, directory, file_name)
+                except:
+                    print(station, date, xml)
             else:
                 try:
                     tree = ET.ElementTree()
@@ -182,9 +188,11 @@ class FileLisa:
                     pass
                 except TypeError: # one object has NoneType
                     pass
+                except Exception as e:
+                    print(e)
 
     def save_real_xml(self, xml, station, date):
-        directory = self.BASEPATH + station + '/'
+        directory = self.BASEPATH + self.clean_station_name(station) + '/'
         file_name = str(date) + '_' + 'changes.xml'
         if xml != 'None' or xml != None or not xml:
             old_xml = self.open_xml(directory + file_name)
@@ -201,26 +209,28 @@ class FileLisa:
                     pass
                 except TypeError: # one object has NoneType
                     pass
+                except Exception as e:
+                    print(e)
 
     def open_plan_xml(self, station, date):
-        directory = self.BASEPATH + station + '/'
+        directory = self.BASEPATH + self.clean_station_name(station) + '/'
         file_name = str(date) + '_' + 'plan.xml'
         xml = self.open_xml(directory + file_name)
         return xml
 
     def open_real_xml(self, station, date):
-        directory = self.BASEPATH + station + '/'
+        directory = self.BASEPATH + self.clean_station_name(station) + '/'
         file_name = str(date) + '_' + 'changes.xml'
         xml = self.open_xml(directory + file_name)
         return xml
 
     def delete_plan(self, station, date):
-        directory = self.BASEPATH + station + '/'
+        directory = self.BASEPATH + self.clean_station_name(station) + '/'
         file_name = str(date) + '_' + 'plan.xml'
         self.delete(directory + file_name)
 
     def delete_real(self, station, date):
-        directory = self.BASEPATH + station + '/'
+        directory = self.BASEPATH + self.clean_station_name(station) + '/'
         file_name = str(date) + '_' + 'real.xml'
         self.delete(directory + file_name)
 

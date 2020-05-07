@@ -148,12 +148,21 @@ if (__name__ == '__main__'):
                 try:
                     if last_hour > hour:
                         if 'parser_process' in locals():
-                            parser_process.result()
+                            try:
+                                parser_process.result()
+                            except Exception as ex:
+                                print('parser error')
+                                logger.exception(ex)
                         parser_process = executor.submit(parse_full_day, datetime.datetime.today() - datetime.timedelta(days = 1))
                     last_hour = datetime.datetime.now().time().hour
 
                     if 'data_crawler' in locals():
-                        data_crawler.result()
+                        try:
+                            data_crawler.result()
+                        except Exception as ex:
+                            print('crawler error')
+                            logger.exception(ex)
                     data_crawler = executor.submit(get_hourely_batch)
+                    
                 except Exception as ex:
                     logger.exception(ex)
