@@ -55,15 +55,15 @@ def get_save_plan(station_id, str_date, hour, date, station):
     try:
         xml = dd.get_plan(station_id, str_date, hour)
         fl.save_plan_xml(xml, station, date)
-    except requests.exceptions.ConnectionError:
-        pass
+    except requests.exceptions.ConnectionError as ex:
+        print(ex)
 
 def get_save_real(station_id, date, station):
     try:
         xml = dd.get_real(station_id)
         fl.save_real_xml(xml, station, date)
-    except requests.exceptions.ConnectionError:
-        pass
+    except requests.exceptions.ConnectionError as ex:
+        print(ex)
 
 def get_save_plan_batch(batch, date, hour, str_date):
     gather_xmls = {}

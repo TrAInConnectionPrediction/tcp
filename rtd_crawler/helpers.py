@@ -175,8 +175,9 @@ class FileLisa:
             if old_xml == None:
                 try:
                     self.save_xml(xml, directory, file_name)
-                except:
+                except Exception as ex:
                     print(station, date, xml)
+                    print(ex)
             else:
                 try:
                     tree = ET.ElementTree()
