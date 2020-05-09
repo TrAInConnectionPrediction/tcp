@@ -28,20 +28,14 @@ logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
 
 
-def get_save_plan(station_id, str_date, hour, date, station):
-    try:
-        xml = dd.get_plan(station_id, str_date, hour)
-        fl.save_plan_xml(xml, station, date)
-    except requests.exceptions.ConnectionError as ex:
-        print(ex)
-
-
-def get_save_real(station_id, date, station):
-    try:
-        xml = dd.get_real(station_id)
-        fl.save_real_xml(xml, station, date)
-    except requests.exceptions.ConnectionError as ex:
-        print(ex)
+def get_station_xml(station_id, str_date, hour, date, station):
+    # try:
+    plan_xml = dd.get_plan(station_id, str_date, hour)
+    fl.save_plan_xml(plan_xml, station, date)
+    real_xml = dd.get_real(station_id)
+    fl.save_real_xml(real_xml, station, date)
+    # except requests.exceptions.ConnectionError as ex:
+    #     print(ex)
 
 
 def get_hourely_batch():
@@ -52,31 +46,22 @@ def get_hourely_batch():
     station_list = list(station for station in stations.random_iter())
     bar = Bar('crawling ' + str(datetime.datetime.now()), max=len(stations))
     gatherers = []
-    old_eta = 1000000
     with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
         # start all gathering processes
         for station in station_list:
             station_id = stations.get_eva(name=station)
-            gatherers.append(executor.submit(get_save_plan, station_id, str_date,
+            gatherers.append(executor.submit(get_station_xml, station_id, str_date,
                                              hour, date, station))
-
-            gatherers.append(executor.submit(
-                get_save_real, station_id, date, station))
 
         # collect all finished gathering processes while changing the ip
         for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers)):
             gatherer.result()
-            if i % 6 == 0:
+            if i % 3 == 0:
                 bar.next(3)
 
-            # renew ip if the download slowed down
-            if old_eta < bar.eta:
-                dd.new_ip()
-            old_eta = bar.eta
             # renew ip in average each 60th time
             if random.randint(-30, 30) == 0:
                 dd.new_ip()
-
     bar.finish()
 
 
@@ -86,7 +71,7 @@ if (__name__ == '__main__'):
     stations = StationPhillip()
 
     hour = datetime.datetime.now().time().hour
-    last_hour = datetime.datetime.now().time().hour - 2
+    last_hour = hour - 2
     parsed_last_day = False
     with concurrent.futures.ThreadPoolExecutor() as executor:
         while True:
@@ -96,6 +81,7 @@ if (__name__ == '__main__'):
                 hour = datetime.datetime.now().time().hour
                 try:
                     if last_hour > hour:
+                        print('trying to parse')
                         if 'parser_process' in locals():
                             try:
                                 parser_process.result()
@@ -116,4 +102,4 @@ if (__name__ == '__main__'):
 
                 except Exception as ex:
                     print(ex)
-                    logger.exception(ex)
+                    # logger.exception(ex)

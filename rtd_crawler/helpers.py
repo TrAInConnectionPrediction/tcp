@@ -105,13 +105,13 @@ class StationPhillip:
             return (self.eva_index_stations.at[eva, 'lon'],
                     self.eva_index_stations.at[eva, 'lat'])
 
-
     def random_iter(self):
         random_sta_list = self.station_df['name'].tolist()
         # randomize list order in order to be harder to track when doing requests
-        random.shuffle(random_sta_list)
+        # random.shuffle(random_sta_list)
         for sta in random_sta_list:
             yield sta
+
 
 class FileLisa:
     def __init__(self):
@@ -119,20 +119,6 @@ class FileLisa:
 
     def clean_station_name(self, station):
         return station.strip().replace('/', 'slash')
-
-    def get(self, station, date):
-        try:
-            return pd.read_csv(self.BASEPATH + str(date) + '/' + self.clean_station_name(station) + '.csv', index_col=False,
-                               dtype={'pla_route': object, 'act_rout': object, 'message': object, 'arr_message': object, 'dep_message': object}, 
-                               engine='c')
-        except FileNotFoundError:
-            return None
-
-    def save(self, df, station, date):
-        directory = self.BASEPATH + str(date) + '/'
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        df.to_csv(directory + self.clean_station_name(station) + '.csv', index=False)
 
     def concat_xmls(self, xml1, xml2):
         # iter the elements to concat
@@ -142,6 +128,7 @@ class FileLisa:
         return xml1
 
     def save_xml(self, xml, directory, file_name):
+        # try:
         # check if there is an xml to save
         if xml != 'None' or xml != None or not xml:
             #create dir if not present
@@ -150,6 +137,9 @@ class FileLisa:
             # save xml to file
             with open(directory + file_name, 'w') as fd:
                 print(xml, file=fd)
+        # except Exception as ex:
+        #     print(directory, file_name)
+        #     print(ex)
 
     def open_xml(self, dir_name):
         # try to open and parse the file
@@ -173,11 +163,7 @@ class FileLisa:
         if xml != 'None' or xml != None or not xml:
             old_xml = self.open_xml(directory + file_name)
             if old_xml == None:
-                try:
-                    self.save_xml(xml, directory, file_name)
-                except Exception as ex:
-                    print(station, date, xml)
-                    print(ex)
+                self.save_xml(xml, directory, file_name)
             else:
                 try:
                     tree = ET.ElementTree()
@@ -189,8 +175,8 @@ class FileLisa:
                     pass
                 except TypeError: # one object has NoneType
                     pass
-                except Exception as e:
-                    print(e)
+                # except Exception as e:
+                #     print(e)
 
     def save_real_xml(self, xml, station, date):
         directory = self.BASEPATH + self.clean_station_name(station) + '/'
@@ -210,8 +196,8 @@ class FileLisa:
                     pass
                 except TypeError: # one object has NoneType
                     pass
-                except Exception as e:
-                    print(e)
+                # except Exception as e:
+                #     print(e)
 
     def open_plan_xml(self, station, date):
         directory = self.BASEPATH + self.clean_station_name(station) + '/'
