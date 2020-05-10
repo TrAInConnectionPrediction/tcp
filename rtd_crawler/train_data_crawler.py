@@ -10,12 +10,31 @@ import logging.handlers as handlers
 import logging
 from time import sleep
 import concurrent.futures
-from progress.bar import Bar, IncrementalBar
+from progress.bar import Bar
 import random
 import datetime
-import numpy as np
 import os
 
+# import cProfile, pstats, io
+
+# def profile(fnc):
+    
+#     """A decorator that uses cProfile to profile a function"""
+    
+#     def inner(*args, **kwargs):
+        
+#         pr = cProfile.Profile()
+#         pr.enable()
+#         retval = fnc(*args, **kwargs)
+#         pr.disable()
+#         s = io.StringIO()
+#         sortby = 'cumulative'
+#         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+#         ps.print_stats()
+#         print(s.getvalue())
+#         return retval
+
+#     return inner
 
 logger = logging.getLogger('my_app')
 logger.setLevel(logging.INFO)
@@ -56,11 +75,11 @@ def get_hourely_batch():
         # collect all finished gathering processes while changing the ip
         for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers)):
             gatherer.result()
-            if i % 3 == 0:
-                bar.next(3)
+            if i % 10 == 0:
+                bar.next(10)
 
-            # renew ip in average each 60th time
-            if random.randint(-30, 30) == 0:
+            # renew ip in average each 400th time
+            if random.randint(-200, 200) == 0:
                 dd.new_ip()
     bar.finish()
 
