@@ -85,8 +85,8 @@ def get_hourely_batch():
 
 
 if (__name__ == '__main__'):
-    import stacktracer
-    stacktracer.trace_start("trace.html",interval=5,auto=True) # Set auto flag to always update file!
+    # import stacktracer
+    # stacktracer.trace_start("trace.html",interval=5,auto=True) # Set auto flag to always update file!
 
     dd = download_dave()
     fl = FileLisa()
@@ -106,7 +106,7 @@ if (__name__ == '__main__'):
                         # print('trying to parse')
                         if 'parser_process' in locals():
                             try:
-                                parser_process.result()
+                                parser_process.result(timeout=0)
                             except Exception as ex:
                                 print('parser error')
                                 logger.exception(ex)
@@ -116,7 +116,7 @@ if (__name__ == '__main__'):
 
                     if 'data_crawler' in locals():
                         try:
-                            data_crawler.result()
+                            data_crawler.result(timeout=0)
                         except Exception as ex:
                             print('crawler error')
                             logger.exception(ex)
