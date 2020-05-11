@@ -85,6 +85,9 @@ def get_hourely_batch():
 
 
 if (__name__ == '__main__'):
+    import stacktracer
+    stacktracer.trace_start("trace.html",interval=5,auto=True) # Set auto flag to always update file!
+
     dd = download_dave()
     fl = FileLisa()
     stations = StationPhillip()
@@ -100,7 +103,7 @@ if (__name__ == '__main__'):
                 hour = datetime.datetime.now().time().hour
                 try:
                     if last_hour > hour:
-                        print('trying to parse')
+                        # print('trying to parse')
                         if 'parser_process' in locals():
                             try:
                                 parser_process.result()
