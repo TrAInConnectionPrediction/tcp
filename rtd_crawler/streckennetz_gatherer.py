@@ -25,19 +25,38 @@ class ConnectionThrottled(Exception):
 class UnknownDs100(Exception):
     pass
 
-def get_route(start, destination, train_type, start_mutter=False, destination_mutter=False):
-    if not type(start) == str or not type(destination) == str:
+class NoRouteFoundError(Exception):
+    pass
+
+def get_route(waypoints, train_type):
+    if len(waypoints) < 2:
         raise ValueError
+    start = waypoints[0]
+    destination = waypoints[-1]
+
+    # if not type(start) == str or not type(destination) == str:
+    #     raise ValueError
 
     request_body = trassenfinder_route_request.standarts[train_type]
-    request_body['wegpunkte'][0]['betriebsstelle']['ds100'] = start
-    request_body['wegpunkte'][0]['betriebsstelle']['mutter'] = start_mutter
-    request_body['wegpunkte'][1]['betriebsstelle']['ds100'] = destination
-    request_body['wegpunkte'][1]['betriebsstelle']['mutter'] = destination_mutter
+    for i, waypoint in enumerate(waypoints):
+        try:
+            if not type(waypoint['ds100']) == str:
+                raise ValueError
+            request_body['wegpunkte'][i]['betriebsstelle']['ds100'] = waypoint['ds100']
+            request_body['wegpunkte'][i]['betriebsstelle']['mutter'] = waypoint['mutter']
+        except IndexError:
+            request_body['wegpunkte'].append({'betriebsstelle':
+                {'ds100': waypoint['ds100'],
+                'mutter': waypoint['mutter']}})
+
+    # request_body['wegpunkte'][0]['betriebsstelle']['ds100'] = start
+    # request_body['wegpunkte'][0]['betriebsstelle']['mutter'] = start_mutter
+    # request_body['wegpunkte'][1]['betriebsstelle']['ds100'] = destination
+    # request_body['wegpunkte'][1]['betriebsstelle']['mutter'] = destination_mutter
 
     while True:
         try:
-            response = tor.session.post('https://openapi.trassenfinder.de/3.7.6/api/v2/infrastrukturen/1/routen/suche',
+            response = tor.session.post('https://openapi.trassenfinder.de/3.7.6/api/v2/infrastrukturen/35/routen/suche',
                 data=json.dumps(request_body), headers={'content-type':'application/json'})
 
             if response.status_code == 429: # api throttle has kicked in
@@ -52,27 +71,37 @@ def get_route(start, destination, train_type, start_mutter=False, destination_mu
         if response.status_code == 400:
             response_json = response.json()
             for details in response_json['details']:
-                if "'" + start + "'" in details:
-                    raise UnknownDs100({'ds100': start})
+                for waypoint in waypoints:
+                    ds100_of_waypoint = waypoint['ds100']
+                    if "Ungültige Betriebsstelle '{0}'".format(ds100_of_waypoint) in details:
+                        raise UnknownDs100({'ds100': ds100_of_waypoint})
 
-                if "'" + destination + "'" in details:
-                    raise UnknownDs100({'ds100': destination})
+                # if "Ungültige Betriebsstelle '" + start + "'" in details:
+                #     raise UnknownDs100({'ds100': start})
+
+                # if "Ungültige Betriebsstelle '" + destination + "'" in details:
+                #     raise UnknownDs100({'ds100': destination})
             else:
                 raise requests.exceptions.InvalidHeader
 
         if 'failure' in response.json():
             print(response.json())
-            raise requests.exceptions.InvalidHeader
-        response_df = pd.DataFrame(response.json()['result']['gewichtete_route']['routenpunkte'])
+            raise NoRouteFoundError
+        else:
+            response_df = pd.DataFrame(response.json()['result']['gewichtete_route']['routenpunkte'])
+
     except json.decoder.JSONDecodeError:
-        print('error getting route from', start, 'to', destination, 'response.status_code:', response.status_code)
+        print('error getting route for', waypoints, 'response.status_code:', response.status_code)
         raise requests.exceptions.InvalidHeader
 
     for i in range(len(response_df) - 1):
         for key in response_df.at[i, 'strecke_info']:
             response_df.at[i, key] = response_df.at[i, 'strecke_info'][key]
-        for key in response_df.at[i, 'naechstes_streckensegment']:
-            response_df.at[i, key] = response_df.at[i, 'naechstes_streckensegment'][key]
+        try:
+            for key in response_df.at[i, 'naechstes_streckensegment']:
+                response_df.at[i, key] = response_df.at[i, 'naechstes_streckensegment'][key]
+        except TypeError:
+            continue
             
     return response_df.drop(columns=['wegpunkt_index', 'naechstes_streckensegment', 'technische_fahrzeit_info',
                             'haltart', 'halteplatz_sprungart', 'schiebelok_kupplungsart',
@@ -130,20 +159,19 @@ def get_unique_paths():
             path = list(station.replace(';;;', ',') for station in path)
             paths[i] = path
     bar.finish()
-    pickle.dump(paths, open('paths_pickle', 'wb'))
+    pickle.dump(paths, open('data_buffer/unique_paths', 'wb'))
     return paths
 
-paths = pickle.load(open('paths_pickle', 'rb'))
-
-def check_path_edges(path):
+def check_path_edges(paths):
     bar = Bar('checking path edges', max=len(paths))
-    for i, path in enumerate(paths):
+    for path in paths:
         bar.next()
         if path:
             for u in range(len(path) - 1):
                 is_checked(path[u], path[u + 1])
     edges = checked[0:index_in_checked]
     pickle.dump(edges, open('edges_streckennetz', 'wb'))
+    bar.finish()
     return edges
 
 # edges = pickle.load(open('edges_streckennetz', 'rb'))
@@ -154,8 +182,14 @@ def add_edges_to_streckennetz(edges, streckennetz):
         bar.next()
         try:
             station1 = edges[i, 0]
+            if not station1 or not type(station1) == np.str_ and not type(station1) == str:
+                print(station1, 'is nan')
+                continue
             location1 = stations.get_location(name=station1)
             station2 = edges[i, 1]
+            if not station2 or not type(station2) == np.str_ and not type(station2) == str:
+                print(station2, 'is nan')
+                continue
             location2 = stations.get_location(name=station2)
         except KeyError:
             print('no location for', station1, 'or', station2)
@@ -167,11 +201,11 @@ def add_edges_to_streckennetz(edges, streckennetz):
             continue
         streckennetz.add_edges_from([(station1, station2, {'distance':distance})])
     bar.finish()
-    pickle.dump(streckennetz, open('streckennetz_pickle', 'wb'))
+    return streckennetz
+    # pickle.dump(streckennetz, open('streckennetz_pickle', 'wb'))
 
 
 def add_trassenfinder_info_to_streckennetz(streckennetz):
-    streckennetz_ds100 = nx.Graph()
     not_found = []
     bar = Bar('checking ds100s', max=len(streckennetz.edges()))
     ecken = list(ecke for ecke in streckennetz.edges)
@@ -193,19 +227,40 @@ def add_trassenfinder_info_to_streckennetz(streckennetz):
         # if ds1001 in not_found or ds1002 in not_found:
         #     continue
         route = pd.DataFrame()
+        waypoints = [{'ds100': ds1001, 'mutter': False},
+            {'ds100': ds1002, 'mutter': False}]
+        train_type = 's_bahn'
+        unknown_ds100 = False
+        no_route_found = False
         try:
             while True:
                 try:
-                    route = get_route(ds1001, ds1002, 's_bahn',
-                        start_mutter = ds1001_mutter, destination_mutter = ds1002_mutter)
+                    route = get_route(waypoints, train_type)
                     break
                 except UnknownDs100 as e:
-                    details = e.args[0]
-                    if ds1001 == details['ds100']:
-                        not_found.append(ds1001)
-                    elif ds1002 == details['ds100']:
-                        not_found.append(ds1002)
-                    break
+                    if not unknown_ds100:
+                        unknown_ds100 = True
+                        details = e.args[0]
+                        if ds1001 == details['ds100']:
+                            waypoints[0]['mutter'] = True
+                            not_found.append(ds1001)
+                        elif ds1002 == details['ds100']:
+                            waypoints[1]['mutter'] = True
+                            not_found.append(ds1002)
+                        else:
+                            break
+                    else:
+                        break
+                except NoRouteFoundError:
+                    if not no_route_found:
+                        no_route_found = True
+                        waypoint_reruted_search = {'ds100': 'TT', 'mutter': False}
+                        waypoints.insert(0, waypoint_reruted_search)
+                        waypoints.append(waypoint_reruted_search)
+                        train_type = 'nahverkehr_diesel_lok'
+                    else:
+                        break
+
                 except ValueError:
                     break
         except requests.exceptions.InvalidHeader:
@@ -213,6 +268,14 @@ def add_trassenfinder_info_to_streckennetz(streckennetz):
 
         if not route.empty:
             # add edges to graph
+            drop_list = []
+            for i in range(len(route)):
+                s = route.at[i, 'ds100']
+                if not type(s) == np.str_ and not type(s) == str:
+                    drop_list.append(i)
+                if drop_list:
+                    route = route.drop(drop_list)
+
             for i in range(len(route) - 1):
                 edge_attributes = {'length_km':(route.at[i+1, 'laufende_hm'] - route.at[i, 'laufende_hm']) / 10, 
                     'speed_kmh': route.at[i, 'geschwindigkeit_technisch_hmh'] / 10, 'comment':route.at[i, 'bemerkungen'],
@@ -226,9 +289,18 @@ def add_trassenfinder_info_to_streckennetz(streckennetz):
 # pickle.dump(not_found, open('not_found', 'wb'))
 
 if __name__ == '__main__':
-    streckennetz = pickle.load(open('streckennetz_pickle', 'rb'))
+    # get_unique_paths()
+    # paths = pickle.load(open('data_buffer/unique_paths', 'rb'))
+    # edges = check_path_edges(paths)
+    # edges = pickle.load(open('data_buffer/edges', 'rb'))
+    # streckennetz = nx.Graph()
+    # streckennetz = add_edges_to_streckennetz(edges, streckennetz)
+    # pickle.dump(streckennetz, open('data_buffer/streckennetz_basic', 'wb'))
+    streckennetz = pickle.load(open('data_buffer/streckennetz_basic', 'rb'))
+
+    # streckennetz = pickle.load(open('streckennetz_pickle', 'rb'))
     streckennetz2 =  add_trassenfinder_info_to_streckennetz(streckennetz)
-    pickle.dump(streckennetz2, open('streckennetz2_pickle', 'wb'))
+    pickle.dump(streckennetz2, open('streckennetz3_pickle', 'wb'))
 
 
 
