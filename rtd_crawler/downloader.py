@@ -53,7 +53,8 @@ class download_dave(Tor):
             except requests.exceptions.ConnectionError:
                 pass
         else:
-            raise requests.exceptions.ConnectionError
+            print('connection error on', url)
+            return None
 
     def get_plan(self, station_id, date, hour):
         return self.get_data(url=self.PLAN_BASE_URL + str(station_id) + '/' + date + '/' + '{:02}'.format(hour))
