@@ -58,6 +58,7 @@ def get_hourely_batch():
                     dd.new_ip()
         except TimeoutError:
             pass
+        executor.shutdown(wait=False)
     bar.finish()
 
 
@@ -72,7 +73,7 @@ if (__name__ == '__main__'):
     hour = datetime.datetime.now().time().hour
     last_hour = hour - 2
     parsed_last_day = False
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         while True:
             if last_hour == datetime.datetime.now().time().hour:
                 sleep(20)
