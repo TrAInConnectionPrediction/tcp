@@ -243,12 +243,12 @@ def parse_full_day(date):
 
     # multithreading variables
     max_threads = 5
-    uploaders = {}
-    running_threads = []
+    uploaders = []
+    # running_threads = []
     buffer = pd.DataFrame()
 
     bar = Bar('parsing ' + str(date), max = len(stations))
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         for station in stations:
             bar.next()
             # real1: real of the same day as plan
@@ -281,27 +281,19 @@ def parse_full_day(date):
 
             # upload the data as soon as it is longer than 1000 lines. This is more efficient than uploading each stations data individually
             if len(buffer) > 1000:
-                uploaders[station] = executor.submit(upload_data, buffer)
-                running_threads.append(station)
+                uploaders.append(executor.submit(upload_data, buffer))
 
                 buffer = pd.DataFrame()
 
-                # collect runnung threads if there are to many running ones
-                while len(running_threads) >= max_threads:
-                    # running_threads[0] contains the station name
-                    uploaders[running_threads[0]].result()
-                    del uploaders[running_threads[0]]
-                    del running_threads[0]
-
         # upload the data that did not make it over the 1000 line limit
-        uploaders[station] = executor.submit(upload_data, buffer)
-        running_threads.append(station)
-        # collect all remaining running threads
-        while running_threads:
-            # running_threads[0] contains the station name
-            uploaders[running_threads[0]].result()
-            del uploaders[running_threads[0]]
-            del running_threads[0]
+        uploaders.append(executor.submit(upload_data, buffer))
+        
+        # collect all processes
+        for uploader in concurrent.futures.as_completed(uploaders, timeout=(60*60*23)): # wait 23h
+            uploader.result()
+
+
+        executor.shutdown(wait=False)
             
     engine.dispose()
     for station in stations:
