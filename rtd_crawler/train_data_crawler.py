@@ -27,10 +27,11 @@ logger.addHandler(logHandler)
 
 
 def get_station_xml(station_id, str_date, hour, date, station):
-    plan_xml = dd.get_plan(station_id, str_date, hour)
-    fl.save_plan_xml(plan_xml, station, date)
-    real_xml = dd.get_real(station_id)
-    fl.save_real_xml(real_xml, station, date)
+    # plan_xml = dd.get_plan(station_id, str_date, hour)
+    fl.save_plan_xml(dd.get_plan(station_id, str_date, hour), station, date)
+
+    # real_xml = dd.get_real(station_id)
+    fl.save_real_xml(dd.get_real(station_id), station, date)
 
 
 def get_hourely_batch():
@@ -61,19 +62,43 @@ def get_hourely_batch():
         executor.shutdown(wait=False)
     bar.finish()
 
+def gather_day(start_hour = 0):
+    hour = datetime.datetime.now().time().hour
+    last_hour = hour - 2
+    # parsed_last_day = False
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        parser_process = executor.submit(parse_full_day, datetime.datetime.today() - datetime.timedelta(days=1))
+        for _i in range(24):
+            hour = datetime.datetime.now().time().hour
+            if 'data_crawler' in locals():
+                try:
+                    data_crawler.result(timeout=0)
+                except Exception as ex:
+                    print('crawler error')
+                    logger.exception(ex)
+
+            data_crawler = executor.submit(get_hourely_batch)
+            while hour == datetime.datetime.now().time().hour:
+                sleep(20)
+                
+        if 'parser_process' in locals():
+            try:
+                parser_process.result(timeout=0)
+            except Exception as ex:
+                print('parser error')
+                logger.exception(ex)
+
+        executor.shutdown(wait=False)
 
 if (__name__ == '__main__'):
-    # import stacktracer
-    # stacktracer.trace_start("trace.html",interval=5,auto=True) # Set auto flag to always update file!
-
     dd = download_dave()
     fl = FileLisa()
     stations = StationPhillip()
 
     hour = datetime.datetime.now().time().hour
     last_hour = hour - 2
-    parsed_last_day = False
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    # parsed_last_day = False
+    with concurrent.futures.ThreadPoolExecutor() as executor:
         while True:
             if last_hour == datetime.datetime.now().time().hour:
                 sleep(20)
