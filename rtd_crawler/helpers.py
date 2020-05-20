@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import sqlalchemy
 import collections
 from config import db_database, db_password, db_server, db_username
-import psycopg2
+# import psycopg2
 
 class NoLocationError(Exception):
     pass
