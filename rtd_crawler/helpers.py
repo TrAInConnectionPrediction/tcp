@@ -53,11 +53,12 @@ class StationPhillip:
         try:
             self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
             self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
-            self.station_df.to_feather('data_buffer/station_offline_buffer')
+            self.station_df.to_pickle('data_buffer/station_offline_buffer')
             self.engine.dispose()
         except:
             try:
-                self.station_df = pd.read_feather('data_buffer/station_offline_buffer')
+                self.station_df = pd.read_pickle('data_buffer/station_offline_buffer')
+                print('Using local station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
 
