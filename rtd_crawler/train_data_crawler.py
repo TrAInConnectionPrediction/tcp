@@ -63,7 +63,7 @@ def get_hourely_batch():
     bar.finish()
 
 def gather_day(start_hour = 0):
-    # dd = download_dave()
+    # dd = DownloadDave()
     # fl = FileLisa()
     # stations = StationPhillip()
 
@@ -101,13 +101,14 @@ def gather_day(start_hour = 0):
         
         executor.shutdown(wait=False)
 
+
 if (__name__ == '__main__'):
     stations = StationPhillip()
 
-    hour = datetime.datetime.now().time().hour
     while True:
-        dd = download_dave()
+        dd = DownloadDave()
         fl = FileLisa()
+        hour = datetime.datetime.now().time().hour
         gather_day(start_hour=hour)
 
     # last_hour = hour - 2

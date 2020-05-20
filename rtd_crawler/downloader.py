@@ -26,7 +26,7 @@ class Tor:
         self.session = self.new_session()
 
 
-class download_dave(Tor):
+class DownloadDave(Tor):
     def __init__(self):
         super().__init__()
         # + '8010097/191218/10'
