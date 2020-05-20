@@ -63,57 +63,24 @@ def get_hourely_batch():
     bar.finish()
 
 def gather_day(start_hour = 0):
-    hour = datetime.datetime.now().time().hour
-    last_hour = hour - 2
-    # parsed_last_day = False
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        parser_process = executor.submit(parse_full_day, datetime.datetime.today() - datetime.timedelta(days=1))
-        for _i in range(24):
-            hour = datetime.datetime.now().time().hour
-            if 'data_crawler' in locals():
-                try:
-                    data_crawler.result(timeout=0)
-                except Exception as ex:
-                    print('crawler error')
-                    logger.exception(ex)
+    # dd = download_dave()
+    # fl = FileLisa()
+    # stations = StationPhillip()
 
-            data_crawler = executor.submit(get_hourely_batch)
-            while hour == datetime.datetime.now().time().hour:
-                sleep(20)
-                
-        if 'parser_process' in locals():
-            try:
-                parser_process.result(timeout=0)
-            except Exception as ex:
-                print('parser error')
-                logger.exception(ex)
-
-        executor.shutdown(wait=False)
-
-if (__name__ == '__main__'):
-    dd = download_dave()
-    fl = FileLisa()
-    stations = StationPhillip()
-
-    hour = datetime.datetime.now().time().hour
-    last_hour = hour - 2
-    # parsed_last_day = False
+    hour = datetime.datetime.now().time().hour - 1
+    last_hour = hour
     with concurrent.futures.ThreadPoolExecutor() as executor:
+        if start_hour == 0:
+            parser_process = executor.submit(
+                            parse_full_day, datetime.datetime.today() - datetime.timedelta(days=1))
         while True:
-            if last_hour == datetime.datetime.now().time().hour:
+            if hour == datetime.datetime.now().time().hour:
                 sleep(20)
             else:
                 hour = datetime.datetime.now().time().hour
+                if last_hour > hour:
+                    break
                 try:
-                    if last_hour > hour:
-                        if 'parser_process' in locals():
-                            try:
-                                parser_process.result(timeout=0)
-                            except Exception as ex:
-                                print('parser error')
-                                logger.exception(ex)
-                        parser_process = executor.submit(
-                            parse_full_day, datetime.datetime.today() - datetime.timedelta(days=1))
                     last_hour = datetime.datetime.now().time().hour
 
                     if 'data_crawler' in locals():
@@ -126,4 +93,51 @@ if (__name__ == '__main__'):
 
                 except Exception as ex:
                     print(ex)
-                    # logger.exception(ex)
+        try:
+            parser_process.result(timeout=0)
+        except Exception as ex:
+            print('parser error')
+            logger.exception(ex)
+        
+        executor.shutdown(wait=False)
+
+if (__name__ == '__main__'):
+    stations = StationPhillip()
+
+    hour = datetime.datetime.now().time().hour
+    while True:
+        dd = download_dave()
+        fl = FileLisa()
+        gather_day(start_hour=hour)
+
+    # last_hour = hour - 2
+    # # parsed_last_day = False
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     while True:
+    #         if last_hour == datetime.datetime.now().time().hour:
+    #             sleep(20)
+    #         else:
+    #             hour = datetime.datetime.now().time().hour
+    #             try:
+    #                 if last_hour > hour:
+    #                     if 'parser_process' in locals():
+    #                         try:
+    #                             parser_process.result(timeout=0)
+    #                         except Exception as ex:
+    #                             print('parser error')
+    #                             logger.exception(ex)
+    #                     parser_process = executor.submit(
+    #                         parse_full_day, datetime.datetime.today() - datetime.timedelta(days=1))
+    #                 last_hour = datetime.datetime.now().time().hour
+
+    #                 if 'data_crawler' in locals():
+    #                     try:
+    #                         data_crawler.result(timeout=0)
+    #                     except Exception as ex:
+    #                         print('crawler error')
+    #                         logger.exception(ex)
+    #                 data_crawler = executor.submit(get_hourely_batch)
+
+    #             except Exception as ex:
+    #                 print(ex)
+    #                 # logger.exception(ex)

@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import sqlalchemy
 import collections
 from config import db_database, db_password, db_server, db_username
+import psycopg2
 
 class NoLocationError(Exception):
     pass
@@ -49,16 +50,23 @@ class BetriebsstellenBill:
 
 class StationPhillip:
     def __init__(self):
-        self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
-        self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
-        # self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
-        self.engine.dispose()
+        try:
+            self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
+            self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
+            self.station_df.to_feather('data_buffer/station_offline_buffer')
+            self.engine.dispose()
+        except:
+            try:
+                self.station_df = pd.read_feather('data_buffer/station_offline_buffer')
+            except FileNotFoundError:
+                raise FileNotFoundError('There is no connection to the database and no local buffer')
 
         self.station_df['eva'] = self.station_df['eva'].astype(int)
         self.name_index_stations = self.station_df.set_index('name')
         self.eva_index_stations = self.station_df.set_index('eva')
         self.ds100_index_stations = self.station_df.set_index('ds100')
         self.sta_list = self.station_df['name'].tolist()
+        self.random_sta_list = self.station_df['name'].tolist()
 
     def __len__(self):
         return len(self.station_df)
@@ -75,6 +83,15 @@ class StationPhillip:
             raise StopIteration
 
     def get_eva(self, name=None, ds100=None):
+        """get the eva from name or ds100
+
+        Keyword Arguments:
+            name {string} -- official station name (default: {None})
+            ds100 {string} -- ds100 of station (different from ds100 of Betriebsstalle) (default: {None})
+
+        Returns:
+            int -- eva of station
+        """
         if name:
             return self.name_index_stations.at[name, 'eva']
         elif ds100:
@@ -83,6 +100,15 @@ class StationPhillip:
             return None
 
     def get_name(self, eva=None, ds100=None):
+        """get the name from eva or ds100
+
+        Keyword Arguments:
+            eva {int} -- eva of station (default: {None})
+            ds100 {string} -- ds100 of station (different from ds100 of Betriebsstalle) (default: {None})
+
+        Returns:
+            string -- official station name
+        """
         if eva:
             return self.eva_index_stations.at[eva, 'name']
         elif ds100:
@@ -91,6 +117,15 @@ class StationPhillip:
             return None
     
     def get_ds100(self, name=None, eva=None):
+        """get the ds100 from eva or station name
+
+        Keyword Arguments:
+            name {string} -- official station name (default: {None})
+            eva {int} -- eva of station (default: {None})
+
+        Returns:
+            string -- ds100 of station (different from ds100 of Betriebsstalle)
+        """
         if name:
             return self.name_index_stations.at[name, 'ds100']
         elif eva:
@@ -99,6 +134,16 @@ class StationPhillip:
             return None
 
     def get_location(self, name=None, eva=None, ds100=None):
+        """get the location of a station
+
+        Keyword Arguments:
+            name {string} -- official station name (default: {None})
+            eva {int} -- eva of station (default: {None})
+            ds100 {string} -- ds100 of station (different from ds100 of Betriebsstalle) (default: {None})
+
+        Returns:
+            tuple -- longitude and latitide
+        """
         if name or ds100:
             return self.get_location(eva=self.get_eva(name=name, ds100=ds100))
         else:
@@ -106,10 +151,13 @@ class StationPhillip:
                     self.eva_index_stations.at[eva, 'lat'])
 
     def random_iter(self):
-        random_sta_list = self.station_df['name'].tolist()
+        """random iterator over station names
 
-        # random.shuffle(random_sta_list)
-        for sta in random_sta_list:
+        Yields:
+            string -- station names in random order
+        """
+        random.shuffle(self.random_sta_list)
+        for sta in self.random_sta_list:
             yield sta
 
 
