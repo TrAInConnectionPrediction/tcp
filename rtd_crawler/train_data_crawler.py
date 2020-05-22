@@ -79,6 +79,12 @@ def gather_day(start_hour = 0):
             else:
                 hour = datetime.datetime.now().time().hour
                 if last_hour > hour:
+                    if 'data_crawler' in locals():
+                        try:
+                            data_crawler.result(timeout=0)
+                        except Exception as ex:
+                            print('crawler error')
+                            logger.exception(ex)
                     break
                 try:
                     last_hour = datetime.datetime.now().time().hour
