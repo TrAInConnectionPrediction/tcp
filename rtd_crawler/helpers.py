@@ -186,7 +186,8 @@ class FileLisa:
             if old_xml is not None:
                 try:
                     tree = etree.ElementTree()
-                    root = etree.fromstring(xml.encode('utf-8'))
+                    parser = etree.XMLParser(encoding = 'utf-8')
+                    root = etree.fromstring(xml, parser)
                     xml = self.concat_xmls(old_xml, root)
                     tree._setroot(xml)
                     tree.write(directory + file_name)
@@ -199,7 +200,8 @@ class FileLisa:
 
     def open_xml(self, dir_name):
         try:
-            tree = etree.parse(dir_name)
+            parser = etree.XMLParser(encoding = 'utf-8')
+            tree = etree.parse(dir_name, parser)
             xroot = tree.getroot()
             return xroot
         except OSError: # FileNotFound in lxml
