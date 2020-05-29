@@ -38,7 +38,7 @@ class DownloadDave(Tor):
         if (resp.status_code != 200 or resp.text == '[]'):
             raise ValueError('Something went wrong while doing session.get(' +
                                 url + ') status code: ' + str(resp.status_code))
-        return resp.text
+        return resp.text.replace('\'', '"')
 
     def get_data(self, url):
         # try 3 times to get the data. It is unlikely that the

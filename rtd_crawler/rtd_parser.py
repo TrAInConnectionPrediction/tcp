@@ -3,7 +3,7 @@ sys.path.append('../')
 import pandas as pd 
 import numpy as np 
 import io
-import xml.etree.ElementTree as ET
+import lxml.etree as etree
 import os
 import datetime
 import sqlalchemy
@@ -11,7 +11,7 @@ from progress.bar import Bar
 import concurrent.futures
 
 from helpers import FileLisa, StationPhillip
-from speed import to_unix, parse_plan, fill_unknown_data, xml_parser, concat_changes, parse_realtime, unix_date
+from speed import to_unix, parse_plan, fill_unknown_data, concat_changes, parse_realtime, unix_date #, xml_parser
 
 from config import db_database, db_password, db_server, db_username
 
@@ -77,19 +77,35 @@ aind = {'platform': 0, 'arr': 1, 'dep': 2, 'stay_time': 3, 'pla_arr_path': 4, 'p
 eind = { 'changed_path': 0, 'changed_platform': 1, 'changed_time': 2, 'changed_status': 3,
         'cancellation_time': 4, 'line': 5, 'message': 6}
 
-def parse_plan_xml(xroot):
-    """
-    This function parses and concats plan xmls
 
-    Args:
-        xroot (ET.Element): ET Element of plan xml
-    
+def xml_parser(xml):
+    """a recursive function to convert xml to list dict mix
+
+    Arguments:
+        xml {etree} -- the xml to convert
+
     Returns:
-        np.ndarray: parsed plan
-        None: if there is no plan
+        dict -- a dict list mix of the xml
     """
-    # xml to list-dict mix
-    plan = list(xml_parser(part) for part in list(xroot))
+    parsed = dict(xml.attrib)
+    for xml_child in list(xml):
+        if xml_child.tag in parsed:
+            parsed[xml_child.tag].append(xml_parser(xml_child))
+        else:
+            parsed[xml_child.tag] = [xml_parser(xml_child)]
+    return parsed
+
+
+def parse_plan_xml(tree):
+    """parses a etree tree of planned traffic to np.ndarray
+
+    Arguments:
+        tree {etree._Element} -- planned xml
+
+    Returns:
+        np.ndarray -- parsed plan
+    """
+    plan = list(xml_parser(part) for part in list(tree))
     plan = list(fill_unknown_data(part, real=False) for part in plan)
     plan = list(parse_plan(part) for part in plan)
 
@@ -106,19 +122,16 @@ def parse_plan_xml(xroot):
 
 # @profile
 def parse_realtime_xml(xroot):
-    """
-    This function parses and concats realtime xmls
+    """parses a etree tree of changed traffic to np.ndarray
 
-    Args:
-        xroot (ET.Element): ET Element of real xml
-    
+    Arguments:
+        tree {etree._Element} -- changes xml
+
     Returns:
-        np.ndarray: parsed and concatted changes
-        None: if there is no realtime info
+        np.ndarray -- parsed changes
     """
     if xroot is None:
         return None
-    # xml to list-dict mix
     realtime = list(xml_parser(part) for part in list(xroot))
 
     # realtime is a mix of stops and sometimes messages. The messages are unwanted and have to be removed.
@@ -136,16 +149,15 @@ def parse_realtime_xml(xroot):
     return array
 
 def add_realtime_to_plan(plan, real):
-    """
-    This function adds the fitting realtime info to the plan
+    """adds fitting realtime info aka changes to the plan
 
-    Args:
-        plan(np.ndarray): parsed plan
-        real(np.ndarray): parsed and concatted changes
-    
+    Arguments:
+        plan {np.ndarray} -- parsed plan
+        real {np.ndarray} -- parsed and concatted changes
+
     Returns:
-        np.ndarray: plan with realtime info
-    """
+        np.ndarray -- plan with realtime info aka changes
+    """    
     if not real is None:
         for i in range(plan.shape[0]):
             plan_id = plan[i, pind['first_id']]
@@ -156,14 +168,13 @@ def add_realtime_to_plan(plan, real):
     return plan
 
 def concat_all_changes(real):
-    """
-    This function concats changes as its common to have one message twice or multiple delay infos where only the newest is important
+    """This function concats changes as its common to have one message twice or multiple delay infos where only the newest is important
 
-    Args:
-        real(np.ndarray): parsed changes (Cannot handle empty real)
+    Arguments:
+        real {np.ndarray} -- parsed changes (Cannot handle empty real)
     
     Returns:
-        np.ndarray: concatted changes with one message per train
+        np.ndarray -- concatted changes with one message per train
     """
     # find unique message ids
     unique_ids = np.unique(real[:, rind['first_id']])
@@ -174,25 +185,23 @@ def concat_all_changes(real):
     return concatted
 
 def upload_data(df):
-    """
-    This function uploads the data to our database
+    """This function uploads the data to our database
 
-    Args:
-        df(pd.DataFrame): fully parsed and prepared data
+    Arguments:
+        df {pd.DataFrame} -- fully parsed and prepared data
     """
     df.to_sql('rtd', con=engine, if_exists='append', method='multi')
     #### TODO: Add some retrying if it does not work ####
 
 def parse_station(plan, real):
-    """
-    This function parses plan and real and adds real to plan
+    """This function parses plan and real and adds real to plan
 
-    Args:
-        plan(ET.Element): plan xml or None
-        real(ET.Element): real xml or None
+    Arguments:
+        plan {etree._Element} -- plan xml
+        real {etree._Element} -- changes xml
     
     Returns:
-        np.ndarray: plan + real
+        np.ndarray -- plan with realtime info aka changes
     """
     plan = parse_plan_xml(plan)
     real = parse_realtime_xml(real)
@@ -202,10 +211,9 @@ def parse_station(plan, real):
         return add_realtime_to_plan(plan, real)
 
 def prepare_plan_for_upload(plan):
-    """
-    This function prepares data for upload by changing remaining np.ndarrays to list and replacing -1s with np.nan
+    """This function prepares data for upload by changing remaining np.ndarrays to list and replacing -1s with np.nan
 
-    Args:
+    Arguments:
         plan(np.ndarray): parsed plan + real
     
     Returns:
@@ -231,7 +239,7 @@ def prepare_plan_for_upload(plan):
     np.place(plan[:, pind['dep_message']], plan[:, pind['dep_message']] == buf, [np.nan])
     return plan
 
-# @profile
+
 def parse_full_day(date):
     global engine
     engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
@@ -253,9 +261,9 @@ def parse_full_day(date):
             bar.next()
             # real1: real of the same day as plan
             # real2: real of the day before plan, as a train rolling at 0:10 probably has changes from the day before
-            plan = fl.open_plan_xml(station, date1)
-            real1 = fl.open_real_xml(station, date1)
-            real2 = fl.open_real_xml(station, date2)
+            plan = fl.open_station_xml(station, date1, 'plan')
+            real1 = fl.open_station_xml(station, date1, 'changes')
+            real2 = fl.open_station_xml(station, date2, 'changes')
 
             # check wether there is plan and or real data and parse it accordingly
             if plan is None:
@@ -297,9 +305,9 @@ def parse_full_day(date):
             
     engine.dispose()
     for station in stations:
-        # delete the files that are no longer used (the parsed plan and real from two day ago)
-        fl.delete_plan(station, date1)
-        fl.delete_real(station, date2)
+        # delete the files that are no longer used (the parsed plan and real from two days ago)
+        fl.delete_xml(station, date1, 'plan')
+        fl.delete_xml(station, date2, 'changes')
     bar.finish()
 
 station = 'Aachen Hbf'

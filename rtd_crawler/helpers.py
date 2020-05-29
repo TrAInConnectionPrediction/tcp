@@ -3,11 +3,11 @@ import pandas as pd
 import numpy as np
 import os
 import random
-import xml.etree.ElementTree as ET
+import lxml.etree as etree
 import sqlalchemy
 import collections
+import re
 from config import db_database, db_password, db_server, db_username
-# import psycopg2
 
 class NoLocationError(Exception):
     pass
@@ -163,8 +163,8 @@ class StationPhillip:
 
 
 class FileLisa:
-    def __init__(self):
-        self.BASEPATH = 'rtd/'
+    BASEPATH = 'rtd/'
+    XML_CHILD_RE = re.compile(r'(<timetable station="[^"]*"[ eva="\d*"]*>)(.*)(<\/timetable>)', flags=re.RegexFlag.S)
 
 
     def clean_station_name(self, station):
@@ -178,87 +178,92 @@ class FileLisa:
         return xml1
 
 
+    def concat_xmls_as_str(self, xml1: str, xml2: str) -> str:
+        content2 = re.search(self.XML_CHILD_RE, xml2)[2]
+        concatted = re.sub(self.XML_CHILD_RE, '\\1\\2' + content2 + '\\3', xml1)
+        return concatted
+
+
+    def save_xml_as_str(self, xml: str, directory: str, file_name: str):
+        if xml and xml != 'None' and xml != '<timetable/>\n':
+            #create dir if not present
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            try:
+                old_xml = self.open_xml_as_str(directory + file_name)
+                xml = self.concat_xmls_as_str(old_xml, xml)
+            except FileNotFoundError:
+                pass
+            with open(directory + file_name, 'w', encoding="utf-8") as f:
+                f.write(xml)
+                # print(xml, file=f)
+
+
     def save_xml(self, xml, directory, file_name):
-        if xml and xml != 'None':
+        if xml and xml != 'None' and xml != '<timetable/>\n':
             #create dir if not present
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
             old_xml = self.open_xml(directory + file_name)
-            if old_xml:
+            if old_xml is not None:
                 try:
-                    tree = ET.ElementTree()
-                    root = ET.fromstring(xml)
-                    old_xml = self.concat_xmls(old_xml, root)
-                    tree._setroot(old_xml)
+                    tree = etree.ElementTree()
+                    root = etree.fromstring(xml.encode('utf-8'))
+                    xml = self.concat_xmls(old_xml, root)
+                    tree._setroot(xml)
                     tree.write(directory + file_name)
-                except ET.ParseError: # if the xml looks like <timetable\> or sth like that
-                    pass
-                except TypeError: # one object has NoneType
-                    pass
+                except Exception as ex:
+                    print('Save xml exeption:', ex)
             else:
-                with open(directory + file_name, 'w') as fd:
-                    print(xml, file=fd)
+                with open(directory + file_name, 'w', encoding="utf-8") as f:
+                    f.write(xml)
+
+
+    def open_xml_as_str(self, dir_name) -> str:
+        with open(dir_name, 'r') as f:
+            xml = f.read()
+            return xml
 
 
     def open_xml(self, dir_name):
-        # try to open and parse the file
         try:
-            tree = ET.parse(dir_name)
+            tree = etree.parse(dir_name)
             xroot = tree.getroot()
             return xroot
-        except FileNotFoundError:
-            # print('file_not_found')
+        except OSError: # FileNotFound in lxml
             return None
-        except ET.ParseError: #if the file is emty or corrupt
-            # print('parse_error')
+        except etree.XMLSyntaxError: # File is empty
             return None
 
 
-    def save_plan_xml(self, xml, station, date):
+    def save_station_xml(self, xml: str, station: str, date: int, data_type: str):
         directory = self.BASEPATH + self.clean_station_name(station) + '/'
-        file_name = str(date) + '_' + 'plan.xml'
+        file_name = str(date) + '_' + data_type + '.xml'
         self.save_xml(xml, directory, file_name)
 
 
-    def save_real_xml(self, xml, station, date):
+    def open_station_xml(self, station: str, date: int, data_type: str):
         directory = self.BASEPATH + self.clean_station_name(station) + '/'
-        file_name = str(date) + '_' + 'changes.xml'
-        self.save_xml(xml, directory, file_name)
+        file_name = str(date) + '_' + data_type + '.xml'
+        return self.open_xml(directory + file_name)
 
 
-    def open_plan_xml(self, station, date):
+    def delete_xml(self, station: str, date: int, data_type: str):
         directory = self.BASEPATH + self.clean_station_name(station) + '/'
-        file_name = str(date) + '_' + 'plan.xml'
-        xml = self.open_xml(directory + file_name)
-        return xml
-
-
-    def open_real_xml(self, station, date):
-        directory = self.BASEPATH + self.clean_station_name(station) + '/'
-        file_name = str(date) + '_' + 'changes.xml'
-        xml = self.open_xml(directory + file_name)
-        return xml
-
-
-    def delete_plan(self, station, date):
-        directory = self.BASEPATH + self.clean_station_name(station) + '/'
-        file_name = str(date) + '_' + 'plan.xml'
+        file_name = str(date) + '_' + data_type + '.xml'
         self.delete(directory + file_name)
 
 
-    def delete_real(self, station, date):
-        directory = self.BASEPATH + self.clean_station_name(station) + '/'
-        file_name = str(date) + '_' + 'real.xml'
-        self.delete(directory + file_name)
-
-
-    def delete(self, path):
+    def delete(self, path: str):
         if os.path.isfile(path):
             os.remove(path)
 
 
 if __name__ == '__main__':
-    stations = StationPhillip()
+    fl = FileLisa()
+    # xml = fl.concat_xmls_as_str(xml1, xml2)
+    plan = '<timetable station="Hilden S&#252;d"><s id="-4549549882670356501-2005271456-37"><tl f="S" t="p" o="800337" c="S" n="34886"/><ar pt="2005271640" pp="1" l="1" ppth="Dortmund Hbf|Dortmund-Dorstfeld|Dortmund-Dorstfeld S&#252;d|Dortmund Universit&#228;t|Dortmund-Oespel|Dortmund-Kley|Bochum-Langendreer|Bochum-Langendreer West|Bochum Hbf|Bochum-Ehrenfeld|Wattenscheid-H&#246;ntrop|Essen-Eiberg|Essen-Steele Ost|Essen-Steele|Essen Hbf|Essen West|Essen-Frohnhausen|M&#252;lheim(Ruhr)Hbf|M&#252;lheim(Ruhr)Styrum|Duisburg Hbf|Duisburg-Schlenk|Duisburg-Buchholz|Duisburg-Gro&#223;enbaum|Duisburg-Rahm|Angermund|D&#252;sseldorf Flughafen|D&#252;sseldorf-Unterrath|D&#252;sseldorf-Derendorf|D&#252;sseldorf-Zoo|D&#252;sseldorf Wehrhahn|D&#252;sseldorf Hbf|D&#252;sseldorf Volksgarten|D&#252;sseldorf-Oberbilk|D&#252;sseldorf-Eller Mitte|D&#252;sseldorf-Eller|Hilden"/><dp pt="2005271640" pp="1" l="1" ppth="Solingen Vogelpark|Solingen Hbf"/></s></timetable>'
+    fl.concat_xmls_as_str(plan, plan)
     print('lol')
     
