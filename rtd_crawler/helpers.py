@@ -6,7 +6,6 @@ import random
 import lxml.etree as etree
 import sqlalchemy
 import collections
-import re
 from config import db_database, db_password, db_server, db_username
 
 class NoLocationError(Exception):
@@ -164,7 +163,6 @@ class StationPhillip:
 
 class FileLisa:
     BASEPATH = 'rtd/'
-    XML_CHILD_RE = re.compile(r'(<timetable station="[^"]*"[ eva="\d*"]*>)(.*)(<\/timetable>)', flags=re.RegexFlag.S)
 
 
     def clean_station_name(self, station):
@@ -176,27 +174,6 @@ class FileLisa:
         for xml_child in xml2:
             xml1.append(xml_child)
         return xml1
-
-
-    def concat_xmls_as_str(self, xml1: str, xml2: str) -> str:
-        content2 = re.search(self.XML_CHILD_RE, xml2)[2]
-        concatted = re.sub(self.XML_CHILD_RE, '\\1\\2' + content2 + '\\3', xml1)
-        return concatted
-
-
-    def save_xml_as_str(self, xml: str, directory: str, file_name: str):
-        if xml and xml != 'None' and xml != '<timetable/>\n':
-            #create dir if not present
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            try:
-                old_xml = self.open_xml_as_str(directory + file_name)
-                xml = self.concat_xmls_as_str(old_xml, xml)
-            except FileNotFoundError:
-                pass
-            with open(directory + file_name, 'w', encoding="utf-8") as f:
-                f.write(xml)
-                # print(xml, file=f)
 
 
     def save_xml(self, xml, directory, file_name):
@@ -218,12 +195,6 @@ class FileLisa:
             else:
                 with open(directory + file_name, 'w', encoding="utf-8") as f:
                     f.write(xml)
-
-
-    def open_xml_as_str(self, dir_name) -> str:
-        with open(dir_name, 'r') as f:
-            xml = f.read()
-            return xml
 
 
     def open_xml(self, dir_name):

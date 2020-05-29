@@ -1,7 +1,6 @@
 import sys
 sys.path.append('../')
 import requests
-import fancy_print_tcp
 from rtd_parser import parse_full_day
 from speed import unix_date, unix_now, to_unix
 from downloader import *
@@ -27,11 +26,9 @@ logger.addHandler(logHandler)
 
 
 def get_station_xml(station_id, str_date, hour, date, station):
-    # plan_xml = dd.get_plan(station_id, str_date, hour)
-    fl.save_plan_xml(dd.get_plan(station_id, str_date, hour), station, date)
-
-    # real_xml = dd.get_real(station_id)
-    fl.save_real_xml(dd.get_real(station_id), station, date)
+    plan_xml = dd.get_plan(station_id, str_date, hour)
+    real_xml = dd.get_real(station_id)
+    return {'plan_xml':plan_xml, 'real_xml':real_xml, 'station':station}
 
 
 def get_hourely_batch():
@@ -42,6 +39,7 @@ def get_hourely_batch():
     station_list = list(station for station in stations.random_iter())
     bar = Bar('crawling ' + str(datetime.datetime.now()), max=len(stations))
     gatherers = []
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
         # start all gathering processes
         for station in station_list:
@@ -51,22 +49,23 @@ def get_hourely_batch():
         try:
             # collect all finished gathering processes while changing the ip
             for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
-                gatherer.result(timeout=40)
+                xmls = gatherer.result()
+                fl.save_station_xml(xmls['plan_xml'], xmls['station'], date, 'plan')
+                fl.save_station_xml(xmls['real_xml'], xmls['station'], date, 'changes')
                 bar.next()
 
                 # renew ip in average each 400th time
                 if random.randint(-200, 200) == 0:
                     dd.new_ip()
-        except TimeoutError:
+        except concurrent.futures._base.TimeoutError:
             pass
+        except Exception as ex:
+            print(ex)
         executor.shutdown(wait=False)
     bar.finish()
 
-def gather_day(start_hour = 0):
-    # dd = DownloadDave()
-    # fl = FileLisa()
-    # stations = StationPhillip()
 
+def gather_day(start_hour = 0):
     hour = datetime.datetime.now().time().hour - 1
     last_hour = hour
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -79,12 +78,6 @@ def gather_day(start_hour = 0):
             else:
                 hour = datetime.datetime.now().time().hour
                 if last_hour > hour:
-                    if 'data_crawler' in locals():
-                        try:
-                            data_crawler.result(timeout=0)
-                        except Exception as ex:
-                            print('crawler error')
-                            logger.exception(ex)
                     break
                 try:
                     last_hour = datetime.datetime.now().time().hour
@@ -100,6 +93,12 @@ def gather_day(start_hour = 0):
                 except Exception as ex:
                     print(ex)
         try:
+            data_crawler.result(timeout=0)
+        except Exception as ex:
+            print('crawler error')
+            logger.exception(ex)
+
+        try:
             parser_process.result(timeout=0)
         except Exception as ex:
             print('parser error')
@@ -109,13 +108,17 @@ def gather_day(start_hour = 0):
 
 
 if (__name__ == '__main__'):
-    stations = StationPhillip()
-
+    import fancy_print_tcp
     while True:
+        stations = StationPhillip()
         dd = DownloadDave()
         fl = FileLisa()
         hour = datetime.datetime.now().time().hour
         gather_day(start_hour=hour)
+        del stations
+        del dd
+        del fl
+        
 
     # last_hour = hour - 2
     # # parsed_last_day = False
