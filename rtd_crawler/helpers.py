@@ -187,7 +187,7 @@ class FileLisa:
                 try:
                     tree = etree.ElementTree()
                     parser = etree.XMLParser(encoding = 'utf-8')
-                    root = etree.fromstring(xml, parser)
+                    root = etree.fromstring(xml.encode('utf-8'), parser)
                     xml = self.concat_xmls(old_xml, root)
                     tree._setroot(xml)
                     tree.write(directory + file_name)
