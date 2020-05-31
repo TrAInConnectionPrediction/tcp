@@ -186,7 +186,7 @@ class FileLisa:
             if old_xml is not None:
                 try:
                     tree = etree.ElementTree()
-                    parser = etree.XMLParser(encoding = 'utf-8')
+                    parser = etree.XMLParser(encoding = 'utf-8', collect_ids=False)
                     root = etree.fromstring(xml.encode('utf-8'), parser)
                     xml = self.concat_xmls(old_xml, root)
                     tree._setroot(xml)
@@ -200,7 +200,7 @@ class FileLisa:
 
     def open_xml(self, dir_name):
         try:
-            parser = etree.XMLParser(encoding = 'utf-8')
+            parser = etree.XMLParser(encoding = 'utf-8', collect_ids=False)
             tree = etree.parse(dir_name, parser)
             xroot = tree.getroot()
             return xroot

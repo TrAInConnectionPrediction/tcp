@@ -52,7 +52,7 @@ class TestFileLisa(unittest.TestCase):
         self.assertEqual(opened_xml, self.test_changes_xml)
 
     def test_concat(self):
-        parser = etree.XMLParser(encoding='utf-8')
+        parser = etree.XMLParser(encoding='utf-8', collect_ids=False)
         xml = self.fl.concat_xmls(etree.fromstring(self.test_changes_xml, parser),
                                   etree.fromstring(self.test_changes_xml, parser))
         self.assertEqual(etree.tostring(
