@@ -25,13 +25,17 @@ logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
 
 
-def get_station_xml(station_id, str_date, hour, date, station):
+def get_station_xml(station_id, str_date, hour, date, station, dd):
     plan_xml = dd.get_plan(station_id, str_date, hour)
     real_xml = dd.get_real(station_id)
     return {'plan_xml':plan_xml, 'real_xml':real_xml, 'station':station}
 
 
 def get_hourely_batch():
+    stations = StationPhillip()
+    dd = DownloadDave()
+    fl = FileLisa()
+
     date = unix_date(unix_now())
     hour = (datetime.datetime.now() + datetime.timedelta(hours=1)).time().hour
     str_date = datetime.datetime.now().strftime('%y%m%d')
@@ -45,7 +49,7 @@ def get_hourely_batch():
         for station in station_list:
             station_id = stations.get_eva(name=station)
             gatherers.append(executor.submit(get_station_xml, station_id, str_date,
-                                             hour, date, station))
+                                             hour, date, station, dd))
         try:
             # collect all finished gathering processes while changing the ip
             for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
@@ -68,7 +72,7 @@ def get_hourely_batch():
 def gather_day(start_hour = 0):
     hour = datetime.datetime.now().time().hour - 1
     last_hour = hour
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ProcessPoolExecutor() as executor:
         if start_hour == 0:
             parser_process = executor.submit(
                             parse_full_day, datetime.datetime.today() - datetime.timedelta(days=1))
@@ -110,14 +114,14 @@ def gather_day(start_hour = 0):
 if (__name__ == '__main__'):
     import fancy_print_tcp
     while True:
-        stations = StationPhillip()
-        dd = DownloadDave()
-        fl = FileLisa()
+        # stations = StationPhillip()
+        # dd = DownloadDave()
+        # fl = FileLisa()
         hour = datetime.datetime.now().time().hour
         gather_day(start_hour=hour)
-        del stations
-        del dd
-        del fl
+        # del stations
+        # del dd
+        # del fl
         
 
     # last_hour = hour - 2
