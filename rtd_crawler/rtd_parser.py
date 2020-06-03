@@ -17,26 +17,6 @@ from config import db_database, db_password, db_server, db_username
 
 engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
 
-# import cProfile, pstats, io
-
-# def profile(fnc):
-    
-#     """A decorator that uses cProfile to profile a function"""
-    
-#     def inner(*args, **kwargs):
-        
-#         pr = cProfile.Profile()
-#         pr.enable()
-#         retval = fnc(*args, **kwargs)
-#         pr.disable()
-#         s = io.StringIO()
-#         sortby = 'cumulative'
-#         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-#         ps.print_stats()
-#         print(s.getvalue())
-#         return retval
-
-#     return inner
 
 MESSAGE = {
     'id':None,
@@ -120,7 +100,6 @@ def parse_plan_xml(tree):
     return parsed_array
 
 
-# @profile
 def parse_realtime_xml(xroot):
     """parses a etree tree of changed traffic to np.ndarray
 
@@ -191,7 +170,6 @@ def upload_data(df):
         df {pd.DataFrame} -- fully parsed and prepared data
     """
     df.to_sql('rtd', con=engine, if_exists='append', method='multi')
-    #### TODO: Add some retrying if it does not work ####
 
 def parse_station(plan, real):
     """This function parses plan and real and adds real to plan
@@ -250,9 +228,7 @@ def parse_full_day(date):
     date2 = unix_date(to_unix(date - datetime.timedelta(days = 1)))
 
     # multithreading variables
-    max_threads = 5
     uploaders = []
-    # running_threads = []
     buffer = pd.DataFrame()
 
     bar = Bar('parsing ' + str(date), max = len(stations))
