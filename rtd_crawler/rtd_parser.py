@@ -139,8 +139,12 @@ def add_realtime_to_plan(plan, real):
     """    
     if not real is None:
         for i in range(plan.shape[0]):
-            plan_id = plan[i, pind['first_id']]
-            data = real[real[:, rind['first_id']] == plan_id, :]
+            plan_first_id = plan[i, pind['first_id']]
+            plan_middle_id = plan[i, pind['middle_id']]
+            plan_last_id = plan[i, pind['last_id']]
+            data = real[np.all([real[:, rind['first_id']] == plan_first_id,
+                        real[:, rind['middle_id']] == plan_middle_id,
+                        real[:, rind['last_id']] == plan_last_id], axis=0), :]
 
             if data.size != 0:
                 plan[i, pind['first_id']:] = data[0, :]
@@ -155,12 +159,25 @@ def concat_all_changes(real):
     Returns:
         np.ndarray -- concatted changes with one message per train
     """
-    # find unique message ids
-    unique_ids = np.unique(real[:, rind['first_id']])
+    unique_first_ids = np.unique(real[:, rind['first_id']])
+    unique_ids = np.empty((0,3), np.int64)
+    for first_id in unique_first_ids:
+        unique_middle_ids = np.unique(real[real[:, rind['first_id']] == first_id, rind['middle_id']])
+        for middle_id in unique_middle_ids:
+            mask = np.all([real[:, rind['first_id']] == first_id, real[:, rind['middle_id']] == middle_id], axis=0)
+            unique_last_ids = np.unique(real[mask, rind['last_id']])
+
+            ids_to_append = np.array([[first_id, middle_id, last_id] for last_id in unique_last_ids], dtype=np.int64)
+            unique_ids = np.append(unique_ids, ids_to_append, axis=0)
+        # unique_ids = np.append(unique_ids, np.array([[first_id, middle_id] for middle_id in unique_middle_ids], dtype=np.int64), axis=0)
+
     concatted = np.full((unique_ids.shape[0], real.shape[1]), -1, dtype=object)
-    for i, f_id in enumerate(unique_ids):
+    for i, ids in enumerate(unique_ids):
         # concat all the messages with the same id
-        concatted[i, :] = concat_changes(real[np.in1d(real[:, rind['first_id']], [f_id]), :])
+        mask = np.all([real[:, rind['first_id']] == ids[0],
+                       real[:, rind['middle_id']] == ids[1],
+                       real[:, rind['last_id']] == ids[2]], axis=0)
+        concatted[i, :] = concat_changes(real[mask, :])
     return concatted
 
 def upload_data(df):
@@ -169,7 +186,11 @@ def upload_data(df):
     Arguments:
         df {pd.DataFrame} -- fully parsed and prepared data
     """
-    df.to_sql('rtd', con=engine, if_exists='append', method='multi')
+    # pass
+    # arr_delay = df['arr_changed_time'] - df['arr']
+    # dep_delay = df['dep_changed_time'] - df['dep']
+    # print('arr:', arr_delay.min(), 'dep:', dep_delay.min())
+    df.to_sql('rtd2', con=engine, if_exists='append', method='multi')
 
 def parse_station(plan, real):
     """This function parses plan and real and adds real to plan
@@ -217,8 +238,65 @@ def prepare_plan_for_upload(plan):
     np.place(plan[:, pind['dep_message']], plan[:, pind['dep_message']] == buf, [np.nan])
     return plan
 
+class StatsStella:
+    total_trips = 0
+    arr_delay = {}
+    dep_delay = {}
+    cancellations = 0
+
+    def add_to_stats(self, df):
+        self.total_trips += len(df)
+
+        arr_delays = df['arr_changed_time'] - df['arr']
+        arr_delays = arr_delays / 60
+        arr_delays = arr_delays.value_counts().to_dict()
+        for delay in arr_delays:
+            if delay in self.arr_delay:
+                self.arr_delay[delay] += arr_delays[delay]
+            else:
+                self.arr_delay[delay] = arr_delays[delay]
+
+        dep_delays = df['dep_changed_time'] - df['dep']
+        dep_delays = dep_delays / 60
+        dep_delays = dep_delays.value_counts().to_dict()
+        for delay in dep_delays:
+            if delay in self.dep_delay:
+                self.dep_delay[delay] += dep_delays[delay]
+            else:
+                self.dep_delay[delay] = dep_delays[delay]
+
+        self.cancellations += len(df['arr_cancellation_time'].dropna())
+
+    def _summarize_delays(self, delays):
+        summarized_delays = {-40:0, -10:0, -5:0, -1:0, 0:0, 1:0, 5:0, 10:0, 20:0}
+        for delay in (delay for delay in delays):
+            nearest_delay = min(summarized_delays.keys(), key=lambda x:abs(x-delay))
+            summarized_delays[nearest_delay] += delays[delay]
+        return summarized_delays
+
+    def __str__(self):
+        print_str = ''
+        print_str += str(self.total_trips) + ' trips in total\n'
+        print_str += str(self.cancellations) + ' or ' + str(int(self.cancellations * 100 / self.total_trips)) + '% cancellations\n'
+        sum_arr = self._summarize_delays(self.arr_delay)
+        print_str += 'arr delays:\n'
+        for delay in sum_arr:
+            print_str += str(sum_arr[delay]) + ' or ' + str(int(sum_arr[delay] * 100 / self.total_trips)) + '% were ' + str(delay) + ' min delayed\n'
+        
+        sum_dep = self._summarize_delays(self.dep_delay)
+        print_str += 'dep delays:\n'
+        for delay in sum_dep:
+            print_str += str(sum_dep[delay]) + ' or ' + str(int(sum_dep[delay] * 100 / self.total_trips)) + '% were ' + str(delay) + ' min delayed\n'
+        
+        return print_str
+
+def make_stats(con_df):
+    arr_delay = df['arr_changed_time'] - df['arr']
+    dep_delay = df['dep_changed_time'] - df['dep']
+    print('arr:', arr_delay.min(), 'dep:', dep_delay.min())
 
 def parse_full_day(date):
+    stats = StatsStella()
     global engine
     engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
     fl = FileLisa()
@@ -251,7 +329,7 @@ def parse_full_day(date):
             elif real2 == None:
                 real = real1
             else:
-                real = fl.concat_xmls(real1, real2)
+                real = fl.concat_xmls(real2, real1)
             plan = parse_station(plan, real)
             if plan is None:
                 continue
@@ -265,11 +343,13 @@ def parse_full_day(date):
 
             # upload the data as soon as it is longer than 1000 lines. This is more efficient than uploading each stations data individually
             if len(buffer) > 1000:
+                stats.add_to_stats(buffer)
                 uploaders.append(executor.submit(upload_data, buffer))
 
                 buffer = pd.DataFrame()
 
         # upload the data that did not make it over the 1000 line limit
+        stats.add_to_stats(buffer)
         uploaders.append(executor.submit(upload_data, buffer))
         
         # collect all processes
@@ -285,7 +365,8 @@ def parse_full_day(date):
         fl.delete_xml(station, date1, 'plan')
         fl.delete_xml(station, date2, 'changes')
     bar.finish()
+    print(stats)
 
 station = 'Aachen Hbf'
 if __name__ == '__main__':
-    parse_full_day(datetime.datetime.today())
+    parse_full_day(datetime.datetime.today()) # - datetime.timedelta(days=1)
