@@ -199,7 +199,17 @@ class DatabaseOfDoom:
 
     def upload_queue(self):
         query = sqlalchemy.insert(self.json_rtd)
-        self.connection.execute(query, self.queue)
+        for i in range(3):
+            try:
+                sqlalchemy.exc.OperationalError('lol', 'lol', 'lol')
+                self.connection.execute(query, self.queue)
+                break
+            except sqlalchemy.exc.OperationalError as ex:
+                self.engine.dispose()
+                self.connection = self.engine.connect()
+
+                if i > 1:
+                    raise ex
         self.queue = []
 
     def add_jsons(self, plan, changes, bhf, date, hour):
