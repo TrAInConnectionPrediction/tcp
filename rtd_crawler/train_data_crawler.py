@@ -25,7 +25,7 @@ logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
 
 
-def get_station_xml(station_id, str_date, hour, station, dd):
+def get_station_json(station_id, str_date, hour, station, dd):
     """get the plan and real xml from a given station on a given date / time
 
     Arguments:
@@ -78,18 +78,19 @@ def get_hourely_batch():
         # start all gathering threads
         for station in station_list:
             station_id = stations.get_eva(name=station)
-            gatherers.append(executor.submit(get_station_xml, station_id, str_date, hour, station, dd))
+            gatherers.append(executor.submit(get_station_json, station_id, str_date, hour, station, dd))
         try:
             # collect all finished gathering threads while changing the ip
             for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
                 jsons = gatherer.result()
 
-                db.add_jsons(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
+                db.add_to_queue(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
                 bar.next()
 
                 # change ip in average each 400th time
                 if random.randint(-200, 200) == 0:
                     dd.new_ip()
+            db.upload_queue()
         except concurrent.futures._base.TimeoutError:
             pass
         executor.shutdown(wait=False)

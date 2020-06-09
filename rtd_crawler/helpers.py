@@ -164,16 +164,24 @@ class StationPhillip:
 
 
 class DatabaseOfDoom:
-    db = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
-    engine = db.connect()
-    meta = sqlalchemy.MetaData(engine)
+    engine = sqlalchemy.create_engine(
+        'postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require',
+        pool_pre_ping=True
+    )
+    meta = sqlalchemy.MetaData()
+    engine.dispose()
+    connection = engine.connect()
 
-    json_rtd = sqlalchemy.table(
-                        'json_rtd',
-                        Column('date', DateTime),
-                        Column('bhf', Text),
-                        Column('plan', JSON),
-                        Column('changes', JSON))
+    json_rtd = sqlalchemy.Table('json_rtd', meta, autoload=True, autoload_with=engine)
+
+    queue = []
+
+    # json_rtd = sqlalchemy.table(
+    #                     'json_rtd',
+    #                     Column('date', DateTime),
+    #                     Column('bhf', Text),
+    #                     Column('plan', JSON),
+    #                     Column('changes', JSON))
 
     def create_table(self):
         sqlalchemy.Table('json_rtd', self.meta,
@@ -183,15 +191,26 @@ class DatabaseOfDoom:
                          Column('changes', JSON))
         self.meta.create_all()
 
+    def add_to_queue(self, plan, changes, bhf, date, hour):
+        date = datetime.datetime.combine(date, datetime.time(hour, 0))
+        self.queue.append({'date':date, 'bhf':bhf, 'plan':plan, 'changes':changes})
+        if len(self.queue) > 300:
+            self.upload_queue()
+
+    def upload_queue(self):
+        query = sqlalchemy.insert(self.json_rtd)
+        self.connection.execute(query, self.queue)
+        self.queue = []
+
     def add_jsons(self, plan, changes, bhf, date, hour):
         date = datetime.datetime.combine(date, datetime.time(hour, 0))
-        statement  = self.json_rtd.insert().values(
+        statement  = sqlalchemy.insert(self.json_rtd).values(
             date=date,
             bhf=bhf,
             plan=plan,
             changes=changes
         )
-        self.engine.execute(statement)
+        self.connection.execute(statement)
 
     def get_json(self, bhf):
         find_bhf = self.json_rtd.select().where(self.json_rtd.c.bhf == bhf)
