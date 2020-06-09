@@ -40,7 +40,22 @@ def get_station_xml(station_id, str_date, hour, station, dd):
     """
     plan_xml = dd.get_plan(station_id, str_date, hour)
     real_xml = dd.get_real(station_id)
-    return {'plan_xml': plan_xml, 'real_xml': real_xml, 'station': station}
+
+    parser = etree.XMLParser(encoding='utf-8', collect_ids=False)
+
+    if plan_xml and plan_xml != 'None' and plan_xml != '<timetable/>\n':
+        plan_tree = etree.fromstring(plan_xml.encode(), parser)
+        plan_json = list(xml_parser(part) for part in list(plan_tree))
+    else:
+        plan_json = None
+
+    if real_xml and real_xml != 'None' and real_xml != '<timetable/>\n':
+        changes_tree = etree.fromstring(real_xml.encode(), parser)
+        changes_json = list(xml_parser(part) for part in list(changes_tree))
+    else:
+        changes_json = None
+
+    return {'plan': plan_json, 'changes': changes_json, 'station': station}
 
 
 def get_hourely_batch():
@@ -67,22 +82,9 @@ def get_hourely_batch():
         try:
             # collect all finished gathering threads while changing the ip
             for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
-                xmls = gatherer.result()
-                parser = etree.XMLParser(encoding='utf-8', collect_ids=False)
+                jsons = gatherer.result()
 
-                if xmls['plan_xml'] and xmls['plan_xml'] != 'None' and xmls['plan_xml'] != '<timetable/>\n':
-                    plan_tree = etree.fromstring(xmls['plan_xml'].encode(), parser)
-                    plan_json = list(xml_parser(part) for part in list(plan_tree))
-                else:
-                    plan_json = None
-
-                if xmls['real_xml'] and xmls['real_xml'] != 'None' and xmls['real_xml'] != '<timetable/>\n':
-                    changes_tree = etree.fromstring(xmls['real_xml'].encode(), parser)
-                    changes_json = list(xml_parser(part) for part in list(changes_tree))
-                else:
-                    changes_json = None
-
-                db.add_jsons(plan_json, changes_json, xmls['station'], datetime_date, hour)
+                db.add_jsons(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
                 bar.next()
 
                 # change ip in average each 400th time
@@ -119,6 +121,7 @@ def gather_day(start_hour=0):
 
             except Exception as ex:
                 print(ex)
+                logger.exception(ex)
     if 'data_crawler' in locals():
         try:
             data_crawler.join(timeout=0)
