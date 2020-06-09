@@ -184,7 +184,7 @@ class DatabaseOfDoom:
         self.meta.create_all()
 
     def add_jsons(self, plan, changes, bhf, date, hour):
-        date = date + datetime.timedelta(hours=hour)
+        date = datetime.datetime.combine(date, datetime.time(hour, 0))
         statement  = self.json_rtd.insert().values(
             date=date,
             bhf=bhf,

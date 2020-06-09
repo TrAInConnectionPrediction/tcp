@@ -6,10 +6,9 @@ import concurrent.futures
 from time import sleep
 import logging
 import logging.handlers as handlers
-from helpers import FileLisa, StationPhillip, DatabaseOfDoom
+from helpers import StationPhillip, DatabaseOfDoom
 from downloader import DownloadDave
-from speed import unix_date, unix_now
-from rtd_parser import parse_full_day, xml_parser
+from rtd_parser import xml_parser
 import requests
 import sys
 import lxml.etree as etree
@@ -99,10 +98,6 @@ def gather_day(start_hour=0):
     hour = datetime.datetime.now().time().hour - 1
     last_hour = hour
 
-    # if start_hour == 0:
-    #     parser_process = Process(target=parse_full_day, args=(
-    #         datetime.datetime.today() - datetime.timedelta(days=1),))
-    #     parser_process.start()
     while True:
         if hour == datetime.datetime.now().time().hour:
             sleep(20)
@@ -130,13 +125,6 @@ def gather_day(start_hour=0):
         except Exception as ex:
             print('crawler error')
             logger.exception(ex)
-
-    # if 'parser_process' in locals():
-    #     try:
-    #         parser_process.join(timeout=0)
-    #     except Exception as ex:
-    #         print('parser error')
-    #         logger.exception(ex)
 
 
 if (__name__ == '__main__'):
