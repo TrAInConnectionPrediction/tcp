@@ -6,12 +6,13 @@ import concurrent.futures
 from time import sleep
 import logging
 import logging.handlers as handlers
-from helpers import FileLisa, StationPhillip
+from helpers import FileLisa, StationPhillip, DatabaseOfDoom
 from downloader import DownloadDave
 from speed import unix_date, unix_now
-from rtd_parser import parse_full_day
+from rtd_parser import parse_full_day, xml_parser
 import requests
 import sys
+import lxml.etree as etree
 sys.path.append('../')
 
 logger = logging.getLogger('my_app')
@@ -50,11 +51,10 @@ def get_hourely_batch():
     with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
         stations = StationPhillip()
         dd = DownloadDave()
-        fl = FileLisa()
+        db = DatabaseOfDoom()
 
-        date = unix_date(unix_now())
-        hour = (datetime.datetime.now() +
-                datetime.timedelta(hours=1)).time().hour
+        datetime_date = datetime.datetime.today().date()
+        hour = datetime.datetime.now().time().hour
         str_date = datetime.datetime.now().strftime('%y%m%d')
 
         station_list = list(station for station in stations.random_iter())
@@ -64,16 +64,26 @@ def get_hourely_batch():
         # start all gathering threads
         for station in station_list:
             station_id = stations.get_eva(name=station)
-            gatherers.append(executor.submit(get_station_xml, station_id, str_date,
-                                             hour, station, dd))
+            gatherers.append(executor.submit(get_station_xml, station_id, str_date, hour, station, dd))
         try:
             # collect all finished gathering threads while changing the ip
             for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
                 xmls = gatherer.result()
-                fl.save_station_xml(
-                    xmls['plan_xml'], xmls['station'], date, 'plan')
-                fl.save_station_xml(
-                    xmls['real_xml'], xmls['station'], date, 'changes')
+                parser = etree.XMLParser(encoding='utf-8', collect_ids=False)
+
+                if xmls['plan_xml'] and xmls['plan_xml'] != 'None' and xmls['plan_xml'] != '<timetable/>\n':
+                    plan_tree = etree.fromstring(xmls['plan_xml'].encode(), parser)
+                    plan_json = list(xml_parser(part) for part in list(plan_tree))
+                else:
+                    plan_json = None
+
+                if xmls['real_xml'] and xmls['real_xml'] != 'None' and xmls['real_xml'] != '<timetable/>\n':
+                    changes_tree = etree.fromstring(xmls['real_xml'].encode(), parser)
+                    changes_json = list(xml_parser(part) for part in list(changes_tree))
+                else:
+                    changes_json = None
+
+                db.add_jsons(plan_json, changes_json, xmls['station'], datetime_date, hour)
                 bar.next()
 
                 # change ip in average each 400th time
@@ -89,10 +99,10 @@ def gather_day(start_hour=0):
     hour = datetime.datetime.now().time().hour - 1
     last_hour = hour
 
-    if start_hour == 0:
-        parser_process = Process(target=parse_full_day, args=(
-            datetime.datetime.today() - datetime.timedelta(days=1),))
-        parser_process.start()
+    # if start_hour == 0:
+    #     parser_process = Process(target=parse_full_day, args=(
+    #         datetime.datetime.today() - datetime.timedelta(days=1),))
+    #     parser_process.start()
     while True:
         if hour == datetime.datetime.now().time().hour:
             sleep(20)
@@ -121,12 +131,12 @@ def gather_day(start_hour=0):
             print('crawler error')
             logger.exception(ex)
 
-    if 'parser_process' in locals():
-        try:
-            parser_process.join(timeout=0)
-        except Exception as ex:
-            print('parser error')
-            logger.exception(ex)
+    # if 'parser_process' in locals():
+    #     try:
+    #         parser_process.join(timeout=0)
+    #     except Exception as ex:
+    #         print('parser error')
+    #         logger.exception(ex)
 
 
 if (__name__ == '__main__'):

@@ -5,6 +5,8 @@ import os
 import random
 import lxml.etree as etree
 import sqlalchemy
+from sqlalchemy import Column, Integer, Text, DateTime
+from sqlalchemy.dialects.postgresql import JSON
 import collections
 from config import db_database, db_password, db_server, db_username
 
@@ -161,6 +163,40 @@ class StationPhillip:
             yield sta
 
 
+class DatabaseOfDoom:
+    db = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
+    engine = db.connect()
+    meta = sqlalchemy.MetaData(engine)
+
+    json_rtd = sqlalchemy.table(
+                        'json_rtd',
+                        Column('date', DateTime),
+                        Column('bhf', Text),
+                        Column('plan', JSON),
+                        Column('changes', JSON))
+
+    def create_table(self):
+        sqlalchemy.Table('json_rtd', self.meta,
+                         Column('date', DateTime),
+                         Column('bhf', Text),
+                         Column('plan', JSON),
+                         Column('changes', JSON))
+        self.meta.create_all()
+
+    def add_jsons(self, plan, changes, bhf, date, hour):
+        date = date + datetime.timedelta(hours=hour)
+        statement  = self.json_rtd.insert().values(
+            date=date,
+            bhf=bhf,
+            plan=plan,
+            changes=changes
+        )
+        self.engine.execute(statement)
+
+    def get_json(self, bhf):
+        find_bhf = self.json_rtd.select().where(self.json_rtd.c.bhf == bhf)
+        print(self.engine.execute(find_bhf).fetchone())
+
 class FileLisa:
     BASEPATH = 'rtd/'
 
@@ -234,9 +270,8 @@ class FileLisa:
 
 
 if __name__ == '__main__':
-    fl = FileLisa()
-    # xml = fl.concat_xmls_as_str(xml1, xml2)
-    plan = '<timetable station="Hilden S&#252;d"><s id="-4549549882670356501-2005271456-37"><tl f="S" t="p" o="800337" c="S" n="34886"/><ar pt="2005271640" pp="1" l="1" ppth="Dortmund Hbf|Dortmund-Dorstfeld|Dortmund-Dorstfeld S&#252;d|Dortmund Universit&#228;t|Dortmund-Oespel|Dortmund-Kley|Bochum-Langendreer|Bochum-Langendreer West|Bochum Hbf|Bochum-Ehrenfeld|Wattenscheid-H&#246;ntrop|Essen-Eiberg|Essen-Steele Ost|Essen-Steele|Essen Hbf|Essen West|Essen-Frohnhausen|M&#252;lheim(Ruhr)Hbf|M&#252;lheim(Ruhr)Styrum|Duisburg Hbf|Duisburg-Schlenk|Duisburg-Buchholz|Duisburg-Gro&#223;enbaum|Duisburg-Rahm|Angermund|D&#252;sseldorf Flughafen|D&#252;sseldorf-Unterrath|D&#252;sseldorf-Derendorf|D&#252;sseldorf-Zoo|D&#252;sseldorf Wehrhahn|D&#252;sseldorf Hbf|D&#252;sseldorf Volksgarten|D&#252;sseldorf-Oberbilk|D&#252;sseldorf-Eller Mitte|D&#252;sseldorf-Eller|Hilden"/><dp pt="2005271640" pp="1" l="1" ppth="Solingen Vogelpark|Solingen Hbf"/></s></timetable>'
-    fl.concat_xmls_as_str(plan, plan)
+    db = DatabaseOfDoom()
+    # db.create_table()
+    db.get_json('Blankenstein(Saale)')
     print('lol')
     
