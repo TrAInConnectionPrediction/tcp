@@ -1,4 +1,3 @@
-# bot.py
 import os
 
 import discord
@@ -6,6 +5,8 @@ from config import discord_bot_token
 from DatabaseOfDoom import DatabaseOfDoom
 import datetime
 from time import sleep
+import sys
+sys.path.append('../')
 
 client = discord.Client()
 
@@ -24,15 +25,11 @@ async def on_ready():
         else:
             hour = datetime.datetime.now().time().hour
             date_to_check = datetime.datetime.combine(datetime.date.today(), datetime.time(hour, 0)) - datetime.timedelta(hours=1)
-            new_row_conts = db.count_entrys_at_date(date_to_check)
-            if new_row_conts < 7000:
-                await channel.send('@everyone The gatherer is not working, as ' + str(new_row_conts) + ' new entrys where added to database at ' + str(date_to_check))
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    print(message.channel.id)
+            new_row_cont = db.count_entrys_at_date(date_to_check)
+            if new_row_cont < 7000:
+                await channel.send('@everyone The gatherer is not working, as ' + str(new_row_cont) + ' new entrys where added to database at ' + str(date_to_check))
+            print('checked ' + str(date_to_check) + ': ' + str(new_row_cont) + ' rows were added')
 
 if __name__ == "__main__":
+    import fancy_print_tcp
     client.run(discord_bot_token)
