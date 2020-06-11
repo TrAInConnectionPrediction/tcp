@@ -6,7 +6,8 @@ import concurrent.futures
 from time import sleep
 import logging
 import logging.handlers as handlers
-from helpers import StationPhillip, DatabaseOfDoom
+from helpers import StationPhillip
+from DatabaseOfDoom import DatabaseOfDoom
 from downloader import DownloadDave
 from rtd_parser import xml_parser
 import requests
@@ -39,7 +40,7 @@ def get_station_json(station_id, str_date, hour, station, dd):
         dict -- contains the gathered plan_xml and real_xml as well as the station
     """
     plan_xml = dd.get_plan(station_id, str_date, hour)
-    real_xml = dd.get_real(station_id)
+    changes_xml = dd.get_real(station_id)
 
     parser = etree.XMLParser(encoding='utf-8', collect_ids=False)
 
@@ -48,12 +49,14 @@ def get_station_json(station_id, str_date, hour, station, dd):
         plan_json = list(xml_parser(part) for part in list(plan_tree))
     else:
         plan_json = None
+    
 
-    if real_xml and real_xml != 'None' and real_xml != '<timetable/>\n':
-        changes_tree = etree.fromstring(real_xml.encode(), parser)
+    if changes_xml and changes_xml != 'None' and changes_xml != '<timetable/>\n':
+        changes_tree = etree.fromstring(changes_xml.encode(), parser)
         changes_json = list(xml_parser(part) for part in list(changes_tree))
     else:
         changes_json = None
+    
 
     return {'plan': plan_json, 'changes': changes_json, 'station': station}
 
@@ -84,13 +87,14 @@ def get_hourely_batch():
             for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
                 jsons = gatherer.result()
 
-                db.add_to_queue(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
+                db.upload_json(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
                 bar.next()
 
                 # change ip in average each 400th time
                 if random.randint(-200, 200) == 0:
                     dd.new_ip()
-            db.upload_queue()
+            # db.upload_queue()
+            db.commit()
         except concurrent.futures._base.TimeoutError:
             pass
         executor.shutdown(wait=False)
@@ -133,6 +137,23 @@ def gather_day(start_hour=0):
 
 if (__name__ == '__main__'):
     import fancy_print_tcp
+    hour = datetime.datetime.now().time().hour - 1
+
     while True:
-        hour = datetime.datetime.now().time().hour
-        gather_day(start_hour=hour)
+        if hour == datetime.datetime.now().time().hour:
+            sleep(20)
+        else:
+            hour = datetime.datetime.now().time().hour
+            try:
+                if 'data_crawler' in locals():
+                    try:
+                        data_crawler.join(timeout=0)
+                    except Exception as ex:
+                        print('crawler error')
+                        logger.exception(ex)
+                data_crawler = Process(target=get_hourely_batch)
+                data_crawler.start()
+
+            except Exception as ex:
+                print(ex)
+                logger.exception(ex)

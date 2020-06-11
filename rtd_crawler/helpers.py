@@ -5,8 +5,6 @@ import os
 import random
 import lxml.etree as etree
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime
-from sqlalchemy.dialects.postgresql import JSON
 import collections
 from config import db_database, db_password, db_server, db_username
 
@@ -163,69 +161,6 @@ class StationPhillip:
             yield sta
 
 
-class DatabaseOfDoom:
-    engine = sqlalchemy.create_engine(
-        'postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require',
-        pool_pre_ping=True
-    )
-    meta = sqlalchemy.MetaData()
-    engine.dispose()
-    connection = engine.connect()
-
-    json_rtd = sqlalchemy.Table('json_rtd', meta, autoload=True, autoload_with=engine)
-
-    queue = []
-
-    # json_rtd = sqlalchemy.table(
-    #                     'json_rtd',
-    #                     Column('date', DateTime),
-    #                     Column('bhf', Text),
-    #                     Column('plan', JSON),
-    #                     Column('changes', JSON))
-
-    def create_table(self):
-        sqlalchemy.Table('json_rtd', self.meta,
-                         Column('date', DateTime),
-                         Column('bhf', Text),
-                         Column('plan', JSON),
-                         Column('changes', JSON))
-        self.meta.create_all()
-
-    def add_to_queue(self, plan, changes, bhf, date, hour):
-        date = datetime.datetime.combine(date, datetime.time(hour, 0))
-        self.queue.append({'date':date, 'bhf':bhf, 'plan':plan, 'changes':changes})
-        if len(self.queue) > 300:
-            self.upload_queue()
-
-    def upload_queue(self):
-        query = sqlalchemy.insert(self.json_rtd)
-        for i in range(3):
-            try:
-                sqlalchemy.exc.OperationalError('lol', 'lol', 'lol')
-                self.connection.execute(query, self.queue)
-                break
-            except sqlalchemy.exc.OperationalError as ex:
-                self.engine.dispose()
-                self.connection = self.engine.connect()
-
-                if i > 1:
-                    raise ex
-        self.queue = []
-
-    def add_jsons(self, plan, changes, bhf, date, hour):
-        date = datetime.datetime.combine(date, datetime.time(hour, 0))
-        statement  = sqlalchemy.insert(self.json_rtd).values(
-            date=date,
-            bhf=bhf,
-            plan=plan,
-            changes=changes
-        )
-        self.connection.execute(statement)
-
-    def get_json(self, bhf):
-        find_bhf = self.json_rtd.select().where(self.json_rtd.c.bhf == bhf)
-        print(self.engine.execute(find_bhf).fetchone())
-
 class FileLisa:
     BASEPATH = 'rtd/'
 
@@ -299,8 +234,5 @@ class FileLisa:
 
 
 if __name__ == '__main__':
-    db = DatabaseOfDoom()
-    # db.create_table()
-    db.get_json('Blankenstein(Saale)')
-    print('lol')
+    pass
     
