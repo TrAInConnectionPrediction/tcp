@@ -7,10 +7,10 @@ import lxml.etree as etree
 import os
 import datetime
 import sqlalchemy
-from progress.bar import Bar
 import concurrent.futures
 
 from helpers import FileLisa, StationPhillip
+from DatabaseOfDoom import DatabaseOfDoom
 from speed import to_unix, parse_plan, fill_unknown_data, concat_changes, parse_realtime, unix_date #, xml_parser
 
 from config import db_database, db_password, db_server, db_username
@@ -186,10 +186,6 @@ def upload_data(df):
     Arguments:
         df {pd.DataFrame} -- fully parsed and prepared data
     """
-    # pass
-    # arr_delay = df['arr_changed_time'] - df['arr']
-    # dep_delay = df['dep_changed_time'] - df['dep']
-    # print('arr:', arr_delay.min(), 'dep:', dep_delay.min())
     df.to_sql('rtd2', con=engine, if_exists='append', method='multi')
 
 def parse_station(plan, real):
@@ -240,16 +236,29 @@ def prepare_plan_for_upload(plan):
 
 class StatsStella:
     total_trips = 0
+    total_arr = 0
+    total_dep = 0
+    cancellations = 0
+    min_arr_delay = 0
+    min_dep_delay = 0
     arr_delay = {}
     dep_delay = {}
-    cancellations = 0
+    
 
     def add_to_stats(self, df):
         self.total_trips += len(df)
+        self.total_arr += len(df['arr'].dropna())
+        self.total_dep += len(df['dep'].dropna())
+        self.cancellations += len(df['arr_cancellation_time'].dropna())
 
         arr_delays = df['arr_changed_time'] - df['arr']
         arr_delays = arr_delays / 60
+        zero_delay = len(df['arr'].dropna()) - len(df['arr_changed_time'].dropna())
         arr_delays = arr_delays.value_counts().to_dict()
+        if 0 in arr_delays:
+            arr_delays[0] += zero_delay
+        else:
+            arr_delays[0] = zero_delay
         for delay in arr_delays:
             if delay in self.arr_delay:
                 self.arr_delay[delay] += arr_delays[delay]
@@ -258,17 +267,24 @@ class StatsStella:
 
         dep_delays = df['dep_changed_time'] - df['dep']
         dep_delays = dep_delays / 60
+        zero_delay = len(df['dep'].dropna()) - len(df['dep_changed_time'].dropna())
         dep_delays = dep_delays.value_counts().to_dict()
+        if 0 in dep_delays:
+            dep_delays[0] += zero_delay
+        else:
+            dep_delays[0] = zero_delay
         for delay in dep_delays:
             if delay in self.dep_delay:
                 self.dep_delay[delay] += dep_delays[delay]
             else:
                 self.dep_delay[delay] = dep_delays[delay]
 
-        self.cancellations += len(df['arr_cancellation_time'].dropna())
+        self.min_arr_delay = min(self.min_arr_delay, min(arr_delays.keys()))
+        self.min_dep_delay = min(self.min_dep_delay, min(dep_delays.keys()))
+
 
     def _summarize_delays(self, delays):
-        summarized_delays = {-40:0, -10:0, -5:0, -1:0, 0:0, 1:0, 5:0, 10:0, 20:0}
+        summarized_delays = {-40:0, -10:0, -5:0, -1:0, 0:0, 1:0, 5:0, 6:0, 10:0, 20:0}
         for delay in (delay for delay in delays):
             nearest_delay = min(summarized_delays.keys(), key=lambda x:abs(x-delay))
             summarized_delays[nearest_delay] += delays[delay]
@@ -277,28 +293,26 @@ class StatsStella:
     def __str__(self):
         print_str = ''
         print_str += str(self.total_trips) + ' trips in total\n'
-        print_str += str(self.cancellations) + ' or ' + str(int(self.cancellations * 100 / self.total_trips)) + '% cancellations\n'
+        print_str += str(self.total_arr) + ' arrs in total\n'
+        print_str += str(self.total_dep) + ' deps in total\n'
+        print_str += str(self.cancellations) + ' \tor ' + str(int(self.cancellations * 100 / self.total_trips)) + '% cancellations\n'
         sum_arr = self._summarize_delays(self.arr_delay)
         print_str += 'arr delays:\n'
+        print_str += str(self.min_arr_delay) + ' min delay\n'
         for delay in sum_arr:
-            print_str += str(sum_arr[delay]) + ' or ' + str(int(sum_arr[delay] * 100 / self.total_trips)) + '% were ' + str(delay) + ' min delayed\n'
+            print_str += str(sum_arr[delay]) + ' \tor ' + str(int(sum_arr[delay] * 100 / self.total_arr)) + '% were ' + str(delay) + ' min delayed\n'
         
         sum_dep = self._summarize_delays(self.dep_delay)
         print_str += 'dep delays:\n'
+        print_str += str(self.min_arr_delay) + ' min delay\n'
         for delay in sum_dep:
-            print_str += str(sum_dep[delay]) + ' or ' + str(int(sum_dep[delay] * 100 / self.total_trips)) + '% were ' + str(delay) + ' min delayed\n'
+            print_str += str(sum_dep[delay]) + ' \tor ' + str(int(sum_dep[delay] * 100 / self.total_dep)) + '% were ' + str(delay) + ' min delayed\n'
         
         return print_str
 
-def make_stats(con_df):
-    arr_delay = df['arr_changed_time'] - df['arr']
-    dep_delay = df['dep_changed_time'] - df['dep']
-    print('arr:', arr_delay.min(), 'dep:', dep_delay.min())
 
 def parse_full_day(date):
     stats = StatsStella()
-    global engine
-    engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
     fl = FileLisa()
     stations = StationPhillip()
 
@@ -316,13 +330,13 @@ def parse_full_day(date):
             # real1: real of the same day as plan
             # real2: real of the day before plan, as a train rolling at 0:10 probably has changes from the day before
             plan = fl.open_station_xml(station, date1, 'plan')
+            if plan is None:
+                continue
             real1 = fl.open_station_xml(station, date1, 'changes')
             real2 = fl.open_station_xml(station, date2, 'changes')
 
             # check wether there is plan and or real data and parse it accordingly
-            if plan is None:
-                continue
-            elif real1 == None and real2 == None:
+            if real1 == None and real2 == None:
                 real = None
             elif real1 == None:
                 real = real2
@@ -344,29 +358,27 @@ def parse_full_day(date):
             # upload the data as soon as it is longer than 1000 lines. This is more efficient than uploading each stations data individually
             if len(buffer) > 1000:
                 stats.add_to_stats(buffer)
-                uploaders.append(executor.submit(upload_data, buffer))
-
+                print(stats)
+                # uploaders.append(executor.submit(upload_data, buffer))
                 buffer = pd.DataFrame()
 
         # upload the data that did not make it over the 1000 line limit
         stats.add_to_stats(buffer)
-        uploaders.append(executor.submit(upload_data, buffer))
+        # uploaders.append(executor.submit(upload_data, buffer))
         
         # collect all processes
         for uploader in concurrent.futures.as_completed(uploaders, timeout=(60*60*23)): # wait 23h
             uploader.result()
 
-
         executor.shutdown(wait=False)
             
-    engine.dispose()
-    for station in stations:
-        # delete the files that are no longer used (the parsed plan and real from two days ago)
-        fl.delete_xml(station, date1, 'plan')
-        fl.delete_xml(station, date2, 'changes')
+    # for station in stations:
+    #     # delete the files that are no longer used (the parsed plan and real from two days ago)
+    #     fl.delete_xml(station, date1, 'plan')
+    #     fl.delete_xml(station, date2, 'changes')
     bar.finish()
     print(stats)
 
 station = 'Aachen Hbf'
 if __name__ == '__main__':
-    parse_full_day(datetime.datetime.today()) # - datetime.timedelta(days=1)
+    parse_full_day(datetime.datetime.today() - datetime.timedelta(days=1))

@@ -1,7 +1,7 @@
 from multiprocessing import Process
 import datetime
 import random
-from progress.bar import Bar
+import progressbar
 import concurrent.futures
 from time import sleep
 import logging
@@ -75,7 +75,7 @@ def get_hourely_batch():
         str_date = datetime.datetime.now().strftime('%y%m%d')
 
         station_list = list(station for station in stations.random_iter())
-        bar = Bar('crawling ' + str(datetime.datetime.now()), max=len(stations))
+        print('crawling ' + str(datetime.datetime.now()))
         gatherers = []
 
         # start all gathering threads
@@ -83,56 +83,25 @@ def get_hourely_batch():
             station_id = stations.get_eva(name=station)
             gatherers.append(executor.submit(get_station_json, station_id, str_date, hour, station, dd))
         try:
-            # collect all finished gathering threads while changing the ip
-            for gatherer in concurrent.futures.as_completed(gatherers, timeout=(60*55)):
-                jsons = gatherer.result()
+            with progressbar.ProgressBar(max_value=len(stations)) as bar:
+                # collect all finished gathering threads while changing the ip
+                for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*55))):
+                    jsons = gatherer.result()
 
-                db.upload_json(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
-                bar.next()
+                    db.upload_json(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
+                    if not i % 15:
+                        db.commit()
+                    
+                    bar.update(i)
 
-                # change ip in average each 400th time
-                if random.randint(-200, 200) == 0:
-                    dd.new_ip()
-            # db.upload_queue()
+                    # change ip in average each 400th time
+                    if random.randint(-200, 200) == 0:
+                        dd.new_ip()
             db.commit()
         except concurrent.futures._base.TimeoutError:
             pass
         executor.shutdown(wait=False)
     bar.finish()
-
-
-def gather_day(start_hour=0):
-    hour = datetime.datetime.now().time().hour - 1
-    last_hour = hour
-
-    while True:
-        if hour == datetime.datetime.now().time().hour:
-            sleep(20)
-        else:
-            hour = datetime.datetime.now().time().hour
-            if last_hour > hour:
-                break
-            try:
-                last_hour = datetime.datetime.now().time().hour
-
-                if 'data_crawler' in locals():
-                    try:
-                        data_crawler.join(timeout=0)
-                    except Exception as ex:
-                        print('crawler error')
-                        logger.exception(ex)
-                data_crawler = Process(target=get_hourely_batch)
-                data_crawler.start()
-
-            except Exception as ex:
-                print(ex)
-                logger.exception(ex)
-    if 'data_crawler' in locals():
-        try:
-            data_crawler.join(timeout=0)
-        except Exception as ex:
-            print('crawler error')
-            logger.exception(ex)
 
 
 if (__name__ == '__main__'):
