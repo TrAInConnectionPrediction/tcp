@@ -1,4 +1,4 @@
-from multiprocessing import Process
+from multiprocessing import Process, Pool
 import datetime
 import random
 import progressbar
@@ -61,7 +61,7 @@ def get_station_json(station_id, str_date, hour, station, dd):
     return {'plan': plan_json, 'changes': changes_json, 'station': station}
 
 
-def get_hourely_batch():
+def get_hourely_batch(_lol):
     """gathers plan and real xmls of the current date and hour from all stations
     inside of the stations table of the db. This function should be called once every hour.
     """
@@ -83,21 +83,23 @@ def get_hourely_batch():
             station_id = stations.get_eva(name=station)
             gatherers.append(executor.submit(get_station_json, station_id, str_date, hour, station, dd))
         try:
-            with progressbar.ProgressBar(max_value=len(stations)) as bar:
-                # collect all finished gathering threads while changing the ip
-                for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*55))):
-                    jsons = gatherer.result()
+            bar = progressbar.ProgressBar(max_value=len(stations)).start()
+            # with progressbar.ProgressBar(max_value=len(stations)) as bar:
+            # collect all finished gathering threads while changing the ip
+            for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*55))):
+                jsons = gatherer.result()
 
-                    db.upload_json(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
-                    if not i % 15:
-                        db.commit()
-                    
-                    bar.update(i)
+                db.upload_json(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
+                # if not i % 15:
+                #     db.commit()
+                
+                bar.update(i)
 
-                    # change ip in average each 400th time
-                    if random.randint(-200, 200) == 0:
-                        dd.new_ip()
-            db.commit()
+                # change ip in average each 400th time
+                if random.randint(-200, 200) == 0:
+                    dd.new_ip()
+            bar.finish()
+            # db.commit()
         except concurrent.futures._base.TimeoutError:
             pass
         executor.shutdown(wait=False)
@@ -108,21 +110,23 @@ if (__name__ == '__main__'):
     import fancy_print_tcp
     hour = datetime.datetime.now().time().hour - 1
 
-    while True:
-        if hour == datetime.datetime.now().time().hour:
-            sleep(20)
-        else:
-            hour = datetime.datetime.now().time().hour
-            try:
-                if 'data_crawler' in locals():
-                    try:
-                        data_crawler.join(timeout=0)
-                    except Exception as ex:
-                        print('crawler error')
-                        logger.exception(ex)
-                data_crawler = Process(target=get_hourely_batch)
-                data_crawler.start()
+    with Pool(processes=1, maxtasksperchild=1) as pool:
+        while True:
+            if hour == datetime.datetime.now().time().hour:
+                sleep(20)
+            else:
+                hour = datetime.datetime.now().time().hour
+                try:
+                    pool.map(get_hourely_batch, range(1))
+                    # if 'data_crawler' in locals():
+                    #     try:
+                    #         data_crawler.join(timeout=0)
+                    #     except Exception as ex:
+                    #         print('crawler error')
+                    #         logger.exception(ex)
+                    # data_crawler = Process(target=get_hourely_batch)
+                    # data_crawler.start()
 
-            except Exception as ex:
-                print(ex)
-                logger.exception(ex)
+                except Exception as ex:
+                    print(ex)
+                    logger.exception(ex)
