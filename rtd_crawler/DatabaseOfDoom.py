@@ -50,15 +50,13 @@ class DatabaseOfDoom:
 
         self.session.execute(on_conflict_stmt)
 
-    def upload_json(self, plan, changes, bhf, date, hour):
+    def add_row(self, plan, changes, bhf, date, hour):
         date = datetime.datetime.combine(date, datetime.time(hour, 0))
         # new_row = self.JsonRtd(date=date, bhf=bhf, plan=plan, changes=changes)
         self.queue.append({'date': date, 'bhf': bhf, 'plan': plan, 'changes':changes})
         if len(self.queue) > 20:
             self.commit()
-            # self.session.bulk_update_mappings(self.JsonRtd, self.queue)
-            # self.queue = []
-            # self.session.commit()
+
         # for _i in range(3):
         #     try:
         #         self.session.merge(new_row)
@@ -70,7 +68,6 @@ class DatabaseOfDoom:
 
     def commit(self):
         self.upsert(self.queue)
-        # self.session.bulk_update_mappings(self.JsonRtd, self.queue)
         self.queue = []
         self.session.commit()
 

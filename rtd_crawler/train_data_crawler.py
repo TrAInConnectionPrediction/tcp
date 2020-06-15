@@ -9,7 +9,6 @@ import logging.handlers as handlers
 from helpers import StationPhillip
 from DatabaseOfDoom import DatabaseOfDoom
 from downloader import DownloadDave
-from rtd_parser import xml_parser
 import requests
 import sys
 import lxml.etree as etree
@@ -24,6 +23,24 @@ logHandler = handlers.TimedRotatingFileHandler(
 logHandler.setLevel(logging.INFO)
 logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
+
+
+def xml_to_json(xml):
+    """a recursive function to convert xml to list dict mix
+
+    Arguments:
+        xml {etree} -- the xml to convert
+
+    Returns:
+        dict -- a dict list mix of the xml
+    """
+    parsed = dict(xml.attrib)
+    for xml_child in list(xml):
+        if xml_child.tag in parsed:
+            parsed[xml_child.tag].append(xml_to_json(xml_child))
+        else:
+            parsed[xml_child.tag] = [xml_to_json(xml_child)]
+    return parsed
 
 
 def get_station_json(station_id, str_date, hour, station, dd):
@@ -46,14 +63,14 @@ def get_station_json(station_id, str_date, hour, station, dd):
 
     if plan_xml and plan_xml != 'None' and plan_xml != '<timetable/>\n':
         plan_tree = etree.fromstring(plan_xml.encode(), parser)
-        plan_json = list(xml_parser(part) for part in list(plan_tree))
+        plan_json = list(xml_to_json(part) for part in list(plan_tree))
     else:
         plan_json = None
     
 
     if changes_xml and changes_xml != 'None' and changes_xml != '<timetable/>\n':
         changes_tree = etree.fromstring(changes_xml.encode(), parser)
-        changes_json = list(xml_parser(part) for part in list(changes_tree))
+        changes_json = list(xml_to_json(part) for part in list(changes_tree))
     else:
         changes_json = None
     
@@ -70,7 +87,7 @@ def get_hourely_batch(_lol):
         dd = DownloadDave()
         db = DatabaseOfDoom()
 
-        datetime_date = datetime.datetime.today().date()
+        date = datetime.datetime.today().date()
         hour = datetime.datetime.now().time().hour
         str_date = datetime.datetime.now().strftime('%y%m%d')
 
@@ -84,26 +101,22 @@ def get_hourely_batch(_lol):
             gatherers.append(executor.submit(get_station_json, station_id, str_date, hour, station, dd))
         try:
             bar = progressbar.ProgressBar(max_value=len(stations)).start()
-            # with progressbar.ProgressBar(max_value=len(stations)) as bar:
             # collect all finished gathering threads while changing the ip
-            for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*55))):
+            for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*40))):
                 jsons = gatherer.result()
 
-                db.upload_json(jsons['plan'], jsons['changes'], jsons['station'], datetime_date, hour)
-                # if not i % 15:
-                #     db.commit()
-                
-                bar.update(i)
+                db.add_row(jsons['plan'], jsons['changes'], jsons['station'], date, hour)
 
                 # change ip in average each 400th time
                 if random.randint(-200, 200) == 0:
                     dd.new_ip()
+                bar.update(i)
+            db.commit()
             bar.finish()
-            # db.commit()
+            
         except concurrent.futures._base.TimeoutError:
             pass
         executor.shutdown(wait=False)
-    bar.finish()
 
 
 if (__name__ == '__main__'):
