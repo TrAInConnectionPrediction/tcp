@@ -130,15 +130,9 @@ if (__name__ == '__main__'):
             else:
                 hour = datetime.datetime.now().time().hour
                 try:
-                    pool.map(get_hourely_batch, range(1))
-                    # if 'data_crawler' in locals():
-                    #     try:
-                    #         data_crawler.join(timeout=0)
-                    #     except Exception as ex:
-                    #         print('crawler error')
-                    #         logger.exception(ex)
-                    # data_crawler = Process(target=get_hourely_batch)
-                    # data_crawler.start()
+                    result = pool.map_async(get_hourely_batch, range(1))
+                    result.wait(60 * 50)
+                    result.get(timeout=1)
 
                 except Exception as ex:
                     print(ex)
