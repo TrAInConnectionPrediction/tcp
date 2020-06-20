@@ -99,24 +99,20 @@ def get_hourely_batch(_lol):
         for station in station_list:
             station_id = stations.get_eva(name=station)
             gatherers.append(executor.submit(get_station_json, station_id, str_date, hour, station, dd))
-        try:
-            bar = progressbar.ProgressBar(max_value=len(stations)).start()
-            # collect all finished gathering threads while changing the ip
-            for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*40))):
-                jsons = gatherer.result()
 
-                db.add_row(jsons['plan'], jsons['changes'], jsons['station'], date, hour)
+        bar = progressbar.ProgressBar(max_value=len(stations)).start()
+        # collect all finished gathering threads while changing the ip
+        for i, gatherer in enumerate(concurrent.futures.as_completed(gatherers, timeout=(60*40))):
+            jsons = gatherer.result()
 
-                # change ip in average each 400th time
-                if random.randint(-200, 200) == 0:
-                    dd.new_ip()
-                bar.update(i)
-            db.commit()
-            bar.finish()
-            
-        except concurrent.futures._base.TimeoutError:
-            pass
-        executor.shutdown(wait=False)
+            db.add_row(jsons['plan'], jsons['changes'], jsons['station'], date, hour)
+
+            # change ip in average each 400th time
+            if random.randint(-200, 200) == 0:
+                dd.new_ip()
+            bar.update(i)
+        db.commit()
+        bar.finish()
 
 
 if (__name__ == '__main__'):
