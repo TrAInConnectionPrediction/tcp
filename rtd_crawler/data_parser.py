@@ -154,9 +154,12 @@ def upload_data(df):
     Arguments:
         df {pd.DataFrame} -- parsed data
     """
-    pass
     df = df.set_index('id')
-    pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
+    try:
+        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
+    except IndexError:
+        df = df.loc[~df.index.duplicated(keep='last')]
+        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
     # # df = df.set_index('id')
     # df.to_sql('rtd', con=engine, if_exists='append', method=upsert_rtd, dtype=sql_types)
 
