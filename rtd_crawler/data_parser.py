@@ -155,8 +155,8 @@ def upload_data(df):
         df {pd.DataFrame} -- parsed data
     """
     pass
-    # df = df.set_index('id')
-    # pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
+    df = df.set_index('id')
+    pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
     # # df = df.set_index('id')
     # df.to_sql('rtd', con=engine, if_exists='append', method=upsert_rtd, dtype=sql_types)
 
