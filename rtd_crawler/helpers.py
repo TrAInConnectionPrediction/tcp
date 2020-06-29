@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import datetime
 import pandas as pd
 import numpy as np
@@ -6,6 +8,7 @@ import random
 import lxml.etree as etree
 import sqlalchemy
 import collections
+
 from config import db_database, db_password, db_server, db_username
 
 class NoLocationError(Exception):

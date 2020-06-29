@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import requests
 from stem import Signal
 from stem.control import Controller
@@ -34,7 +36,7 @@ class DownloadDave(Tor):
         self.REAL_BASE_URL = 'http://iris.noncd.db.de/iris-tts/timetable/fchg/'  # + '8010097'
 
     def get_request(self, url):
-        resp = self.session.get(url)
+        resp = self.session.get(url, timeout=50)
         if (resp.status_code != 200 or resp.text == '[]'):
             raise ValueError('Something went wrong while doing session.get(' +
                                 url + ') status code: ' + str(resp.status_code))
@@ -51,6 +53,8 @@ class DownloadDave(Tor):
             except requests.exceptions.ChunkedEncodingError:
                 pass
             except requests.exceptions.ConnectionError:
+                pass
+            except requests.exceptions.Timeout:
                 pass
         else:
             print('connection error on', url)

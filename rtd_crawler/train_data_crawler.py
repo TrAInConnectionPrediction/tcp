@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from multiprocessing import Process, Pool
 import datetime
 import random
@@ -10,9 +12,8 @@ from helpers import StationPhillip
 from DatabaseOfDoom import DatabaseOfDoom
 from downloader import DownloadDave
 import requests
-import sys
 import lxml.etree as etree
-sys.path.append('../')
+
 
 logger = logging.getLogger('my_app')
 logger.setLevel(logging.INFO)
@@ -88,7 +89,7 @@ def get_hourely_batch(_lol):
         db = DatabaseOfDoom()
 
         date = datetime.datetime.today().date()
-        hour = datetime.datetime.now().time().hour
+        hour = datetime.datetime.now().time().hour - 2
         str_date = datetime.datetime.now().strftime('%y%m%d')
 
         station_list = list(station for station in stations.random_iter())
