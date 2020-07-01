@@ -89,7 +89,7 @@ def get_hourely_batch(_lol):
         db = DatabaseOfDoom()
 
         date = datetime.datetime.today().date()
-        hour = datetime.datetime.now().time().hour - 2
+        hour = datetime.datetime.now().time().hour
         str_date = datetime.datetime.now().strftime('%y%m%d')
 
         station_list = list(station for station in stations.random_iter())
@@ -134,3 +134,4 @@ if (__name__ == '__main__'):
                 except Exception as ex:
                     print(ex)
                     logger.exception(ex)
+                    
