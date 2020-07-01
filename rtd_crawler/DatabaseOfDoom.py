@@ -105,20 +105,13 @@ class DatabaseOfDoom:
 
         self.session.execute(on_conflict_stmt)
 
+
     def add_row(self, plan, changes, bhf, date, hour):
         date = datetime.datetime.combine(date, datetime.time(hour, 0))
         self.queue.append({'date': date, 'bhf': bhf, 'plan': plan, 'changes':changes})
         if len(self.queue) > 20:
             self.commit()
 
-        # for _i in range(3):
-        #     try:
-        #         self.session.merge(new_row)
-        #         self.session.commit()
-        #         break
-        #     except:
-        #         print('rollback')
-        #         self.session.rollback()
 
     def commit(self):
         self.upsert(self.queue)
@@ -143,5 +136,5 @@ class DatabaseOfDoom:
 
 if __name__ == "__main__":
     db = DatabaseOfDoom()
-    print(db.max_date())
-    print(db.count_entrys_at_date(datetime.datetime(2020, 6, 11, 17)))
+    # print(db.max_date())
+    print(db.count_entrys_at_date(datetime.datetime(2020, 7, 2, 0)))
