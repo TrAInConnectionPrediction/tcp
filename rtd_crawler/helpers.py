@@ -15,10 +15,25 @@ class NoLocationError(Exception):
     pass
 
 class BetriebsstellenBill:
-    def __init__(self):
-        self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
-        self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
-        self.engine.dispose()
+    def __init__(self, notebook=False):
+        try:
+            self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
+            self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
+            if notebook:
+                self.betriebsstellen.to_pickle('../data_buffer/betriebsstellen_offline_buffer')
+            else:
+                self.betriebsstellen.to_pickle('data_buffer/betriebsstellen_offline_buffer')
+            self.engine.dispose()
+        except:
+            try:
+                if notebook:
+                    self.betriebsstellen = pd.read_pickle('../data_buffer/betriebsstellen_offline_buffer')
+                else:
+                    self.betriebsstellen = pd.read_pickle('data_buffer/betriebsstellen_offline_buffer')
+                print('Using local station buffer')
+            except FileNotFoundError:
+                raise FileNotFoundError('There is no connection to the database and no local buffer')
+
 
         self.name_index_betriebsstellen = self.betriebsstellen.set_index('name')
         self.ds100_index_betriebsstellen = self.betriebsstellen.set_index('ds100')
@@ -39,27 +54,31 @@ class BetriebsstellenBill:
         else:
             lon = self.ds100_index_betriebsstellen.at[ds100, 'lon']
             lat = self.ds100_index_betriebsstellen.at[ds100, 'lat']
-            # print(type(lon), type(lat))
             if type(lon) == np.ndarray:
                 lon = lon[0]
             if type(lat) == np.ndarray:
                 lat = lat[0]
-            # print(lon, lat)
             if not lon or not lat:
                 raise self.NoLocationError
             else:
                 return (lon,lat)
 
 class StationPhillip:
-    def __init__(self):
+    def __init__(self, notebook=False):
         try:
             self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
             self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
-            self.station_df.to_pickle('data_buffer/station_offline_buffer')
+            if notebook:
+                self.station_df.to_pickle('../data_buffer/station_offline_buffer')
+            else:
+                self.station_df.to_pickle('data_buffer/station_offline_buffer')
             self.engine.dispose()
         except:
             try:
-                self.station_df = pd.read_pickle('data_buffer/station_offline_buffer')
+                if notebook:
+                    self.station_df = pd.read_pickle('../data_buffer/station_offline_buffer')
+                else:
+                    self.station_df = pd.read_pickle('data_buffer/station_offline_buffer')
                 print('Using local station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
@@ -238,4 +257,9 @@ class FileLisa:
 
 if __name__ == '__main__':
     pass
+    betriebsstellen = BetriebsstellenBill()
+    df = pd.read_csv('data/betriebsstellen.csv', sep=';', index_col=False)
+    # df = betriebsstellen.betriebsstellen
+    df = df.drop_duplicates(subset=['ds100'], keep='first')
+    df.to_sql('betriebstellen', con=betriebsstellen.engine, if_exists='replace')
     
