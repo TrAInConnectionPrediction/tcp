@@ -30,7 +30,7 @@ class BetriebsstellenBill:
                     self.betriebsstellen = pd.read_pickle('../data_buffer/betriebsstellen_offline_buffer')
                 else:
                     self.betriebsstellen = pd.read_pickle('data_buffer/betriebsstellen_offline_buffer')
-                print('Using local station buffer')
+                print('Using local betriebstellen buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
 
@@ -103,6 +103,10 @@ class StationPhillip:
             return self.sta_list[self.n -1]
         else:
             raise StopIteration
+
+    def get_geopandas(self):
+        import geopandas as gpd
+        return gpd.GeoDataFrame(self.station_df, geometry=gpd.points_from_xy(self.station_df.lon, self.station_df.lat))
 
     def get_eva(self, name=None, ds100=None):
         """get the eva from name or ds100
