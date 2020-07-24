@@ -10,6 +10,7 @@ import json
 from helpers import StationPhillip
 from DatabaseOfDoom import DatabaseOfDoom
 import pickle
+from cityhash import CityHash64
 
 from config import db_database, db_password, db_server, db_username
 
@@ -64,10 +65,12 @@ sql_types = {
     'rtr': JSON,
 
     'station': Text,
-    'id': Text
+    'id': Text,
+    'hash_id': Integer
 }
 
 def parse_stop_plan(stop):
+    stop['hash_id'] = CityHash64(stop['id']) - ((2**63)-1)
     if 'tl' in stop:
         for key in stop['tl'][0]:
             stop[key] = stop['tl'][0][key]
@@ -154,12 +157,12 @@ def upload_data(df):
     Arguments:
         df {pd.DataFrame} -- parsed data
     """
-    df = df.set_index('id')
+    df = df.set_index('hash_id')
     try:
-        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
+        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
     except IndexError:
         df = df.loc[~df.index.duplicated(keep='last')]
-        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd')
+        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
     # # df = df.set_index('id')
     # df.to_sql('rtd', con=engine, if_exists='append', method=upsert_rtd, dtype=sql_types)
 

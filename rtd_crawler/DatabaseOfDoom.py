@@ -1,7 +1,7 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String
+from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT
 from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -82,7 +82,8 @@ class DatabaseOfDoom:
             rtr = Column(JSON)
 
             station = Column(Text)
-            id = Column(Text, primary_key=True)
+            id = Column(Text)
+            hash_id = Column(BIGINT, primary_key=True)
 
     Base.metadata.create_all(engine)
 
