@@ -182,3 +182,7 @@ rtd_crawler/speed.html
 notebooks/rtd_buffer
 data/rtd_buffer
 config.py
+
+
+#ignore logs
+website.log*

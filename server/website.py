@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, redirect, jsonify, send_from_directory
 from datetime import datetime, timedelta
 from pytz import timezone
 import json
@@ -28,8 +28,8 @@ logHandler.setFormatter(formatter)
 
 logger.addHandler(logHandler)
 
-#we need to change the paths
-app = Flask(__name__, template_folder='website',static_folder='website/')
+#we need to change the paths  https://stackoverflow.com/a/42791810
+app = Flask(__name__, template_folder='website',static_folder='website/',static_url_path='')
 # TODO add config.py data
 app.config['SECRET_KEY'] = ''
 app.config['DEBUG'] = True
