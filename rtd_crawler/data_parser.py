@@ -20,12 +20,12 @@ sql_types = {
     'ar_cpth': Text,
     'ar_pp': Text,
     'ar_cp': Text,
-    'ar_pt': Integer,
-    'ar_ct': Integer,
+    'ar_pt': DateTime,
+    'ar_ct': DateTime,
     'ar_ps': String(length=1),
     'ar_cs': String(length=1),
     'ar_hi': Integer,
-    'ar_clt': Integer,
+    'ar_clt': DateTime,
     'ar_wings': Text,
     'ar_tra': Text,
     'ar_pde': Text,
@@ -38,12 +38,12 @@ sql_types = {
     'dp_cpth': Text,
     'dp_pp': Text,
     'dp_cp': Text,
-    'dp_pt': Integer,
-    'dp_ct': Integer,
+    'dp_pt': DateTime,
+    'dp_ct': DateTime,
     'dp_ps': String(length=1),
     'dp_cs': String(length=1),
     'dp_hi': Integer,
-    'dp_clt': Integer,
+    'dp_clt': DateTime,
     'dp_wings': Text,
     'dp_tra': Text,
     'dp_pde': Text,
@@ -69,7 +69,24 @@ sql_types = {
     'hash_id': Integer
 }
 
-def parse_stop_plan(stop):
+# these are the names of columns, that contain a time and should be parsed into a datetime
+time_names = ('pt', 'ct', 'clt')
+
+def db_to_datetime(dt) -> datetime.datetime:
+    """convert bahn time in format: '%y%m%d%H%M' to datetime.
+    As it it fastest to directly construct a datetime object from this, no strptime is used
+
+    Args:
+        dt (str): bahn timeformat
+
+    Returns:
+        datetime.datetime: converted bahn time
+    """
+    return datetime.datetime(int('20' + dt[0:2]), int(dt[2:4]), int(dt[4:6]), int(dt[6:8]), int(dt[8:10]))
+
+def parse_stop_plan(stop) -> dict:
+    # create a int64 hash to be used as index. CityHash64() -> uint64 which is not supported by postgres,
+    # so we need to cast it into int64 by substracting ((2**63)-1)
     stop['hash_id'] = CityHash64(stop['id']) - ((2**63)-1)
     if 'tl' in stop:
         for key in stop['tl'][0]:
@@ -77,22 +94,34 @@ def parse_stop_plan(stop):
         stop.pop('tl')
     if 'ar' in stop:
         for key in stop['ar'][0]:
-            stop['ar_' + key] = stop['ar'][0][key]
+            if key in time_names:
+                stop['ar_' + key] = db_to_datetime(stop['ar'][0][key])
+            else:
+                stop['ar_' + key] = stop['ar'][0][key]
         stop.pop('ar')
     if 'dp' in stop:
         for key in stop['dp'][0]:
-            stop['dp_' + key] = stop['dp'][0][key]
+            if key in time_names:
+                stop['dp_' + key] = db_to_datetime(stop['dp'][0][key])
+            else:
+                stop['dp_' + key] = stop['dp'][0][key]
         stop.pop('dp')
     return stop
 
 
-def add_change_to_stop(stop, change):
+def add_change_to_stop(stop, change) -> dict:
     if 'ar' in change:
         for key in change['ar'][0]:
-            stop['ar_' + key] = change['ar'][0][key]
+            if key in time_names:
+                stop['ar_' + key] = db_to_datetime(change['ar'][0][key])
+            else:
+                stop['ar_' + key] = change['ar'][0][key]
     if 'dp' in change:
         for key in change['dp'][0]:
-            stop['dp_' + key] = change['dp'][0][key]
+            if key in time_names:
+                stop['dp_' + key] = db_to_datetime(change['dp'][0][key])
+            else:
+                stop['dp_' + key] = change['dp'][0][key]
     if 'm' in change:
         stop['m'] = change['m']
     return stop
@@ -163,9 +192,7 @@ def upload_data(df):
     except IndexError:
         df = df.loc[~df.index.duplicated(keep='last')]
         pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
-    # # df = df.set_index('id')
-    # df.to_sql('rtd', con=engine, if_exists='append', method=upsert_rtd, dtype=sql_types)
-
+   
 
 if __name__ == "__main__":
     start_date = datetime.datetime(2020, 1, 1, 0, 0)
@@ -180,7 +207,7 @@ if __name__ == "__main__":
             station_data = {}
             station_data = db.get_json(station, date1=start_date, date2=end_date)
             parsed = parse_station(station_data)
-            parsed = pd.DataFrame(parsed) # .drop_duplicates(subset=['id'], keep='last')
+            parsed = pd.DataFrame(parsed)
             parsed['station'] = station
             buffer = pd.concat([buffer, parsed], ignore_index=True)
 
@@ -189,11 +216,3 @@ if __name__ == "__main__":
                 upload_data(buffer)
                 buffer = pd.DataFrame()
             bar.update(i)
-            # download jsons
-            # open plan json
-            # open real jsons
-            # iterate over plan json
-                # find newest changed event
-                # add it to plan
-                # break
-        

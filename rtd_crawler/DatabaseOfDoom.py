@@ -9,22 +9,79 @@ import datetime
 
 from config import db_database, db_password, db_server, db_username
 
+"""
+\d tcp:
+                                     Table "public.rtd"
+  Column  |         Type         | Collation | Nullable |               Default                
+----------+----------------------+-----------+----------+--------------------------------------
+ ar_ppth  | text                 |           |          | 
+ ar_cpth  | text                 |           |          | 
+ ar_pp    | text                 |           |          | 
+ ar_cp    | text                 |           |          | 
+ ar_pt    | integer              |           |          | 
+ ar_ct    | integer              |           |          | 
+ ar_ps    | character varying(1) |           |          | 
+ ar_cs    | character varying(1) |           |          | 
+ ar_hi    | integer              |           |          | 
+ ar_clt   | integer              |           |          | 
+ ar_wings | text                 |           |          | 
+ ar_tra   | text                 |           |          | 
+ ar_pde   | text                 |           |          | 
+ ar_cde   | text                 |           |          | 
+ ar_dc    | integer              |           |          | 
+ ar_l     | text                 |           |          | 
+ ar_m     | json                 |           |          | 
+ dp_ppth  | text                 |           |          | 
+ dp_cpth  | text                 |           |          | 
+ dp_pp    | text                 |           |          | 
+ dp_cp    | text                 |           |          | 
+ dp_pt    | integer              |           |          | 
+ dp_ct    | integer              |           |          | 
+ dp_ps    | character varying(1) |           |          | 
+ dp_cs    | character varying(1) |           |          | 
+ dp_hi    | integer              |           |          | 
+ dp_clt   | integer              |           |          | 
+ dp_wings | text                 |           |          | 
+ dp_tra   | text                 |           |          | 
+ dp_pde   | text                 |           |          | 
+ dp_cde   | text                 |           |          | 
+ dp_dc    | integer              |           |          | 
+ dp_l     | text                 |           |          | 
+ dp_m     | json                 |           |          | 
+ f        | character varying(1) |           |          | 
+ t        | text                 |           |          | 
+ o        | text                 |           |          | 
+ c        | text                 |           |          | 
+ n        | text                 |           |          | 
+ m        | json                 |           |          | 
+ hd       | json                 |           |          | 
+ hdc      | json                 |           |          | 
+ conn     | json                 |           |          | 
+ rtr      | json                 |           |          | 
+ station  | text                 |           |          | 
+ id       | text                 |           |          | 
+ hash_id  | bigint               |           | not null | nextval('rtd_hash_id_seq'::regclass)
+Indexes:
+    "rtd_pkey" PRIMARY KEY, btree (hash_id)
+"""
 
-class DatabaseOfDoom:
-    engine = sqlalchemy.create_engine(
-            'postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require',
-            pool_pre_ping=True,
-            pool_recycle=3600
-        )
+
+class RtdDbModel:
+    """class containing table schemes for our db
+    """
+    DB_CONNECT_STRING = 'postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
+    
+    engine = sqlalchemy.create_engine (
+        DB_CONNECT_STRING,
+        pool_pre_ping=True,
+        pool_recycle=3600
+    )
 
     Base = declarative_base()
 
-    Session = sessionmaker(bind=engine)
-    Base.metadata.create_all(engine)
-    session = Session()
-
-
     class JsonRtd(Base):
+        """scheme for table for raw data
+        """
         __tablename__ = 'json_rtd_v2'
         date = Column(DateTime, primary_key=True)
         bhf = Column(Text, primary_key=True)
@@ -32,63 +89,69 @@ class DatabaseOfDoom:
         changes = Column(JSON)
 
     class Rtd(Base):
-            __tablename__ = 'rtd'
-            ar_ppth = Column(Text)
-            ar_cpth = Column(Text)
-            ar_pp = Column(Text)
-            ar_cp = Column(Text)
-            ar_pt = Column(Integer)
-            ar_ct = Column(Integer)
-            ar_ps = Column(String(length=1))
-            ar_cs = Column(String(length=1))
-            ar_hi = Column(Integer)
-            ar_clt = Column(Integer)
-            ar_wings = Column(Text)
-            ar_tra = Column(Text)
-            ar_pde = Column(Text)
-            ar_cde = Column(Text)
-            ar_dc = Column(Integer)
-            ar_l = Column(Text)
-            ar_m = Column(JSON)
+        """scheme for parsed data
+        """
+        __tablename__ = 'rtd'
+        ar_ppth = Column(Text)
+        ar_cpth = Column(Text)
+        ar_pp = Column(Text)
+        ar_cp = Column(Text)
+        ar_pt = Column(DateTime)
+        ar_ct = Column(DateTime)
+        ar_ps = Column(String(length=1))
+        ar_cs = Column(String(length=1))
+        ar_hi = Column(Integer)
+        ar_clt = Column(DateTime)
+        ar_wings = Column(Text)
+        ar_tra = Column(Text)
+        ar_pde = Column(Text)
+        ar_cde = Column(Text)
+        ar_dc = Column(Integer)
+        ar_l = Column(Text)
+        ar_m = Column(JSON)
 
-            dp_ppth = Column(Text)
-            dp_cpth = Column(Text)
-            dp_pp = Column(Text)
-            dp_cp = Column(Text)
-            dp_pt = Column(Integer)
-            dp_ct = Column(Integer)
-            dp_ps = Column(String(length=1))
-            dp_cs = Column(String(length=1))
-            dp_hi = Column(Integer)
-            dp_clt = Column(Integer)
-            dp_wings = Column(Text)
-            dp_tra = Column(Text)
-            dp_pde = Column(Text)
-            dp_cde = Column(Text)
-            dp_dc = Column(Integer)
-            dp_l = Column(Text)
-            dp_m = Column(JSON)
+        dp_ppth = Column(Text)
+        dp_cpth = Column(Text)
+        dp_pp = Column(Text)
+        dp_cp = Column(Text)
+        dp_pt = Column(DateTime)
+        dp_ct = Column(DateTime)
+        dp_ps = Column(String(length=1))
+        dp_cs = Column(String(length=1))
+        dp_hi = Column(Integer)
+        dp_clt = Column(DateTime)
+        dp_wings = Column(Text)
+        dp_tra = Column(Text)
+        dp_pde = Column(Text)
+        dp_cde = Column(Text)
+        dp_dc = Column(Integer)
+        dp_l = Column(Text)
+        dp_m = Column(JSON)
 
-            f = Column(String(length=1))
-            t = Column(Text)
-            o = Column(Text)
-            c = Column(Text)
-            n = Column(Text)
+        f = Column(String(length=1))
+        t = Column(Text)
+        o = Column(Text)
+        c = Column(Text)
+        n = Column(Text)
 
-            m = Column(JSON)
-            hd = Column(JSON)
-            hdc = Column(JSON)
-            conn = Column(JSON)
-            rtr = Column(JSON)
+        m = Column(JSON)
+        hd = Column(JSON)
+        hdc = Column(JSON)
+        conn = Column(JSON)
+        rtr = Column(JSON)
 
-            station = Column(Text)
-            id = Column(Text)
-            hash_id = Column(BIGINT, primary_key=True)
+        station = Column(Text)
+        id = Column(Text)
+        hash_id = Column(BIGINT, primary_key=True)
 
     Base.metadata.create_all(engine)
 
-    queue = []
 
+class DatabaseOfDoom(RtdDbModel):
+    Session = sessionmaker(bind=RtdDbModel.engine)
+    session = Session()
+
+    queue = []
     
     def upsert(self, rows, no_update_cols=[]):
         table = self.JsonRtd.__table__
