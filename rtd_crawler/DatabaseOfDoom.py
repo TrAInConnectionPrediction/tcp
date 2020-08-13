@@ -5,62 +5,63 @@ from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT
 from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql.expression import func
 import datetime
 
 from config import db_database, db_password, db_server, db_username
 
 """
 \d tcp:
-                                     Table "public.rtd"
-  Column  |         Type         | Collation | Nullable |               Default                
-----------+----------------------+-----------+----------+--------------------------------------
- ar_ppth  | text                 |           |          | 
- ar_cpth  | text                 |           |          | 
- ar_pp    | text                 |           |          | 
- ar_cp    | text                 |           |          | 
- ar_pt    | integer              |           |          | 
- ar_ct    | integer              |           |          | 
- ar_ps    | character varying(1) |           |          | 
- ar_cs    | character varying(1) |           |          | 
- ar_hi    | integer              |           |          | 
- ar_clt   | integer              |           |          | 
- ar_wings | text                 |           |          | 
- ar_tra   | text                 |           |          | 
- ar_pde   | text                 |           |          | 
- ar_cde   | text                 |           |          | 
- ar_dc    | integer              |           |          | 
- ar_l     | text                 |           |          | 
- ar_m     | json                 |           |          | 
- dp_ppth  | text                 |           |          | 
- dp_cpth  | text                 |           |          | 
- dp_pp    | text                 |           |          | 
- dp_cp    | text                 |           |          | 
- dp_pt    | integer              |           |          | 
- dp_ct    | integer              |           |          | 
- dp_ps    | character varying(1) |           |          | 
- dp_cs    | character varying(1) |           |          | 
- dp_hi    | integer              |           |          | 
- dp_clt   | integer              |           |          | 
- dp_wings | text                 |           |          | 
- dp_tra   | text                 |           |          | 
- dp_pde   | text                 |           |          | 
- dp_cde   | text                 |           |          | 
- dp_dc    | integer              |           |          | 
- dp_l     | text                 |           |          | 
- dp_m     | json                 |           |          | 
- f        | character varying(1) |           |          | 
- t        | text                 |           |          | 
- o        | text                 |           |          | 
- c        | text                 |           |          | 
- n        | text                 |           |          | 
- m        | json                 |           |          | 
- hd       | json                 |           |          | 
- hdc      | json                 |           |          | 
- conn     | json                 |           |          | 
- rtr      | json                 |           |          | 
- station  | text                 |           |          | 
- id       | text                 |           |          | 
- hash_id  | bigint               |           | not null | nextval('rtd_hash_id_seq'::regclass)
+                                          Table "public.rtd"
+  Column  |            Type             | Collation | Nullable |               Default                
+----------+-----------------------------+-----------+----------+--------------------------------------
+ ar_ppth  | text                        |           |          | 
+ ar_cpth  | text                        |           |          | 
+ ar_pp    | text                        |           |          | 
+ ar_cp    | text                        |           |          | 
+ ar_pt    | timestamp without time zone |           |          | 
+ ar_ct    | timestamp without time zone |           |          | 
+ ar_ps    | character varying(1)        |           |          | 
+ ar_cs    | character varying(1)        |           |          | 
+ ar_hi    | integer                     |           |          | 
+ ar_clt   | timestamp without time zone |           |          | 
+ ar_wings | text                        |           |          | 
+ ar_tra   | text                        |           |          | 
+ ar_pde   | text                        |           |          | 
+ ar_cde   | text                        |           |          | 
+ ar_dc    | integer                     |           |          | 
+ ar_l     | text                        |           |          | 
+ ar_m     | json                        |           |          | 
+ dp_ppth  | text                        |           |          | 
+ dp_cpth  | text                        |           |          | 
+ dp_pp    | text                        |           |          | 
+ dp_cp    | text                        |           |          | 
+ dp_pt    | timestamp without time zone |           |          | 
+ dp_ct    | timestamp without time zone |           |          | 
+ dp_ps    | character varying(1)        |           |          | 
+ dp_cs    | character varying(1)        |           |          | 
+ dp_hi    | integer                     |           |          | 
+ dp_clt   | timestamp without time zone |           |          | 
+ dp_wings | text                        |           |          | 
+ dp_tra   | text                        |           |          | 
+ dp_pde   | text                        |           |          | 
+ dp_cde   | text                        |           |          | 
+ dp_dc    | integer                     |           |          | 
+ dp_l     | text                        |           |          | 
+ dp_m     | json                        |           |          | 
+ f        | character varying(1)        |           |          | 
+ t        | text                        |           |          | 
+ o        | text                        |           |          | 
+ c        | text                        |           |          | 
+ n        | text                        |           |          | 
+ m        | json                        |           |          | 
+ hd       | json                        |           |          | 
+ hdc      | json                        |           |          | 
+ conn     | json                        |           |          | 
+ rtr      | json                        |           |          | 
+ station  | text                        |           |          | 
+ id       | text                        |           |          | 
+ hash_id  | bigint                      |           | not null | nextval('rtd_hash_id_seq'::regclass)
 Indexes:
     "rtd_pkey" PRIMARY KEY, btree (hash_id)
 """
@@ -195,6 +196,9 @@ class DatabaseOfDoom(RtdDbModel):
         return self.session.query(self.JsonRtd).filter(self.JsonRtd.date == date).count()
 
     def max_date(self):
+        return self.session.query(func.max(self.Rtd.ar_pt))
+
+    def max_date(self):
         return self.session.query(sqlalchemy.func.max(self.Rtd.ar_pt)).scalar()
 
 
@@ -202,3 +206,4 @@ if __name__ == "__main__":
     db = DatabaseOfDoom()
     # print(db.max_date())
     print(db.count_entrys_at_date(datetime.datetime(2020, 7, 2, 0)))
+    print(db.max_date())

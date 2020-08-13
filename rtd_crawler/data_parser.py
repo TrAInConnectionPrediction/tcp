@@ -195,12 +195,17 @@ def upload_data(df):
    
 
 if __name__ == "__main__":
-    start_date = datetime.datetime(2020, 1, 1, 0, 0)
-    end_date = datetime.datetime.now()
+    
 
     engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
     stations = StationPhillip()
     db = DatabaseOfDoom()
+    try:
+        start_date = db.max_date() - datetime.timedelta(days=2)
+    except:
+        start_date = datetime.datetime(2020, 1, 1, 0, 0)
+        
+    end_date = datetime.datetime.now()
     buffer = pd.DataFrame()
     with progressbar.ProgressBar(max_value=len(stations)) as bar:
         for i, station in enumerate(stations):
