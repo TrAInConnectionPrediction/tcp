@@ -19,12 +19,12 @@ class RtdRay(RtdDbModel):
         'ar_cpth': pd.Series([], dtype='str'),
         'ar_pp': pd.Series([], dtype='str'),
         'ar_cp': pd.Series([], dtype='str'),
-        'ar_pt': pd.Series([], dtype='Int64'),
-        'ar_ct': pd.Series([], dtype='Int64'),
+        'ar_pt': pd.Series([], dtype='datetime64[ns]'),
+        'ar_ct': pd.Series([], dtype='datetime64[ns]'),
         'ar_ps': pd.Series([], dtype='str'),
         'ar_cs': pd.Series([], dtype='str'),
         'ar_hi': pd.Series([], dtype='Int64'),
-        'ar_clt': pd.Series([], dtype='Int64'),
+        'ar_clt': pd.Series([], dtype='datetime64[ns]'),
         'ar_wings': pd.Series([], dtype='str'),
         'ar_tra': pd.Series([], dtype='str'),
         'ar_pde': pd.Series([], dtype='str'),
@@ -37,12 +37,12 @@ class RtdRay(RtdDbModel):
         'dp_cpth': pd.Series([], dtype='str'),
         'dp_pp': pd.Series([], dtype='str'),
         'dp_cp': pd.Series([], dtype='str'),
-        'dp_pt': pd.Series([], dtype='Int64'),
-        'dp_ct': pd.Series([], dtype='Int64'),
+        'dp_pt': pd.Series([], dtype='datetime64[ns]'),
+        'dp_ct': pd.Series([], dtype='datetime64[ns]'),
         'dp_ps': pd.Series([], dtype='str'),
         'dp_cs': pd.Series([], dtype='str'),
         'dp_hi': pd.Series([], dtype='Int64'),
-        'dp_clt': pd.Series([], dtype='Int64'),
+        'dp_clt': pd.Series([], dtype='datetime64[ns]'),
         'dp_wings': pd.Series([], dtype='str'),
         'dp_tra': pd.Series([], dtype='str'),
         'dp_pde': pd.Series([], dtype='str'),
@@ -102,5 +102,5 @@ class RtdRay(RtdDbModel):
 
 if __name__ == "__main__":
     rtd_d = RtdRay()
-    # rtd_d.refresh_local_buffer()
-    print(rtd_d.load_data())
+    rtd_d.refresh_local_buffer()
+    # print(rtd_d.load_data())
