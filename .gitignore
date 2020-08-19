@@ -186,3 +186,5 @@ config.py
 
 #ignore logs
 website.log*
+data/
+data_buffer/
