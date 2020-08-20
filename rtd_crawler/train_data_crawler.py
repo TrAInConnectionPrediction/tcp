@@ -8,7 +8,7 @@ import concurrent.futures
 from time import sleep
 import logging
 import logging.handlers as handlers
-from helpers import StationPhillip
+from helpers.StationPhillip import StationPhillip
 from DatabaseOfDoom import DatabaseOfDoom
 from downloader import DownloadDave
 import requests

@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 
 import requests
@@ -9,13 +11,17 @@ import networkx as nx
 import matplotlib.pyplot as plt 
 import numpy as np 
 import trassenfinder_route_request
-from helpers import StationPhillip
+from helpers.StationPhillip import StationPhillip
 from progress.bar import Bar
 from time import sleep
 import re
 import random
+from RtdRay import RtdRay
 
 from downloader import Tor
+
+import dask
+import dask.dataframe as dd
 
 tor = Tor()
 
@@ -28,14 +34,45 @@ class UnknownDs100(Exception):
 class NoRouteFoundError(Exception):
     pass
 
-def get_route(waypoints, train_type):
-    if len(waypoints) < 2:
-        raise ValueError
-    start = waypoints[0]
-    destination = waypoints[-1]
+class RouteRequester(Tor):
+    def __init__(self):
+        super().__init__()
 
-    # if not type(start) == str or not type(destination) == str:
-    #     raise ValueError
+    def get_route(self, request_body):
+        while True:
+            try:
+                response = self.session.post('https://openapi.trassenfinder.de/3.7.6/api/v2/infrastrukturen/35/routen/suche',
+                    data=json.dumps(request_body), headers={'content-type':'application/json'})
+
+                if response.status_code == 429: # api throttle has kicked in
+                    self.new_ip()
+                else:
+                    return response
+            except:
+                pass
+
+route_requester = RouteRequester()
+
+def get_route(waypoints, train_type):
+    """Get route over waypoints with train type from trassenfinder.de
+
+    Arguments:
+        waypoints {dict} -- points on your route
+        train_type {string} -- train type
+
+    Raises:
+        ValueError: to few waypoints specified
+        ValueError: [description]
+        UnknownDs100: Ds100 does not exist in trassenfinder
+        requests.exceptions.InvalidHeader: [description]
+        NoRouteFoundError: There is no route (for this train type)
+        requests.exceptions.InvalidHeader: [description]
+
+    Returns:
+        pd.DataFrame -- DataFrame containing all the individual waypoints on your route
+    """
+    if len(waypoints) < 2:
+        raise ValueError('to few waypoints specified')
 
     request_body = trassenfinder_route_request.standarts[train_type]
     for i, waypoint in enumerate(waypoints):
@@ -49,24 +86,8 @@ def get_route(waypoints, train_type):
                 {'ds100': waypoint['ds100'],
                 'mutter': waypoint['mutter']}})
 
-    # request_body['wegpunkte'][0]['betriebsstelle']['ds100'] = start
-    # request_body['wegpunkte'][0]['betriebsstelle']['mutter'] = start_mutter
-    # request_body['wegpunkte'][1]['betriebsstelle']['ds100'] = destination
-    # request_body['wegpunkte'][1]['betriebsstelle']['mutter'] = destination_mutter
+    response = route_requester.get_route(request_body)
 
-    while True:
-        try:
-            response = tor.session.post('https://openapi.trassenfinder.de/3.7.6/api/v2/infrastrukturen/35/routen/suche',
-                data=json.dumps(request_body), headers={'content-type':'application/json'})
-
-            if response.status_code == 429: # api throttle has kicked in
-                raise ConnectionThrottled
-            break
-        except ConnectionThrottled:
-            tor.new_ip()
-            sleep(random.randint(0, 10))
-        except:
-            pass
     try:
         if response.status_code == 400:
             response_json = response.json()
@@ -75,18 +96,12 @@ def get_route(waypoints, train_type):
                     ds100_of_waypoint = waypoint['ds100']
                     if "Ungültige Betriebsstelle '{0}'".format(ds100_of_waypoint) in details:
                         raise UnknownDs100({'ds100': ds100_of_waypoint})
-
-                # if "Ungültige Betriebsstelle '" + start + "'" in details:
-                #     raise UnknownDs100({'ds100': start})
-
-                # if "Ungültige Betriebsstelle '" + destination + "'" in details:
-                #     raise UnknownDs100({'ds100': destination})
             else:
                 raise requests.exceptions.InvalidHeader
 
         if 'failure' in response.json():
             print(response.json())
-            raise NoRouteFoundError
+            raise NoRouteFoundError('There is no route (for this train type)')
         else:
             response_df = pd.DataFrame(response.json()['result']['gewichtete_route']['routenpunkte'])
 
@@ -110,6 +125,13 @@ def get_route(waypoints, train_type):
 
 checked = np.zeros([100000, 2], dtype='U100')
 index_in_checked = 0
+
+
+def get_paths_from_db():
+    from config import db_database, db_password, db_server, db_username
+    db_connect_string = 'postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
+    planned_paths = dd.read_sql_table('rtd', db_connect_string, index_col='index', columns=['arr'])
+    return planned_paths.fillna(-1)
 
 
 def is_checked(station1, station2):
@@ -142,13 +164,18 @@ stations = StationPhillip()
 # streckennetz = nx.Graph()
 station_to_ds100 = pickle.load(open('station_to_ds100', 'rb'))
 
-def get_unique_paths():
-    planned_path_df = pd.read_feather('data_buffer/planned_path_df')
-    paths = list(path for path in planned_path_df.iloc[:, 0].unique())
-    paths.append(path for path in planned_path_df.iloc[:, 1].unique())
+def get_unique_paths(planned_paths: dask.dataframe) -> list:
+    planned_paths = planned_paths['pla_arr_path'].append(planned_paths['pla_dep_path'])
+    planned_paths = planned_paths.drop_duplicates()
+    planned_paths = planned_paths.compute()
+    paths = planned_paths.to_list()
 
-    del planned_path_df
-    del paths[len(paths)-1]
+    # planned_path_df = pd.read_feather('data_buffer/planned_path_df')
+    # paths = list(path for path in planned_path_df.iloc[:, 0].unique())
+    # paths.append(path for path in planned_path_df.iloc[:, 1].unique())
+
+    # del planned_path_df
+    # del paths[len(paths)-1]
 
     bar = Bar('parsing paths', max=len(paths))
     for i, path in enumerate(paths):
@@ -162,21 +189,40 @@ def get_unique_paths():
     pickle.dump(paths, open('data_buffer/unique_paths', 'wb'))
     return paths
 
-def check_path_edges(paths):
+def find_unique_edges(paths):
+    """find unique edges in list of paths
+
+    Arguments:
+        paths {list} -- list of list of stations
+
+    Returns:
+        list -- list of unique edges
+    """
+
     bar = Bar('checking path edges', max=len(paths))
+    edges = []
     for path in paths:
         bar.next()
         if path:
             for u in range(len(path) - 1):
-                is_checked(path[u], path[u + 1])
-    edges = checked[0:index_in_checked]
-    pickle.dump(edges, open('edges_streckennetz', 'wb'))
+                edge = (path[u], path[u+1])
+                reversed_edge = (path[u+1], path[u])
+                if edge not in edges and reversed_edge not in edges:
+                    edges.append(edge)
     bar.finish()
     return edges
 
-# edges = pickle.load(open('edges_streckennetz', 'rb'))
 
 def add_edges_to_streckennetz(edges, streckennetz):
+    """adds edges with distance to streckennetz
+
+    Arguments:
+        edges {list} -- list of edges
+        streckennetz {nx.Graph} -- graph to add the edges to
+
+    Returns:
+        nx-Graph -- graph with added edges
+    """
     bar = Bar('adding edges', max=len(edges))
     for i in range(len(edges)):
         bar.next()
@@ -202,7 +248,6 @@ def add_edges_to_streckennetz(edges, streckennetz):
         streckennetz.add_edges_from([(station1, station2, {'distance':distance})])
     bar.finish()
     return streckennetz
-    # pickle.dump(streckennetz, open('streckennetz_pickle', 'wb'))
 
 
 def add_trassenfinder_info_to_streckennetz(streckennetz):
@@ -289,18 +334,23 @@ def add_trassenfinder_info_to_streckennetz(streckennetz):
 # pickle.dump(not_found, open('not_found', 'wb'))
 
 if __name__ == '__main__':
-    # get_unique_paths()
+    # planned_paths = get_paths_from_db()
+    rtd = RtdRay()
+    planned_paths = rtd.load_data(columns=['pla_arr_path', 'pla_dep_path'])
+    paths = get_unique_paths(planned_paths)
     # paths = pickle.load(open('data_buffer/unique_paths', 'rb'))
-    # edges = check_path_edges(paths)
+    edges = find_unique_edges(paths)
+    pickle.dump(edges, open('data_buffer/edges', 'wb'))
+    # print(edges)
     # edges = pickle.load(open('data_buffer/edges', 'rb'))
     # streckennetz = nx.Graph()
     # streckennetz = add_edges_to_streckennetz(edges, streckennetz)
     # pickle.dump(streckennetz, open('data_buffer/streckennetz_basic', 'wb'))
-    streckennetz = pickle.load(open('data_buffer/streckennetz_basic', 'rb'))
+    # streckennetz = pickle.load(open('data_buffer/streckennetz_basic', 'rb'))
 
     # streckennetz = pickle.load(open('streckennetz_pickle', 'rb'))
-    streckennetz2 =  add_trassenfinder_info_to_streckennetz(streckennetz)
-    pickle.dump(streckennetz2, open('streckennetz3_pickle', 'wb'))
+    # streckennetz2 =  add_trassenfinder_info_to_streckennetz(streckennetz)
+    # pickle.dump(streckennetz2, open('streckennetz3_pickle', 'wb'))
 
 
 

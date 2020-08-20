@@ -1,3 +1,6 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import json
 
 import requests
@@ -11,7 +14,8 @@ from mpl_toolkits.basemap import Basemap
 import numpy as np 
 # import swagger_client
 import trassenfinder_route_request
-from helpers import StationPhillip, BetriebsstellenBill
+from helpers.StationPhillip import StationPhillip
+from helpers.BetriebsstellenBill import BetriebsstellenBill
 from progress.bar import Bar
 from time import sleep
 import sqlalchemy

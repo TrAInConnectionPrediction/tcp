@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSON, insert
 import datetime
 import progressbar
 import json
-from helpers import StationPhillip
+from helpers.StationPhillip import StationPhillip
 from DatabaseOfDoom import DatabaseOfDoom
 import pickle
 from cityhash import CityHash64
@@ -73,8 +73,9 @@ sql_types = {
 time_names = ('pt', 'ct', 'clt')
 
 def db_to_datetime(dt) -> datetime.datetime:
-    """convert bahn time in format: '%y%m%d%H%M' to datetime.
-    As it it fastest to directly construct a datetime object from this, no strptime is used
+    """
+    Convert bahn time in format: '%y%m%d%H%M' to datetime.
+    As it it fastest to directly construct a datetime object from this, no strptime is used.
 
     Args:
         dt (str): bahn timeformat
@@ -181,7 +182,7 @@ def upsert_rtd(table, conn, keys, data_iter):
 
 
 def upload_data(df):
-    """This function uploads the data to our database
+    """This function uploads the data to our database.
 
     Arguments:
         df {pd.DataFrame} -- parsed data
