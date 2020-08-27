@@ -1,15 +1,12 @@
-import pandas as pd 
+import pandas as pd
 import pangres
-import numpy as np 
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String, Boolean
-from sqlalchemy.dialects.postgresql import JSON, insert
+from sqlalchemy import Integer, Text, DateTime, String
+from sqlalchemy.dialects.postgresql import JSON, insert, ARRAY
 import datetime
 import progressbar
-import json
 from helpers.StationPhillip import StationPhillip
 from DatabaseOfDoom import DatabaseOfDoom
-import pickle
 from cityhash import CityHash64
 
 from config import db_database, db_password, db_server, db_username
@@ -32,7 +29,10 @@ sql_types = {
     'ar_cde': Text,
     'ar_dc': Integer,
     'ar_l': Text,
-    'ar_m': JSON,
+    'ar_m_id': ARRAY,
+    'ar_m_t': ARRAY,
+    'ar_m_ts': ARRAY,
+    'ar_m_c': ARRAY,
 
     'dp_ppth': Text,
     'dp_cpth': Text,
@@ -50,7 +50,10 @@ sql_types = {
     'dp_cde': Text,
     'dp_dc': Integer,
     'dp_l': Text,
-    'dp_m': JSON,
+    'dp_m_id': ARRAY,
+    'dp_m_t': ARRAY,
+    'dp_m_ts': ARRAY,
+    'dp_m_c': ARRAY,
 
     'f': String(length=1),
     't': Text,
@@ -58,7 +61,10 @@ sql_types = {
     'c': Text,
     'n': Text,
 
-    'm': JSON,
+    'm_id': ARRAY,
+    'm_t': ARRAY,
+    'm_ts': ARRAY,
+    'm_c': ARRAY,
     'hd': JSON,
     'hdc': JSON,
     'conn': JSON,
@@ -68,9 +74,9 @@ sql_types = {
     'id': Text,
     'hash_id': Integer
 }
-
 # these are the names of columns, that contain a time and should be parsed into a datetime
-time_names = ('pt', 'ct', 'clt')
+time_names = ('pt', 'ct', 'clt', 'ts')
+message_parts_to_parse = ('id', 't', 'c', 'ts')
 
 def db_to_datetime(dt) -> datetime.datetime:
     """
@@ -78,17 +84,31 @@ def db_to_datetime(dt) -> datetime.datetime:
     As it it fastest to directly construct a datetime object from this, no strptime is used.
 
     Args:
-        dt (str): bahn timeformat
+        dt (str): bahn time format
 
     Returns:
         datetime.datetime: converted bahn time
     """
     return datetime.datetime(int('20' + dt[0:2]), int(dt[2:4]), int(dt[4:6]), int(dt[6:8]), int(dt[8:10]))
 
-def parse_stop_plan(stop) -> dict:
-    # create a int64 hash to be used as index. CityHash64() -> uint64 which is not supported by postgres,
-    # so we need to cast it into int64 by substracting ((2**63)-1)
-    stop['hash_id'] = CityHash64(stop['id']) - ((2**63)-1)
+
+def parse_stop_plan(stop: dict) -> dict:
+    """
+    Parse a planned stop: Add index and flatten the arrival and departure events.
+    Parameters
+    ----------
+    stop : dict
+        Stop from the Timetables API
+
+    Returns
+    -------
+    dict
+        Parsed Stop
+
+    """
+    # Create a int64 hash to be used as index. CityHash64() returns uint64 which is not supported by postgres,
+    # so we need to cast it to int64 by subtracting ((2**63)-1)
+    stop['hash_id'] = CityHash64(stop['id']) - ((2 ** 63) - 1)
     if 'tl' in stop:
         for key in stop['tl'][0]:
             stop[key] = stop['tl'][0][key]
@@ -110,21 +130,73 @@ def parse_stop_plan(stop) -> dict:
     return stop
 
 
-def add_change_to_stop(stop, change) -> dict:
+def add_change_to_stop(stop: dict, change: dict) -> dict:
+    """
+    Add realtime changes to a stop.
+
+    Parameters
+    ----------
+    stop : dict
+        A parsed stop from parse_plan_stop().
+    change : dict
+        A stop from the timetables API with realtime changes.
+
+    Returns
+    -------
+    dict
+        The stop with realtime changes added to it.
+
+    """
+    # add arrival changes
     if 'ar' in change:
         for key in change['ar'][0]:
-            if key in time_names:
-                stop['ar_' + key] = db_to_datetime(change['ar'][0][key])
+            if key == 'm':
+                # add message
+                for msg in change['ar'][0][key]:
+                    for msg_part in msg:
+                        if msg_part in message_parts_to_parse:
+                            if 'ar_m' + msg_part not in stop:
+                                stop['ar_m' + msg_part] = []
+                            if msg_part in time_names:
+                                stop['ar_m' + msg_part].append(db_to_datetime(msg[msg_part]))
+                            else:
+                                stop['ar_m' + msg_part].append(msg[msg_part])
             else:
-                stop['ar_' + key] = change['ar'][0][key]
+                if key in time_names:
+                    stop['ar_' + key] = db_to_datetime(change['ar'][0][key])
+                else:
+                    stop['ar_' + key] = change['ar'][0][key]
+
+    # add departure changes
     if 'dp' in change:
         for key in change['dp'][0]:
-            if key in time_names:
-                stop['dp_' + key] = db_to_datetime(change['dp'][0][key])
+            if key == 'm':
+                # add message
+                for msg in change['dp'][0][key]:
+                    for msg_part in msg:
+                        if msg_part in message_parts_to_parse:
+                            if 'dp_m' + msg_part not in stop:
+                                stop['dp_m' + msg_part] = []
+                            if msg_part in time_names:
+                                stop['dp_m' + msg_part].append(db_to_datetime(msg[msg_part]))
+                            else:
+                                stop['dp_m' + msg_part].append(msg[msg_part])
             else:
-                stop['dp_' + key] = change['dp'][0][key]
+                if key in time_names:
+                    stop['dp_' + key] = db_to_datetime(change['dp'][0][key])
+                else:
+                    stop['dp_' + key] = change['dp'][0][key]
     if 'm' in change:
-        stop['m'] = change['m']
+        # stop['m'] = change['m']
+        for msg in change['m']:
+            for msg_part in msg:
+                if msg_part in message_parts_to_parse:
+                    if 'm_' + msg_part not in stop:
+                        stop['m_' + msg_part]  = []
+                    if msg_part in time_names:
+                        stop['m_' + msg_part].append(db_to_datetime(msg[msg_part]))
+                    else:
+                        stop['m_' + msg_part].append(msg[msg_part])
     return stop
 
 
@@ -144,7 +216,7 @@ def parse_station(station_data):
                     continue
                 if changes is None:
                     continue
-                # check wether the stop is still in the next plan. This happens when the train has delay and so its arr/dep is actually in the next hour
+                # check whether the stop is still in the next plan. This happens when the train has delay and so its arr/dep is actually in the next hour
                 # we cannot have a stop twice in our database.
                 try:
                     if changes_delta > 0:
@@ -171,12 +243,12 @@ def upsert_rtd(table, conn, keys, data_iter):
     stmt = insert(table).values(rows)
 
     update_cols = [c.name for c in table.c
-                if c not in list(table.primary_key.columns)]
+                   if c not in list(table.primary_key.columns)]
 
     on_conflict_stmt = stmt.on_conflict_do_update(
         index_elements=table.primary_key.columns,
         set_={k: getattr(stmt.excluded, k) for k in update_cols}
-        )
+    )
 
     conn.execute(on_conflict_stmt)
 
@@ -193,19 +265,21 @@ def upload_data(df):
     except IndexError:
         df = df.loc[~df.index.duplicated(keep='last')]
         pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
-   
+
 
 if __name__ == "__main__":
-    
 
-    engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require') 
+    engine = sqlalchemy.create_engine(
+        'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
     stations = StationPhillip()
     db = DatabaseOfDoom()
-    try:
-        start_date = db.max_date() - datetime.timedelta(days=2)
-    except:
-        start_date = datetime.datetime(2020, 1, 1, 0, 0)
-        
+    # try:
+    #     start_date = db.max_date() - datetime.timedelta(days=2)
+    # except:
+    #     start_date = datetime.datetime(2020, 1, 1, 0, 0)
+
+    start_date = datetime.datetime(2020, 8, 20, 0, 0)
+
     end_date = datetime.datetime.now()
     buffer = pd.DataFrame()
     with progressbar.ProgressBar(max_value=len(stations)) as bar:
@@ -217,7 +291,7 @@ if __name__ == "__main__":
             parsed['station'] = station
             buffer = pd.concat([buffer, parsed], ignore_index=True)
 
-            # upload the data as soon as it is longer than 1000 rows. This is more efficient than uploading each stations data individually
+            # Upload the data as soon as it is longer than 1000 rows. This is more efficient than uploading each stations data individually
             if len(buffer) > 1000:
                 upload_data(buffer)
                 buffer = pd.DataFrame()
