@@ -273,12 +273,12 @@ if __name__ == "__main__":
         'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
     stations = StationPhillip()
     db = DatabaseOfDoom()
-    # try:
-    #     start_date = db.max_date() - datetime.timedelta(days=2)
-    # except:
-    #     start_date = datetime.datetime(2020, 1, 1, 0, 0)
 
-    start_date = datetime.datetime(2020, 8, 20, 0, 0)
+    if input('Do you wish to only parse new data? ([y]/n)') == 'n':
+        start_date = datetime.datetime(2020, 1, 1, 0, 0)
+    else:
+        start_date = db.max_date() - datetime.timedelta(days=2)
+
 
     end_date = datetime.datetime.now()
     buffer = pd.DataFrame()
