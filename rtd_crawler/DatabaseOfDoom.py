@@ -1,8 +1,9 @@
-import os, sys
+import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
 from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT
-from sqlalchemy.dialects.postgresql import JSON, insert
+from sqlalchemy.dialects.postgresql import JSON, insert, ARRAY
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.expression import func
@@ -10,69 +11,14 @@ import datetime
 
 from config import db_database, db_password, db_server, db_username
 
-"""
-\d tcp:
-                                          Table "public.rtd"
-  Column  |            Type             | Collation | Nullable |               Default                
-----------+-----------------------------+-----------+----------+--------------------------------------
- ar_ppth  | text                        |           |          | 
- ar_cpth  | text                        |           |          | 
- ar_pp    | text                        |           |          | 
- ar_cp    | text                        |           |          | 
- ar_pt    | timestamp without time zone |           |          | 
- ar_ct    | timestamp without time zone |           |          | 
- ar_ps    | character varying(1)        |           |          | 
- ar_cs    | character varying(1)        |           |          | 
- ar_hi    | integer                     |           |          | 
- ar_clt   | timestamp without time zone |           |          | 
- ar_wings | text                        |           |          | 
- ar_tra   | text                        |           |          | 
- ar_pde   | text                        |           |          | 
- ar_cde   | text                        |           |          | 
- ar_dc    | integer                     |           |          | 
- ar_l     | text                        |           |          | 
- ar_m     | json                        |           |          | 
- dp_ppth  | text                        |           |          | 
- dp_cpth  | text                        |           |          | 
- dp_pp    | text                        |           |          | 
- dp_cp    | text                        |           |          | 
- dp_pt    | timestamp without time zone |           |          | 
- dp_ct    | timestamp without time zone |           |          | 
- dp_ps    | character varying(1)        |           |          | 
- dp_cs    | character varying(1)        |           |          | 
- dp_hi    | integer                     |           |          | 
- dp_clt   | timestamp without time zone |           |          | 
- dp_wings | text                        |           |          | 
- dp_tra   | text                        |           |          | 
- dp_pde   | text                        |           |          | 
- dp_cde   | text                        |           |          | 
- dp_dc    | integer                     |           |          | 
- dp_l     | text                        |           |          | 
- dp_m     | json                        |           |          | 
- f        | character varying(1)        |           |          | 
- t        | text                        |           |          | 
- o        | text                        |           |          | 
- c        | text                        |           |          | 
- n        | text                        |           |          | 
- m        | json                        |           |          | 
- hd       | json                        |           |          | 
- hdc      | json                        |           |          | 
- conn     | json                        |           |          | 
- rtr      | json                        |           |          | 
- station  | text                        |           |          | 
- id       | text                        |           |          | 
- hash_id  | bigint                      |           | not null | nextval('rtd_hash_id_seq'::regclass)
-Indexes:
-    "rtd_pkey" PRIMARY KEY, btree (hash_id)
-"""
-
 
 class RtdDbModel:
-    """class containing table schemes for our db
     """
-    DB_CONNECT_STRING = 'postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
-    
-    engine = sqlalchemy.create_engine (
+    Class containing table schemes for our db.
+    """
+    DB_CONNECT_STRING = 'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
+
+    engine = sqlalchemy.create_engine(
         DB_CONNECT_STRING,
         pool_pre_ping=True,
         pool_recycle=3600
@@ -81,7 +27,8 @@ class RtdDbModel:
     Base = declarative_base()
 
     class JsonRtd(Base):
-        """scheme for table for raw data
+        """
+        Scheme for table for raw data.
         """
         __tablename__ = 'json_rtd_v2'
         date = Column(DateTime, primary_key=True)
@@ -90,7 +37,8 @@ class RtdDbModel:
         changes = Column(JSON)
 
     class Rtd(Base):
-        """scheme for parsed data
+        """
+        Scheme for parsed data.
         """
         __tablename__ = 'rtd'
         ar_ppth = Column(Text)
@@ -109,7 +57,10 @@ class RtdDbModel:
         ar_cde = Column(Text)
         ar_dc = Column(Integer)
         ar_l = Column(Text)
-        ar_m = Column(JSON)
+        ar_m_id = Column(ARRAY(Text))
+        ar_m_t = Column(ARRAY(Text))
+        ar_m_ts = Column(ARRAY(DateTime))
+        ar_m_c = Column(ARRAY(Integer))
 
         dp_ppth = Column(Text)
         dp_cpth = Column(Text)
@@ -127,7 +78,10 @@ class RtdDbModel:
         dp_cde = Column(Text)
         dp_dc = Column(Integer)
         dp_l = Column(Text)
-        dp_m = Column(JSON)
+        dp_m_id = Column(ARRAY(Text))
+        dp_m_t = Column(ARRAY(Text))
+        dp_m_ts = Column(ARRAY(DateTime))
+        dp_m_c = Column(ARRAY(Integer))
 
         f = Column(String(length=1))
         t = Column(Text)
@@ -135,7 +89,10 @@ class RtdDbModel:
         c = Column(Text)
         n = Column(Text)
 
-        m = Column(JSON)
+        m_id = Column(ARRAY(Text))
+        m_t = Column(ARRAY(Text))
+        m_ts = Column(ARRAY(DateTime))
+        m_c = Column(ARRAY(Integer))
         hd = Column(JSON)
         hdc = Column(JSON)
         conn = Column(JSON)
@@ -153,30 +110,28 @@ class DatabaseOfDoom(RtdDbModel):
     session = Session()
 
     queue = []
-    
+
     def upsert(self, rows, no_update_cols=[]):
         table = self.JsonRtd.__table__
 
         stmt = insert(table).values(rows)
 
         update_cols = [c.name for c in table.c
-                    if c not in list(table.primary_key.columns)
-                    and c.name not in no_update_cols]
+                       if c not in list(table.primary_key.columns)
+                       and c.name not in no_update_cols]
 
         on_conflict_stmt = stmt.on_conflict_do_update(
             index_elements=table.primary_key.columns,
             set_={k: getattr(stmt.excluded, k) for k in update_cols}
-            )
+        )
 
         self.session.execute(on_conflict_stmt)
 
-
     def add_row(self, plan, changes, bhf, date, hour):
         date = datetime.datetime.combine(date, datetime.time(hour, 0))
-        self.queue.append({'date': date, 'bhf': bhf, 'plan': plan, 'changes':changes})
+        self.queue.append({'date': date, 'bhf': bhf, 'plan': plan, 'changes': changes})
         if len(self.queue) > 20:
             self.commit()
-
 
     def commit(self):
         self.upsert(self.queue)
@@ -187,12 +142,13 @@ class DatabaseOfDoom(RtdDbModel):
         if date1 is None:
             return self.session.query(self.JsonRtd).filter((self.JsonRtd.bhf == bhf)).all()
         if date2 is None:
-            return self.session.query(self.JsonRtd).filter((self.JsonRtd.bhf == bhf) & (self.JsonRtd.date == date1)).first()
+            return self.session.query(self.JsonRtd).filter(
+                (self.JsonRtd.bhf == bhf) & (self.JsonRtd.date == date1)).first()
         return self.session.query(self.JsonRtd).filter((self.JsonRtd.bhf == bhf)
-            & (self.JsonRtd.date >= date1)
-            & (self.JsonRtd.date < date2)).all()
+                                                       & (self.JsonRtd.date >= date1)
+                                                       & (self.JsonRtd.date < date2)).all()
 
-    def count_entrys_at_date(self, date):
+    def count_entries_at_date(self, date):
         return self.session.query(self.JsonRtd).filter(self.JsonRtd.date == date).count()
 
     def max_date(self):
@@ -204,6 +160,5 @@ class DatabaseOfDoom(RtdDbModel):
 
 if __name__ == "__main__":
     db = DatabaseOfDoom()
-    # print(db.max_date())
-    print(db.count_entrys_at_date(datetime.datetime(2020, 7, 2, 0)))
+    print(db.count_entries_at_date(datetime.datetime(2020, 7, 2, 0)))
     print(db.max_date())

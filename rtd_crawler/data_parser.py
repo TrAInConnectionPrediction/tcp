@@ -32,10 +32,10 @@ sql_types = {
     'ar_cde': Text,
     'ar_dc': Integer,
     'ar_l': Text,
-    'ar_m_id': ARRAY,
-    'ar_m_t': ARRAY,
-    'ar_m_ts': ARRAY,
-    'ar_m_c': ARRAY,
+    'ar_m_id': ARRAY(Text),
+    'ar_m_t': ARRAY(Text),
+    'ar_m_ts': ARRAY(DateTime),
+    'ar_m_c': ARRAY(Integer),
 
     'dp_ppth': Text,
     'dp_cpth': Text,
@@ -53,10 +53,10 @@ sql_types = {
     'dp_cde': Text,
     'dp_dc': Integer,
     'dp_l': Text,
-    'dp_m_id': ARRAY,
-    'dp_m_t': ARRAY,
-    'dp_m_ts': ARRAY,
-    'dp_m_c': ARRAY,
+    'dp_m_id': ARRAY(Text),
+    'dp_m_t': ARRAY(Text),
+    'dp_m_ts': ARRAY(DateTime),
+    'dp_m_c': ARRAY(Integer),
 
     'f': String(length=1),
     't': Text,
@@ -64,10 +64,10 @@ sql_types = {
     'c': Text,
     'n': Text,
 
-    'm_id': ARRAY,
-    'm_t': ARRAY,
-    'm_ts': ARRAY,
-    'm_c': ARRAY,
+    'm_id': ARRAY(Text),
+    'm_t': ARRAY(Text),
+    'm_ts': ARRAY(DateTime),
+    'm_c': ARRAY(Integer),
     'hd': JSON,
     'hdc': JSON,
     'conn': JSON,
@@ -158,12 +158,14 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
                 for msg in change['ar'][0][key]:
                     for msg_part in msg:
                         if msg_part in message_parts_to_parse:
-                            if 'ar_m' + msg_part not in stop:
-                                stop['ar_m' + msg_part] = []
+                            if 'ar_m_' + msg_part not in stop:
+                                stop['ar_m_' + msg_part] = []
                             if msg_part in time_names:
-                                stop['ar_m' + msg_part].append(db_to_datetime(msg[msg_part]))
+                                stop['ar_m_' + msg_part].append(db_to_datetime(msg[msg_part]))
+                            elif msg_part == 'c':
+                                stop['ar_m_c'].append(int(msg[msg_part]))
                             else:
-                                stop['ar_m' + msg_part].append(msg[msg_part])
+                                stop['ar_m_' + msg_part].append(msg[msg_part])
             else:
                 if key in time_names:
                     stop['ar_' + key] = db_to_datetime(change['ar'][0][key])
@@ -178,12 +180,14 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
                 for msg in change['dp'][0][key]:
                     for msg_part in msg:
                         if msg_part in message_parts_to_parse:
-                            if 'dp_m' + msg_part not in stop:
-                                stop['dp_m' + msg_part] = []
+                            if 'dp_m_' + msg_part not in stop:
+                                stop['dp_m_' + msg_part] = []
                             if msg_part in time_names:
-                                stop['dp_m' + msg_part].append(db_to_datetime(msg[msg_part]))
+                                stop['dp_m_' + msg_part].append(db_to_datetime(msg[msg_part]))
+                            elif msg_part == 'c':
+                                stop['dp_m_c'].append(int(msg[msg_part]))
                             else:
-                                stop['dp_m' + msg_part].append(msg[msg_part])
+                                stop['dp_m_' + msg_part].append(msg[msg_part])
             else:
                 if key in time_names:
                     stop['dp_' + key] = db_to_datetime(change['dp'][0][key])
@@ -195,9 +199,11 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
             for msg_part in msg:
                 if msg_part in message_parts_to_parse:
                     if 'm_' + msg_part not in stop:
-                        stop['m_' + msg_part]  = []
+                        stop['m_' + msg_part] = []
                     if msg_part in time_names:
                         stop['m_' + msg_part].append(db_to_datetime(msg[msg_part]))
+                    elif msg_part == 'c':
+                        stop['m_c'].append(int(msg[msg_part]))
                     else:
                         stop['m_' + msg_part].append(msg[msg_part])
     return stop
@@ -219,13 +225,13 @@ def parse_station(station_data):
                     continue
                 if changes is None:
                     continue
-                # check whether the stop is still in the next plan. This happens when the train has delay and so its arr/dep is actually in the next hour
-                # we cannot have a stop twice in our database.
+                # Check whether the stop is still in the next plan. This happens when the train has delay and so its arr/dep is actually in the next hour.
+                # We cannot have a stop twice in our database.
                 try:
                     if changes_delta > 0:
                         next_plan = station_data[date + datetime.timedelta(hours=changes_delta)].plan
                         if next_plan is not None:
-                            if stop['id'] in (next_stop['id'] for next_stop in next_plan):
+                            if stop['id'] in list(next_stop['id'] for next_stop in next_plan):
                                 stop = None
                                 break
                 except KeyError:
@@ -237,23 +243,6 @@ def parse_station(station_data):
             if stop:
                 parsed.append(stop)
     return parsed
-
-
-def upsert_rtd(table, conn, keys, data_iter):
-    rows = []
-    table = db.Rtd.__table__
-
-    stmt = insert(table).values(rows)
-
-    update_cols = [c.name for c in table.c
-                   if c not in list(table.primary_key.columns)]
-
-    on_conflict_stmt = stmt.on_conflict_do_update(
-        index_elements=table.primary_key.columns,
-        set_={k: getattr(stmt.excluded, k) for k in update_cols}
-    )
-
-    conn.execute(on_conflict_stmt)
 
 
 def upload_data(df):
@@ -278,13 +267,12 @@ if __name__ == "__main__":
     db = DatabaseOfDoom()
 
     if input('Do you wish to only parse new data? ([y]/n)') == 'n':
-        start_date = datetime.datetime(2020, 1, 1, 0, 0)
+        start_date = datetime.datetime(2020, 8, 21, 0, 0)
     else:
         start_date = db.max_date() - datetime.timedelta(days=2)
 
-
     end_date = datetime.datetime.now()
-    buffer = pd.DataFrame()
+    # buffer = pd.DataFrame()
     with progressbar.ProgressBar(max_value=len(stations)) as bar:
         for i, station in enumerate(stations):
             station_data = {}
@@ -292,10 +280,7 @@ if __name__ == "__main__":
             parsed = parse_station(station_data)
             parsed = pd.DataFrame(parsed)
             parsed['station'] = station
-            buffer = pd.concat([buffer, parsed], ignore_index=True)
+            # buffer = pd.concat([buffer, parsed], ignore_index=True)
 
-            # Upload the data as soon as it is longer than 1000 rows. This is more efficient than uploading each stations data individually
-            if len(buffer) > 1000:
-                upload_data(buffer)
-                buffer = pd.DataFrame()
+            upload_data(parsed)
             bar.update(i)
