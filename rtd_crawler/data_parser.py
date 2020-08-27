@@ -267,7 +267,7 @@ if __name__ == "__main__":
     db = DatabaseOfDoom()
 
     if input('Do you wish to only parse new data? ([y]/n)') == 'n':
-        start_date = datetime.datetime(2020, 8, 21, 0, 0)
+        start_date = datetime.datetime(2020, 1, 1, 0, 0)
     else:
         start_date = db.max_date() - datetime.timedelta(days=2)
 
