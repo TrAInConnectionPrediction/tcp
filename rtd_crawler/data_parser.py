@@ -251,16 +251,16 @@ def upload_data(df):
     Arguments:
         df {pd.DataFrame} -- parsed data
     """
-    df = df.set_index('hash_id')
-    try:
-        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
-    except IndexError:
-        df = df.loc[~df.index.duplicated(keep='last')]
-        pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
+    if not df.empty:
+        df = df.set_index('hash_id')
+        try:
+            pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
+        except IndexError:
+            df = df.loc[~df.index.duplicated(keep='last')]
+            pangres.upsert(engine, df, if_row_exists='update', table_name='rtd', dtype=sql_types)
 
 
 if __name__ == "__main__":
-
     engine = sqlalchemy.create_engine(
         'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
     stations = StationPhillip()
@@ -272,15 +272,12 @@ if __name__ == "__main__":
         start_date = db.max_date() - datetime.timedelta(days=2)
 
     end_date = datetime.datetime.now()
-    # buffer = pd.DataFrame()
     with progressbar.ProgressBar(max_value=len(stations)) as bar:
         for i, station in enumerate(stations):
-            station_data = {}
             station_data = db.get_json(station, date1=start_date, date2=end_date)
             parsed = parse_station(station_data)
             parsed = pd.DataFrame(parsed)
             parsed['station'] = station
-            # buffer = pd.concat([buffer, parsed], ignore_index=True)
 
             upload_data(parsed)
             bar.update(i)
