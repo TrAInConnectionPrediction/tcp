@@ -9,8 +9,8 @@ from sqlalchemy.dialects.postgresql import JSON, insert, ARRAY
 import datetime
 import progressbar
 from helpers.StationPhillip import StationPhillip
-from DatabaseOfDoom import DatabaseOfDoom
-from cityhash import CityHash64
+from rtd_crawler.DatabaseOfDoom import DatabaseOfDoom
+from rtd_crawler.hash64 import hash64
 
 from config import db_database, db_password, db_server, db_username
 
@@ -81,6 +81,7 @@ sql_types = {
 time_names = ('pt', 'ct', 'clt', 'ts')
 message_parts_to_parse = ('id', 't', 'c', 'ts')
 
+
 def db_to_datetime(dt) -> datetime.datetime:
     """
     Convert bahn time in format: '%y%m%d%H%M' to datetime.
@@ -109,9 +110,8 @@ def parse_stop_plan(stop: dict) -> dict:
         Parsed Stop
 
     """
-    # Create a int64 hash to be used as index. CityHash64() returns uint64 which is not supported by postgres,
-    # so we need to cast it to int64 by subtracting ((2**63)-1)
-    stop['hash_id'] = CityHash64(stop['id']) - ((2 ** 63) - 1)
+    # Create a int64 hash to be used as index.
+    stop['hash_id'] = hash64(stop['id'])
     if 'tl' in stop:
         for key in stop['tl'][0]:
             stop[key] = stop['tl'][0][key]
