@@ -6,7 +6,6 @@ from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT
 from sqlalchemy.dialects.postgresql import JSON, insert, ARRAY
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql.expression import func
 import datetime
 
 from config import db_database, db_password, db_server, db_username
@@ -102,7 +101,10 @@ class RtdDbModel:
         id = Column(Text)
         hash_id = Column(BIGINT, primary_key=True)
 
-    Base.metadata.create_all(engine)
+    try:
+        Base.metadata.create_all(engine)
+    except sqlalchemy.exc.OperationalError:
+        print('RtdDbModel running offline!')
 
 
 class DatabaseOfDoom(RtdDbModel):
@@ -150,9 +152,6 @@ class DatabaseOfDoom(RtdDbModel):
 
     def count_entries_at_date(self, date):
         return self.session.query(self.JsonRtd).filter(self.JsonRtd.date == date).count()
-
-    def max_date(self):
-        return self.session.query(func.max(self.Rtd.ar_pt))
 
     def max_date(self):
         return self.session.query(sqlalchemy.func.max(self.Rtd.ar_pt)).scalar()
