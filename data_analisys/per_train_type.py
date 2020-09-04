@@ -68,8 +68,8 @@ class TrainTypeAnalysis:
         ax.autoscale_view()
         plt.show()
 
-    def plot_type_delay(self):
-        delays = ((self.data[('ar_on_time_5', 'mean')] + self.data[('dp_on_time_5', 'mean')]) / 2).to_numpy()
+    def plot_type_delay(self, color_by='on_time_3'):
+        delays = ((self.data[('ar_' + color_by, 'mean')] + self.data[('dp_' + color_by, 'mean')]) / 2).to_numpy()
         use_trains = np.logical_not(np.isnan(delays))
         delays = delays[use_trains]
         delays = (delays - delays.min()) / max(delays - delays.min())
@@ -88,5 +88,5 @@ class TrainTypeAnalysis:
 
 if __name__ == '__main__':
     rtd_df = load_with_delay(columns=['station', 'c', 'f'])
-    tta = TrainTypeAnalysis(rtd_df=rtd_df)
-    tta.plot_type_delay()
+    tta = TrainTypeAnalysis(rtd_df=rtd_df, use_cache=True)
+    tta.plot_type_delay(color_by='on_time_5')
