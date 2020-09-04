@@ -8,24 +8,23 @@ from config import tor_password
 
 class Tor:
     def __init__(self):
-        self.renew_connection()
-        self.session = self.new_session()
+        self.new_session()
 
     def new_session(self):
-        session = requests.session()
+        self.session = requests.session()
         # Tor uses the 9050 port as the default socks port
-        session.proxies = {'http':  'socks5://127.0.0.1:9050',
-                           'https': 'socks5://127.0.0.1:9050'}
-        return session
+        self.session.proxies = {'http': 'socks5://127.0.0.1:9050',
+                                'https': 'socks5://127.0.0.1:9050'}
 
-    def renew_connection(self):
+    @staticmethod
+    def renew_connection():
         with Controller.from_port(port=9051) as controller:
             controller.authenticate(password=tor_password)
             controller.signal(Signal.NEWNYM)
 
     def new_ip(self):
         self.renew_connection()
-        self.session = self.new_session()
+        self.new_session()
 
 
 class DownloadDave(Tor):
@@ -34,17 +33,18 @@ class DownloadDave(Tor):
         # + '8010097/191218/10'
         self.PLAN_BASE_URL = 'http://iris.noncd.db.de/iris-tts/timetable/plan/'
         self.REAL_BASE_URL = 'http://iris.noncd.db.de/iris-tts/timetable/fchg/'  # + '8010097'
+        self.RECENT_CHANGE_URL = 'https://iris.noncd.db.de/iris-tts/timetable/rchg/'  # + '8010097'
 
     def get_request(self, url):
         resp = self.session.get(url, timeout=50)
-        if (resp.status_code != 200 or resp.text == '[]'):
+        if resp.status_code != 200 or resp.text == '[]':
             raise ValueError('Something went wrong while doing session.get(' +
-                                url + ') status code: ' + str(resp.status_code))
+                             url + ') status code: ' + str(resp.status_code))
         return resp.text.replace('\'', '"')
 
     def get_data(self, url):
         # try 3 times to get the data. It is unlikely that the
-        # same connection problem occures 3 times in a row
+        # same connection problem occurred 3 times in a row
         for _i in range(3):
             try:
                 return self.get_request(url=url)
@@ -65,3 +65,6 @@ class DownloadDave(Tor):
 
     def get_real(self, station_id):
         return self.get_data(url=self.REAL_BASE_URL + str(station_id))
+
+    def get_recent_change(self, eva):
+        return self.get_data(url=self.RECENT_CHANGE_URL + str(eva))
