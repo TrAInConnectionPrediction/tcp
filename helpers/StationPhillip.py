@@ -22,7 +22,7 @@ class StationPhillip:
                     self.station_df = pd.read_pickle('../data_buffer/station_offline_buffer')
                 else:
                     self.station_df = pd.read_pickle('data_buffer/station_offline_buffer')
-                print('Using local station buffer')
+                print('Using offline station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
 
@@ -164,6 +164,7 @@ class StationPhillip:
         random.shuffle(self.random_sta_list)
         for sta in self.random_sta_list:
             yield sta
+
 
 if __name__ == "__main__":
     stations = StationPhillip()
