@@ -6,7 +6,7 @@ import pandas as pd
 
 
 def get_delays(rtd_df):
-    rtd_df['ar_cancellations'] = rtd_df['ar_cs'] == 'c'
+    rtd_df['ar_cancellations'] = rtd_df['ar_cs'] != 'c'
     rtd_df['ar_cancellation_time_delta'] = (rtd_df['ar_clt'] - rtd_df['ar_pt']) / pd.Timedelta(minutes=1)
     rtd_df['ar_delay'] = (rtd_df['ar_ct'] - rtd_df['ar_pt']) / pd.Timedelta(minutes=1)
     ar_mask = (rtd_df['ar_cs'] != 'c') & (rtd_df['ar_delay'].notnull())
@@ -14,7 +14,7 @@ def get_delays(rtd_df):
     rtd_df['ar_on_time_5'] = rtd_df.loc[ar_mask, 'ar_delay'] < 6
     rtd_df['ar_fern_on_time_5'] = rtd_df.loc[rtd_df['f'] == 'F', 'ar_on_time_5']
 
-    rtd_df['dp_cancellations'] = rtd_df['dp_cs'] == 'c'
+    rtd_df['dp_cancellations'] = rtd_df['dp_cs'] != 'c'
     rtd_df['dp_cancellation_time_delta'] = (rtd_df['dp_clt'] - rtd_df['dp_pt']) / pd.Timedelta(minutes=1)
     rtd_df['dp_delay'] = (rtd_df['dp_ct'] - rtd_df['dp_pt']) / pd.Timedelta(minutes=1)
     dp_mask = (rtd_df['dp_cs'] != 'c') & (rtd_df['dp_delay'].notnull())
