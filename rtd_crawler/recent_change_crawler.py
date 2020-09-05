@@ -6,35 +6,14 @@ import time
 import concurrent.futures
 import sqlite3
 import json
-from config import db_database, db_password, db_server, db_username
-
-
-def xml_to_json(xml):
-    """
-    A recursive function to convert xml to list dict mix.
-
-    Parameters
-    ----------
-    xml : lxml.etree
-        The xml to convert
-
-    Returns
-    -------
-    dict
-        A dict list mix of the xml
-    """
-    parsed = dict(xml.attrib)
-    for xml_child in list(xml):
-        if xml_child.tag in parsed:
-            parsed[xml_child.tag].append(xml_to_json(xml_child))
-        else:
-            parsed[xml_child.tag] = [xml_to_json(xml_child)]
-    return parsed
+import datetime
+from database.change import ChangeManager
+from rtd_crawler.xml_parser import xml_to_json
 
 
 def preparse_changes(changes):
     changes = etree.fromstring(changes.encode())
-    changes = (xml_to_json(change) for change in changes)
+    changes = list(xml_to_json(change) for change in changes)
     changes = {hash64(change['id']): change for change in changes if not 'from' in change}
     return changes
 
@@ -50,7 +29,7 @@ def monitor_recent_change(evas: list, save_to_db: int, dd):
     new_changes = {}
     old_changes = [{} for _ in range(len(evas))]
     start_time = time.time()
-    while True:
+    while datetime.datetime.now().hour != 3:
         for i, eva in enumerate(evas):
             changes = dd.get_recent_change(eva)
             changes = preparse_changes(changes)
@@ -80,23 +59,41 @@ def monitor_recent_change(evas: list, save_to_db: int, dd):
         time.sleep(90 - ((time.time() - start_time) % 90))
 
 
+def upload_local_db():
+    db = ChangeManager()
+    conn, c = get_db_con()
+    c.execute('SELECT * from rchg')
+    for change in c:
+        db.add_change(hash_id=change[0], change=change[1])
+    c.execute('DELETE * from rchg')
+    db.commit()
+
+
 if __name__ == '__main__':
-    # conn = sqlite3.connect('data_buffer/recent_changes.db')
-    # c = conn.cursor()
-    # c.execute("""CREATE TABLE rchg (
-    #              hash_id int PRIMARY KEY,
-    #              change json
-    #              )""")
-    # conn.commit()
-    # conn.close()
+    import fancy_print_tcp
+    # create database and table if not existing.
+    try:
+        conn = sqlite3.connect('data_buffer/recent_changes.db')
+        c = conn.cursor()
+        c.execute("""CREATE TABLE rchg (
+                     hash_id int PRIMARY KEY,
+                     change json
+                     )""")
+        conn.commit()
+        conn.close()
+    except:
+        pass
 
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
     eva_list = [eva_list[i:i + 4] for i in range(0, len(eva_list), 4)]
     dd = SimplestDownloader()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
-        for i, evas in enumerate(eva_list):
-            # monitor_recent_change(evas, 0, dd)
-            # input('lol')
-            executor.submit(monitor_recent_change, evas, i % 10, dd)
-            # print(i)
+    while True:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
+            for i, evas in enumerate(eva_list):
+                monitor_recent_change([8000207], 0, dd)
+                input('lol')
+                executor.submit(monitor_recent_change, evas, i % 10, dd)
+                executor.shutdown(wait=True)
+
+        upload_local_db()
