@@ -36,7 +36,7 @@ def get_connection(start, destination, time):
     #marudor will unix zeit in UTC zeit aber .timestamp macht des automatich wenn die Zeitzone gesetzt ist
     json={"start":get_station(start)[0]['id'],"destination":get_station(destination)[0]['id'],"time":setToUTCTime(time, 1).timestamp()*1000,"maxChanges":"-1","transferTime":"0","hafasProfile":"db"}
     logging.debug(json)
-    r = requests.post('https://marudor.de/api/hafas/v1/route?profile=db', json=json)
+    r = requests.post('https://marudor.de/api/hafas/v2/tripSearch?profile=db', json=json)
     logging.debug(r.status_code)
     return r.text
 

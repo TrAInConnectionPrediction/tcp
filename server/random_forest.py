@@ -13,7 +13,7 @@ def train_and_test(X, y, X_test, y_test, name):
     clf.fit(X, y)
     
     #save the trained model
-    dump(clf, 'server/' + name + '_extra.joblib')
+    dump(clf, 'server/ml_models/' + name + '_extra.joblib')
 
     #make and print some acc statistics
     test_pred = clf.predict(X_test)
@@ -163,7 +163,7 @@ def train():
 class predictor:
     def __init__(self):
         try:
-            self.multiclass_rf = load('server/multiclass_extra.joblib')
+            self.multiclass_rf = load('server/ml_models/multiclass_extra.joblib')
         except FileNotFoundError:
             if input("Models not present! Create Models? y/[n]") == "y":
                 train()
@@ -199,7 +199,7 @@ class predictor:
         del features_df
 
         #make a probability prediction for one train
-        delays = np.array(self.multiclass_rf.predict_proba(features, check_input=False))[:, 0,1] # , check_input=False
+        delays = np.array(self.multiclass_rf.predict_proba(features))[:, 0,1] # , check_input=False
 
         #return delay probabilitys in a dict
         return {'adelay0': delays[0],
