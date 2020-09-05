@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 # Here we define our formatter
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-logHandler = handlers.TimedRotatingFileHandler('website.log', when='M', interval=1, backupCount=10)
+logHandler = handlers.TimedRotatingFileHandler('server/logs/website.log', when='M', interval=1, backupCount=10)
 logHandler.setLevel(logging.INFO)
 # Here we set our logHandler's formatter
 logHandler.setFormatter(formatter)
@@ -164,6 +164,8 @@ def calc_con(startbhf, zielbhf, date):
     """
     logger.info("Getting connection(s) for " + startbhf + ", " + zielbhf + ", " + date + "\n")
     connections = get_connection(startbhf, zielbhf, datetime.strptime(date, '%d.%m.%Y %H:%M'))
+    print("duuude")
+    print(connections)
     connections = json.loads(connections)["routes"]
     connections = clean_data(connections)
 
@@ -201,7 +203,7 @@ def connect():
     """
     logger.debug("Somebody connected")
     data = request.form['keyword']
-    bhfs = pd.read_csv("data/wetterdaten/bahnhof_to_weather_location.csv", sep=",", index_col=False)
+    bhfs = pd.read_csv("server/static_data/auto_complete_bhfs.csv", sep=",", index_col=False)
     data = {"bhf": bhfs["bhf"].tolist()}
     resp = jsonify(data) 
     #resp.headers.add('Access-Control-Allow-Origin', '*')
@@ -236,12 +238,6 @@ def not_found(e):
 
 if __name__ == '__main__':
     #ssl_context='adhoc'
-    print( "\n\x1b[1;32m████████╗ ██████╗██████╗  \n\
-╚══██╔══╝██╔════╝██╔══██╗ \n\
-   ██║   ██║     ██████╔╝ \n\
-   ██║   ██║     ██╔═══╝  \n\
-   ██║   ╚██████╗██║      \n\
-   ╚═╝    ╚═════╝╚═╝ \x1b[0m\n")
     logger.info( "\n\x1b[1;32m████████╗ ██████╗██████╗  \n\
 ╚══██╔══╝██╔════╝██╔══██╗ \n\
    ██║   ██║     ██████╔╝ \n\

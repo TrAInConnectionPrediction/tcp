@@ -6,15 +6,16 @@ import logging
 logger = logging.getLogger('my_app')
 class prediction_data:
     def __init__(self):
-        self.fahrpläne = {}
-        self.fahrplan_basepath = 'data/streckendaten/'
+        self.fahrplaene = {}
+        self.fahrplan_basepath = 'server/static_data/streckendaten/'
 
         try:
-            with open(self.fahrplan_basepath + 'missing_fahrpläne', 'rb') as fp:
-                self.missing_fahrpläne = pickle.load(fp)
-        except:
-            logger.warning('missing_fahrpläne not found in ' + self.fahrplan_basepath)
-            self.missing_fahrpläne = []
+            with open(self.fahrplan_basepath + 'missing_fahrplaene.csv', 'rb+') as fp:
+                self.missing_fahrplaene = pickle.load(fp)
+        except FileNotFoundError:
+            logger.warning('missing_fahrplaene not found in ' + self.fahrplan_basepath + 'so i\m creating it')
+            open(self.fahrplan_basepath + 'missing_fahrplaene', 'a').close()
+            self.missing_fahrplaene = []
     
     def get_pred_data(self, bhf, zugname, date):
         zugname = zugname.replace(' ', '_')
@@ -84,7 +85,7 @@ class prediction_data:
 
     def load_fahrplan(self, zugname):
         try:
-            fahrplan = self.fahrpläne[zugname]
+            fahrplan = self.fahrplaene[zugname]
             return fahrplan
         except KeyError:
             #if the fahrplan is not in memory, try to load it from disk
@@ -94,15 +95,15 @@ class prediction_data:
                                     index_col=False,
                                     engine='c')#c engine is a little faster
                 fahrplan = fahrplan.set_index('bhf')
-                self.fahrpläne[zugname] = fahrplan
+                self.fahrplaene[zugname] = fahrplan
                 #print('loaded timetable for ' + zugname)
                 return fahrplan
             except (FileNotFoundError, UnicodeDecodeError):
                 #If the file was not found we save the zugname to later get the timetable
-                if not zugname in self.missing_fahrpläne:
-                    self.missing_fahrpläne.append(zugname)
-                    with open(self.fahrplan_basepath + 'missing_fahrpläne', 'wb') as fp:
-                        pickle.dump(self.missing_fahrpläne, fp)
+                if not zugname in self.missing_fahrplaene:
+                    self.missing_fahrplaene.append(zugname)
+                    with open(self.fahrplan_basepath + 'missing_fahrplaene.csv', 'wb') as fp:
+                        pickle.dump(self.missing_fahrplaene, fp)
 
                 logger.warning("\x1b[1;31mNo Timetable for "+ zugname + "\x1b[0m")
                 return False
