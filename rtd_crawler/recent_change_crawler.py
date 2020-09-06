@@ -96,8 +96,6 @@ if __name__ == '__main__':
     while True:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
             for i, evas in enumerate(eva_list):
-                monitor_recent_change([8000207], 0, dd)
-                input('lol')
                 executor.submit(monitor_recent_change, evas, i % 10, dd)
                 executor.shutdown(wait=True)
 
