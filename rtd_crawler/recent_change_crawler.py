@@ -1,3 +1,6 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lxml.etree as etree
 from helpers.StationPhillip import StationPhillip
 from rtd_crawler.SimplestDownloader import SimplestDownloader
