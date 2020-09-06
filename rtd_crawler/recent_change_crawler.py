@@ -12,6 +12,7 @@ import json
 import datetime
 from database.change import ChangeManager
 from rtd_crawler.xml_parser import xml_to_json
+import progressbar
 
 
 def preparse_changes(changes):
@@ -28,7 +29,6 @@ def get_db_con():
 
 
 def monitor_recent_change(evas: list, save_to_db: int, dd):
-    # dd = DownloadDave()
     new_changes = {}
     old_changes = [{} for _ in range(len(evas))]
     start_time = time.time()
@@ -95,8 +95,12 @@ if __name__ == '__main__':
     dd = SimplestDownloader()
     while True:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
+            print('starting crawlers for {}'.format(str(datetime.datetime.now())))
+            bar = progressbar.ProgressBar(max_value=len(eva_list)).start()
             for i, evas in enumerate(eva_list):
                 executor.submit(monitor_recent_change, evas, i % 10, dd)
-                executor.shutdown(wait=True)
+                bar.update(i)
+            bar.finish()
+            executor.shutdown(wait=True)
 
         upload_local_db()
