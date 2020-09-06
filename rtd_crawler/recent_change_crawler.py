@@ -38,7 +38,7 @@ def monitor_recent_change(evas: list, save_to_db: int, dd):
             changes = preparse_changes(changes)
             # There might be two different changes for a specific train in the changes. Looping in reverse makes the
             # most recent change to be added last.
-            for train_id in reversed(changes):
+            for train_id in reversed(changes.keys()):
                 if train_id not in old_changes or changes[train_id] != old_changes[i][train_id]:
                     new_changes[train_id] = changes[train_id]
 
@@ -58,11 +58,12 @@ def monitor_recent_change(evas: list, save_to_db: int, dd):
             new_changes = {}
         save_to_db += 1
 
-        print((time.time() - start_time) % 90.0)
+        # print((time.time() - start_time) % 90.0)
         time.sleep(90 - ((time.time() - start_time) % 90))
 
 
 def upload_local_db():
+    start_time = time.time()
     db = ChangeManager()
     conn, c = get_db_con()
     c.execute('SELECT * from rchg')
@@ -70,6 +71,7 @@ def upload_local_db():
         db.add_change(hash_id=change[0], change=change[1])
     c.execute('DELETE * from rchg')
     db.commit()
+    print('needed {} minutes to upload db'.format((time.time() - start_time) / 60))
 
 
 if __name__ == '__main__':
