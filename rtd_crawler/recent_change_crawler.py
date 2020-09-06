@@ -38,7 +38,7 @@ def monitor_recent_change(evas: list, save_to_db: int, dd):
             changes = preparse_changes(changes)
             # There might be two different changes for a specific train in the changes. Looping in reverse makes the
             # most recent change to be added last.
-            for train_id in reversed(changes.keys()):
+            for train_id in reversed(list(changes.keys())):
                 if train_id not in old_changes or changes[train_id] != old_changes[i][train_id]:
                     new_changes[train_id] = changes[train_id]
 
