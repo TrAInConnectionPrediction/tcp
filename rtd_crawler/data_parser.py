@@ -3,16 +3,14 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import pangres
-import sqlalchemy
 from sqlalchemy import Integer, Text, DateTime, String
-from sqlalchemy.dialects.postgresql import JSON, insert, ARRAY
+from sqlalchemy.dialects.postgresql import JSON, ARRAY
 import datetime
 import progressbar
 from helpers.StationPhillip import StationPhillip
 from rtd_crawler.DatabaseOfDoom import DatabaseOfDoom
+import database.rtd
 from rtd_crawler.hash64 import hash64
-
-from config import db_database, db_password, db_server, db_username
 
 
 sql_types = {
@@ -77,6 +75,7 @@ sql_types = {
     'id': Text,
     'hash_id': Integer
 }
+
 # these are the names of columns, that contain a time and should be parsed into a datetime
 time_names = ('pt', 'ct', 'clt', 'ts')
 message_parts_to_parse = ('id', 't', 'c', 'ts')
@@ -261,8 +260,7 @@ def upload_data(df):
 
 
 if __name__ == "__main__":
-    engine = sqlalchemy.create_engine(
-        'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
+    from database.engine import engine
     stations = StationPhillip()
     db = DatabaseOfDoom()
 
