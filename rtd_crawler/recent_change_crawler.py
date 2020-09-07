@@ -67,11 +67,20 @@ def upload_local_db():
     db = ChangeManager()
     conn, c = get_db_con()
     c.execute('SELECT * from rchg')
+    i = 0
     for change in c:
         db.add_change(hash_id=change[0], change=change[1])
-    c.execute('DELETE * from rchg')
+        i += 1
+    c.execute('DROP rchg')
+    conn.commit()
     db.commit()
-    print('needed {} minutes to upload db'.format((time.time() - start_time) / 60))
+    c.execute("""CREATE TABLE rchg (
+                 hash_id int PRIMARY KEY,
+                 change json
+                 )""")
+    conn.commit()
+    conn.close()
+    print('needed {} minutes to upload {} rows to db'.format((time.time() - start_time) / 60), i)
 
 
 if __name__ == '__main__':
