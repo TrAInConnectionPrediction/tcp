@@ -71,7 +71,7 @@ def upload_local_db():
     for change in c:
         db.add_change(hash_id=change[0], change=change[1])
         i += 1
-    c.execute('DROP rchg')
+    c.execute('DROP TABLE rchg')
     conn.commit()
     db.commit()
     c.execute("""CREATE TABLE rchg (
@@ -87,8 +87,7 @@ if __name__ == '__main__':
     import fancy_print_tcp
     # create database and table if not existing.
     try:
-        conn = sqlite3.connect('data_buffer/recent_changes.db')
-        c = conn.cursor()
+        conn, c = get_db_con()
         c.execute("""CREATE TABLE rchg (
                      hash_id int PRIMARY KEY,
                      change json
