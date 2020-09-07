@@ -2,12 +2,14 @@ import pandas as pd
 from datetime import datetime
 import pickle
 import logging
+import os
 
-logger = logging.getLogger('my_app')
+logger = logging.getLogger(__name__)
+
 class prediction_data:
     def __init__(self):
         self.fahrplaene = {}
-        self.fahrplan_basepath = 'server/static_data/streckendaten/'
+        self.fahrplan_basepath = os.path.dirname(os.path.realpath(__file__))+ '/static_data/streckendaten/'
 
         try:
             with open(self.fahrplan_basepath + 'missing_fahrplaene.csv', 'rb+') as fp:
@@ -26,7 +28,7 @@ class prediction_data:
         except ValueError:
             pass
         if not bhf in fahrplan.index:
-            logger.warning("\x1b[1;31mBhf not in Timetable "+ bhf + "\x1b[0m")
+            logger.warning("Bhf not in Timetable "+ bhf)
             #if we don't have the bhf in the timetable, we can't get the data
             return False
 
@@ -70,7 +72,7 @@ class prediction_data:
             data['delta_lon'] = fahrplan.at[bhf,'delta_lon']
             data['delta_lat'] = fahrplan.at[bhf,'delta_lat']
         except KeyError:
-            logger.warning("\x1b[1;31mFor some reason"+ zugname + " has a key error \x1b[0m")
+            logger.warning("For some reason"+ zugname + " has a key error")
 
         try:#sometimes data['stay_time'] is kind of an array.
             #I don't know why, but we catch it anyway.
@@ -105,6 +107,5 @@ class prediction_data:
                     with open(self.fahrplan_basepath + 'missing_fahrplaene.csv', 'wb') as fp:
                         pickle.dump(self.missing_fahrplaene, fp)
 
-                logger.warning("\x1b[1;31mNo Timetable for "+ zugname + "\x1b[0m")
+                logger.warning("No Timetable for "+ zugname)
                 return False
-

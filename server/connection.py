@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 from pytz import timezone
 import logging
 
+logger = logging.getLogger(__name__)
+#basepath = os.path.dirname(os.path.realpath(__file__))
+
 def toLocal(dt):
     ''' Setzt automatich in die Zeitzone in unsere und convertiert die Zeit'''
     return dt.astimezone(timezone('Europe/Berlin'))
@@ -35,9 +38,9 @@ def get_connection(start, destination, time):
         '''
     #marudor will unix zeit in UTC zeit aber .timestamp macht des automatich wenn die Zeitzone gesetzt ist
     json={"start":get_station(start)[0]['id'],"destination":get_station(destination)[0]['id'],"time":setToUTCTime(time, 1).timestamp()*1000,"maxChanges":"-1","transferTime":"0","hafasProfile":"db"}
-    logging.debug(json)
+    logger.debug(json)
     r = requests.post('https://marudor.de/api/hafas/v2/tripSearch?profile=db', json=json)
-    logging.debug(r.status_code)
+    logger.debug(r.status_code)
     return r.text
 
 

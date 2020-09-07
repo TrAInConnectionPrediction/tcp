@@ -4,8 +4,10 @@ import numpy as np
 import pandas as pd
 from joblib import dump, load
 import sys
+import os
 #import logging
 
+basepath = os.path.dirname(os.path.realpath(__file__))
 
 def train_and_test(X, y, X_test, y_test, name):
     clf = ExtraTreesClassifier(n_estimators=70, max_depth=12,
@@ -13,7 +15,7 @@ def train_and_test(X, y, X_test, y_test, name):
     clf.fit(X, y)
     
     #save the trained model
-    dump(clf, 'server/ml_models/' + name + '_extra.joblib')
+    dump(clf, basepath + '/ml_models/' + name + '_extra.joblib')
 
     #make and print some acc statistics
     test_pred = clf.predict(X_test)
@@ -163,7 +165,7 @@ def train():
 class predictor:
     def __init__(self):
         try:
-            self.multiclass_rf = load('server/ml_models/multiclass_extra.joblib')
+            self.multiclass_rf = load(basepath + '/ml_models/multiclass_extra.joblib')
         except FileNotFoundError:
             if input("Models not present! Create Models? y/[n]") == "y":
                 train()

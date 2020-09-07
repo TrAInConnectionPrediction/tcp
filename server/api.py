@@ -1,42 +1,23 @@
-from flask import Flask, render_template, request, redirect, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify
+from flask import Blueprint
 from datetime import datetime, timedelta
 from pytz import timezone
 import json
 import sys
 import pandas as pd
-import warnings
-from flask_cors import CORS
 import logging
-import logging.handlers as handlers
+import os
 
 # self-writen stuff
-from predict_data import prediction_data
-from connection import get_connection, clean_data
-from random_forest import predictor
-
-logger = logging.getLogger('my_app')
-logger.setLevel(logging.INFO)
-
-# Here we define our formatter
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-logHandler = handlers.TimedRotatingFileHandler('server/logs/website.log', when='M', interval=1, backupCount=10)
-logHandler.setLevel(logging.INFO)
-# Here we set our logHandler's formatter
-logHandler.setFormatter(formatter)
+from server.predict_data import prediction_data
+from server.connection import get_connection, clean_data
+from server.random_forest import predictor
 
 
-logger.addHandler(logHandler)
+bp = Blueprint("api", __name__, url_prefix="/api")
 
-#we need to change the paths  https://stackoverflow.com/a/42791810
-app = Flask(__name__, template_folder='website',static_folder='website/',static_url_path='')
-# TODO add config.py data
-app.config['SECRET_KEY'] = ''
-app.config['DEBUG'] = True
-
-
-
-CORS(app)
+logger = logging.getLogger(__name__)
+basepath = os.path.dirname(os.path.realpath(__file__))
 
 # make a new random-forest-predictor instance
 rfp = predictor()
@@ -66,8 +47,6 @@ def analysis(connection):
     Returns:
         dict: the connection with the evaluation/rating
     """
-
-    logger.info('Mache Analyse...')
     total_score = 0
     #change between scheduled and predicted time
     time = 'scheduledTime' # 'time'
@@ -128,7 +107,7 @@ def analysis(connection):
         logger.debug(data2)
         
 
-        logger.info("Score for connection[" + connection[i]['train']['name'] +  ' to ' + connection[i+1]['train']['name'] + ' in ' + connection[i]['segmentDestination']['title'] + "] = " + str(connection[i]['con_score']))
+        logger.debug("Score for connection[" + connection[i]['train']['name'] +  ' to ' + connection[i+1]['train']['name'] + ' in ' + connection[i]['segmentDestination']['title'] + "] = " + str(connection[i]['con_score']))
         if (total_score == 0):
             total_score = connection[i]['con_score']
         else:
@@ -145,7 +124,7 @@ def analysis(connection):
     else:
         connection[-1]['total_score'] =  int(total_score * 100)
 
-    logger.info('Verbindungsscore:' + str(total_score))
+    logger.debug('Verbindungsscore:' + str(total_score))
     return connection
 
 
@@ -162,10 +141,8 @@ def calc_con(startbhf, zielbhf, date):
     Returns:
         dict: a dict with different connections
     """
-    logger.info("Getting connection(s) for " + startbhf + ", " + zielbhf + ", " + date + "\n")
+    logger.info("Getting connections from " + startbhf + " to " + zielbhf + ", " + date)
     connections = get_connection(startbhf, zielbhf, datetime.strptime(date, '%d.%m.%Y %H:%M'))
-    print("duuude")
-    print(connections)
     connections = json.loads(connections)["routes"]
     connections = clean_data(connections)
 
@@ -173,24 +150,9 @@ def calc_con(startbhf, zielbhf, date):
         connections[i] = analysis(connections[i])
     return connections
 
-@app.route("/")
-@app.route("/home/")
-def home(output = []):
-    """
-    Gets called when somebody requests the website
-    If we want we can redirect to kepiserver.de to the main server
-
-    Args:
-        -
-
-    Returns:
-        html page: the html homepage
-    """
-    #return redirect("http://kepiserver.de/tcp", code=302)
-    return render_template('index.html')
 
 
-@app.route('/connect', methods=['POST'])
+@bp.route('/connect', methods=['POST'])
 def connect():
     """
     Gets called when the website is loaded
@@ -201,15 +163,15 @@ def connect():
     Returns:
         list: a list of strings with all the known train stations
     """
-    logger.debug("Somebody connected")
-    data = request.form['keyword']
-    bhfs = pd.read_csv("server/static_data/auto_complete_bhfs.csv", sep=",", index_col=False)
-    data = {"bhf": bhfs["bhf"].tolist()}
+    logger.info("Screensize: " + request.form['screen'])
+    logger.info("IP: " + request.form['ip'])
+    logger.info("User-Agent: " + request.headers.get('User-Agent'))
+    data = {"bhf": pd.read_csv(basepath + "/static_data/auto_complete_bhfs.csv", sep=",", index_col=False)["bhf"].tolist()}
     resp = jsonify(data) 
-    #resp.headers.add('Access-Control-Allow-Origin', '*')
+    resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
 
-@app.route('/api', methods=['POST'])
+@bp.route('/trip', methods=['POST'])
 def api():
     """
     Interface using POST request
@@ -223,25 +185,9 @@ def api():
         json: All the possible connections
     """
 
-
     #add check for right datetime here
 
     data = calc_con(request.form['startbhf'], request.form['zielbhf'], request.form['date'])
     resp = jsonify(data) 
+    resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
-
-@app.errorhandler(404)
-def not_found(e): 
-    # inbuilt function which takes error as parameter 
-    # defining function 
-    return render_template("404.html") 
-
-if __name__ == '__main__':
-    #ssl_context='adhoc'
-    logger.info( "\n\x1b[1;32m████████╗ ██████╗██████╗  \n\
-╚══██╔══╝██╔════╝██╔══██╗ \n\
-   ██║   ██║     ██████╔╝ \n\
-   ██║   ██║     ██╔═══╝  \n\
-   ██║   ╚██████╗██║      \n\
-   ╚═╝    ╚═════╝╚═╝ \x1b[0m\n")
-    app.run(host= '127.0.0.1', port=5000)
