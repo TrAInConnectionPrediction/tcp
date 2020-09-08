@@ -30,19 +30,15 @@ def get_db_con():
 
 def monitor_recent_change(evas: list, save_to_db: int, dd):
     new_changes = {}
-    old_changes = [{} for _ in range(len(evas))]
     start_time = time.time()
     while datetime.datetime.now().hour != 3:
-        for i, eva in enumerate(evas):
+        for eva in evas:
             changes = dd.get_recent_change(eva)
             changes = preparse_changes(changes)
             # There might be two different changes for a specific train in the changes. Looping in reverse makes the
             # most recent change to be added last.
             for train_id in reversed(list(changes.keys())):
-                if train_id not in old_changes or changes[train_id] != old_changes[i][train_id]:
-                    new_changes[train_id] = changes[train_id]
-
-            old_changes[i] = changes
+                new_changes[train_id] = changes[train_id]
 
         if save_to_db % 10 == 0:
             # load changes to local sqlite db
