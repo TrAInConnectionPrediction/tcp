@@ -20,7 +20,7 @@ class Change(Base):
 try:
     Base.metadata.create_all(engine)
 except sqlalchemy.exc.OperationalError:
-    print('plan running offline!')
+    print('database.change running offline!')
 
 
 class ChangeManager:
@@ -29,7 +29,7 @@ class ChangeManager:
 
     queue = []
 
-    def upsert(self, rows):
+    def upsert(self, rows: list):
         table = Change.__table__
 
         stmt = insert(table).values(rows)
@@ -42,7 +42,7 @@ class ChangeManager:
         )
         self.session.execute(on_conflict_stmt)
 
-    def add_change(self, hash_id, change):
+    def add_change(self, hash_id: int, change: dict):
         self.queue.append({'hash_id': hash_id, 'change': change})
         if len(self.queue) > 10000:
             self.commit()
@@ -52,8 +52,28 @@ class ChangeManager:
         self.queue = []
         self.session.commit()
 
-    def get_json(self, hash_ids: list):
+    def get_changes(self, hash_ids: list):
+        """
+        Get changes that have a given hash_id
+
+        Parameters
+        ----------
+        hash_ids: list
+            A list of hash_ids to get the corresponding rows from the db
+
+        Returns
+        -------
+        Sqlalchemy query with the results
+        """
         return self.session.query(Change).filter(Change.hash_id.in_(hash_ids)).all()
 
-    def count_entries(self, date):
+    def count_entries(self) -> int:
+        """
+        Get the number of rows in db.
+
+        Returns
+        -------
+        int
+            Number of Rows
+        """
         return self.session.query(Change).count()

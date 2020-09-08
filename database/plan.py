@@ -2,8 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT
-from sqlalchemy.dialects.postgresql import JSON, insert, ARRAY
+from sqlalchemy import Column, Text, DateTime
+from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from database.engine import engine
@@ -22,7 +22,7 @@ class Plan(Base):
 try:
     Base.metadata.create_all(engine)
 except sqlalchemy.exc.OperationalError:
-    print('plan running offline!')
+    print('database.plan running offline!')
 
 
 class PlanManager:
@@ -58,7 +58,7 @@ class PlanManager:
         self.queue = []
         self.session.commit()
 
-    def get_json(self, bhf, date1, date2):
+    def plan_of_station(self, bhf: str, date1: datetime.datetime, date2: datetime.datetime):
         if date1 is None:
             return self.session.query(Plan).filter((Plan.bhf == bhf)).all()
         if date2 is None:
@@ -68,5 +68,5 @@ class PlanManager:
                                                & (Plan.date >= date1)
                                                & (Plan.date < date2)).all()
 
-    def count_entries_at_date(self, date):
+    def count_entries_at_date(self, date: datetime.datetime) -> int:
         return self.session.query(Plan).filter(Plan.date == date).count()
