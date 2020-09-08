@@ -39,8 +39,9 @@ if __name__ == '__main__':
                 i = 0
                 for eva, bhf in zip(evas, stations.sta_list):
                     plan = dd.get_plan(station_id=eva, date=str_date, hour=hour)
-                    plan = preparse_plan(plan)
-                    db.add_plan(plan=plan, bhf=bhf, date=date, hour=hour)
+                    if plan is not None:
+                        plan = preparse_plan(plan)
+                        db.add_plan(plan=plan, bhf=bhf, date=date, hour=hour)
                     bar.update(i)
                     i += 1
                 db.commit()
