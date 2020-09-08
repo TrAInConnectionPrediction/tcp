@@ -80,7 +80,7 @@ def upload_local_db():
                  )""")
     conn.commit()
     conn.close()
-    print('needed {} minutes to upload {} rows to db'.format((time.time() - start_time) / 60), i)
+    print('needed {time} minutes to upload {rows} rows to db'.format(time=(time.time() - start_time) / 60, rows=i))
 
 
 if __name__ == '__main__':
