@@ -3,17 +3,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
+from database.rtd import Rtd
 
-import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String
-from sqlalchemy.sql import select
-from sqlalchemy.dialects.postgresql import JSON
-from sqlalchemy.ext.declarative import declarative_base
-from rtd_crawler.DatabaseOfDoom import RtdDbModel
 
-from config import db_database, db_password, db_server, db_username
-
-class RtdRay(RtdDbModel):
+class RtdRay(Rtd):
     df_dict = {
         'ar_ppth': pd.Series([], dtype='str'),
         'ar_cpth': pd.Series([], dtype='str'),
@@ -31,7 +24,10 @@ class RtdRay(RtdDbModel):
         'ar_cde': pd.Series([], dtype='str'),
         'ar_dc': pd.Series([], dtype='Int64'),
         'ar_l': pd.Series([], dtype='str'),
-        'ar_m': pd.Series([], dtype='object'),
+        'ar_m_id': pd.Series([], dtype='object'),
+        'ar_m_t': pd.Series([], dtype='object'),
+        'ar_m_ts': pd.Series([], dtype='object'),
+        'ar_m_c': pd.Series([], dtype='object'),
 
         'dp_ppth': pd.Series([], dtype='str'),
         'dp_cpth': pd.Series([], dtype='str'),
@@ -49,7 +45,10 @@ class RtdRay(RtdDbModel):
         'dp_cde': pd.Series([], dtype='str'),
         'dp_dc': pd.Series([], dtype='Int64'),
         'dp_l': pd.Series([], dtype='str'),
-        'dp_m': pd.Series([], dtype='object'),
+        'dp_m_id': pd.Series([], dtype='object'),
+        'dp_m_t': pd.Series([], dtype='object'),
+        'dp_m_ts': pd.Series([], dtype='object'),
+        'dp_m_c': pd.Series([], dtype='object'),
 
         'f': pd.Series([], dtype='str'),
         't': pd.Series([], dtype='str'),
@@ -57,7 +56,10 @@ class RtdRay(RtdDbModel):
         'c': pd.Series([], dtype='str'),
         'n': pd.Series([], dtype='str'),
 
-        'm': pd.Series([], dtype='object'),
+        'm_id': pd.Series([], dtype='object'),
+        'm_t': pd.Series([], dtype='object'),
+        'm_ts': pd.Series([], dtype='object'),
+        'm_c': pd.Series([], dtype='object'),
         'hd': pd.Series([], dtype='object'),
         'hdc': pd.Series([], dtype='object'),
         'conn': pd.Series([], dtype='object'),
@@ -76,29 +78,41 @@ class RtdRay(RtdDbModel):
             self.LOCAL_BUFFER_PATH = 'data_buffer/' + self.Rtd.__tablename__ + '_local_buffer'
 
     def refresh_local_buffer(self):
-        """pull the hole db and save it on disk. This takes a while.
+        """
+        Pull the hole rtd table from db and save it on disk. This takes a while.
         """
         with ProgressBar():
             rtd = dd.read_sql_table(self.Rtd.__tablename__, self.DB_CONNECT_STRING,
-                index_col='hash_id', meta=self.meta, npartitions=200)
+                                    index_col='hash_id', meta=self.meta, npartitions=200)
             rtd.to_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow')
 
     def load_data(self, **kwargs):
-        """try to load data from disk. If not present, pull db to disk and then open it.
-        It may not work when the data is getting pulled from db (unicode decode error).
+        """
+        Try to load data from disk. If not present, pull db to disk and then open it.
+        It may not work after the data was pulled from db (unicode decode error).
         Deleting _metadata and _common_metadata will resolve this.
 
-        Returns:
-            dask.DataFrame: dataframe containing the read data
+        Parameters
+        ----------
+        kwargs
+            kwargs passed to dask.dataframe.read_parquet()
+
+        Returns
+        -------
+        dask.DataFrame
+            dask.dataframe containing the loaded data
+
         """
         try:
             data = dd.read_parquet(self.LOCAL_BUFFER_PATH, **kwargs)
         except FileNotFoundError:
-            print('there was no buffer found. A new buffer will be downloaded from the datebase. This will take a while.')
+            print(
+                'There was no buffer found. A new buffer will be downloaded from the db. This will take a while.')
             self.refresh_local_buffer()
             data = dd.read_parquet(self.LOCAL_BUFFER_PATH, **kwargs)
-        
+
         return data
+
 
 if __name__ == "__main__":
     rtd_d = RtdRay()
