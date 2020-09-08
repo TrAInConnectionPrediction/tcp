@@ -54,7 +54,7 @@ class StationPhillip:
         Returns
         -------
         geopandas.DateFrame
-            Stations with coordinates as geametry for geopandas.DataFrame.
+            Stations with coordinates as geometry for geopandas.DataFrame.
         """        
         import geopandas as gpd
         return gpd.GeoDataFrame(self.station_df, geometry=gpd.points_from_xy(self.station_df.lon, self.station_df.lat))
