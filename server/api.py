@@ -216,7 +216,7 @@ def deploy():
 
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
-            logger.warning("git pull said: " + os.popen("git --git-dir " + basepath + "/../.git pull").read())
+            logger.warning("git pull said: " + os.popen("/usr/bin/git --git-dir " + basepath + "/../.git pull").read())
             git = os.popen(basepath + '/checkgit.sh').read()
 
             if git == "1":
@@ -253,8 +253,8 @@ def gitid():
     """
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
-        git = os.popen('git --git-dir '+basepath+'/../.git rev-parse @').read()
-        resp = resp = jsonify({'resp': git, 'code': 0})
+        git = os.popen('/usr/bin/git git --git-dir '+basepath+'/../.git rev-parse @').read()
+        resp = jsonify({'resp': git, 'code': 0})
     else:
         resp = jsonify({'resp': 'wrong key', 'code': -1})
 
