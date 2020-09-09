@@ -31,7 +31,7 @@ def get_db_con():
 def monitor_recent_change(evas: list, save_to_db: int, dd):
     new_changes = {}
     start_time = time.time()
-    while datetime.datetime.now().hour != 3:
+    while datetime.datetime.now().hour != 3 and (time.time() - start_time) < 60**3:
         for eva in evas:
             changes = dd.get_recent_change(eva)
             changes = preparse_changes(changes)
