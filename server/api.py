@@ -253,7 +253,7 @@ def gitid():
     """
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
-        git = os.popen('/usr/bin/git git --git-dir '+basepath+'/../.git rev-parse @').read()
+        git = os.popen('/usr/bin/git --git-dir '+basepath+'/../.git rev-parse @').read()
         resp = jsonify({'resp': git, 'code': 0})
     else:
         resp = jsonify({'resp': 'wrong key', 'code': -1})
