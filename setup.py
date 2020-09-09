@@ -10,6 +10,7 @@ setup(
         'flask',
         'sklearn',
         'pandas',
-        'requests'
+        'requests',
+        'gunicorn'
     ],
 )

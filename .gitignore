@@ -181,10 +181,14 @@ rtd_crawler/speed.cp37-win_amd64.pyd
 rtd_crawler/speed.html
 notebooks/rtd_buffer
 data/rtd_buffer
+
+#ignore secret config
 config.py
 
+#don't leak our data
+streckendaten/
+data/
+data_buffer/
 
 #ignore logs
 website.log*
-data/
-data_buffer/

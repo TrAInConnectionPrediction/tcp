@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve the webserver
+After=network.target
+
+[Service]
+User=kepler
+Group=www-data
+WorkingDirectory=/home/kepler/tcp_kuthy
+Environment="PATH=/home/kepler/tcp_kuthy/venv/bin"
+ExecStart=/home/kepler/tcp_kuthy/venv/bin/gunicorn -b 10.16.1.200:5000 --workers 3 --bind unix:server.sock -m 007 "server:create_app()"
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response, current_app
 from flask import Blueprint
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -38,6 +38,7 @@ def fromUnix(unix):
 
     return datetime.utcfromtimestamp(float(unix)/1000 + 3600).replace(tzinfo=timezone('Europe/Berlin'))
 
+
 def analysis(connection):
     """
     Analyses/evaluates/rates a given connection using machine learning
@@ -48,12 +49,12 @@ def analysis(connection):
         dict: the connection with the evaluation/rating
     """
     total_score = 0
-    #change between scheduled and predicted time
-    time = 'scheduledTime' # 'time'
+    # change between scheduled and predicted time
+    time = 'scheduledTime'  # 'time'
     connection[-1]['totaltime'] = 0
     connection[-1]['transfers'] = len(connection)-2
-    
-    #sometimes the first segment is a Fußweg. We cannot predict delays for that
+
+    # sometimes the first segment is a Fußweg. We cannot predict delays for that
     index1 = 1 if (connection[0]['train']['name'] == 'Fußweg') else 0
     index2 = 3 if (connection[-2]['train']['name'] == 'Fußweg') else 2
 
@@ -85,7 +86,7 @@ def analysis(connection):
         else:
             connection[i]['train']['d_type'] = 'unknown'
 
-    #there are two segments more than connections (= overall info at the end - 1 bc it is like that)
+    # there are two segments more than connections (= overall info at the end - 1 bc it is like that)
     for i in range(index1, len(connection)-index2):
         if (connection[i]['train']['name'] == 'Fußweg'):
             connection[-1]['transfers'] -= 1
@@ -105,7 +106,7 @@ def analysis(connection):
 
         logger.debug(data1)
         logger.debug(data2)
-        
+
 
         logger.debug("Score for connection[" + connection[i]['train']['name'] +  ' to ' + connection[i+1]['train']['name'] + ' in ' + connection[i]['segmentDestination']['title'] + "] = " + str(connection[i]['con_score']))
         if (total_score == 0):
@@ -114,15 +115,15 @@ def analysis(connection):
             total_score *= connection[i]['con_score']
 
     #Calculate total time from start to end
-    totaltime = (fromUnix(connection[-2]['arrival'][time]) - fromUnix(connection[0]['departure'][time]))
+    totaltime = fromUnix(connection[-2]['arrival'][time]) - fromUnix(connection[0]['departure'][time])
     #we strip the seconds off the back
     connection[-1]['totaltime'] = str(totaltime)[:-3] 
     
-    #When there ist no connection we always give 100% score
-    if(len(connection) == 2): 
+    # When there ist no connection we always give 100% score
+    if(len(connection) == 2):
         connection[-1]['total_score'] = 100
     else:
-        connection[-1]['total_score'] =  int(total_score * 100)
+        connection[-1]['total_score'] = int(total_score * 100)
 
     logger.debug('Verbindungsscore:' + str(total_score))
     return connection
@@ -151,7 +152,6 @@ def calc_con(startbhf, zielbhf, date):
     return connections
 
 
-
 @bp.route('/connect', methods=['POST'])
 def connect():
     """
@@ -171,6 +171,7 @@ def connect():
     resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
 
+
 @bp.route('/trip', methods=['POST'])
 def api():
     """
@@ -185,9 +186,76 @@ def api():
         json: All the possible connections
     """
 
-    #add check for right datetime here
+    # add check for right datetime here
 
     data = calc_con(request.form['startbhf'], request.form['zielbhf'], request.form['date'])
     resp = jsonify(data) 
     resp.headers.add('Access-Control-Allow-Origin', '*')
+    return resp
+
+
+@bp.route('/deploy', methods=['POST'])
+def deploy():
+    """
+    Interface using POST request
+    Deploys the project
+
+    Args:
+        In the POST request
+
+    Returns:
+        json: Succsees
+    """
+
+    if request.form['key'] == current_app.config["DEPLOY_KEY"]:
+        git = os.popen(basepath + '/checkgit.sh').read()
+        if git == "1":
+            logger.warning("Deploy was requested, but no need to, since I'm up to date")
+
+            return jsonify({'resp': 'no need to pull', 'code': 1})
+
+        elif git == "2":
+            logger.warning("Deploy was requested, and I'm behind, so pulling")
+            logger.warning("git pull said: " + os.popen("git --git-dir " + basepath + "/../.git pull").read())
+            git = os.popen(basepath + '/checkgit.sh').read()
+
+            if git == "1":
+                logger.warning('Pull was succesfull restarting webserver...')
+                response = Response()
+
+                @response.call_on_close
+                def on_close():
+                    logger.warning(os.popen(basepath + '/restart.sh').read())
+                    return
+
+                response.set_data(str({'resp': 'pull was succesfull restarting webserver', "code": 0}))
+
+                return response
+            else:
+                return jsonify({'resp': "pull did't succeed", 'code': 2})
+
+    else:
+        return jsonify({'resp': 'wrong key', 'code': -1})
+
+    return response
+
+@bp.route('/gitid', methods=['POST'])
+def gitid():
+    """
+    Interface using POST request
+    Returns the last commit id the server is on
+
+    Args:
+        The deploy key
+
+    Returns:
+        json: Current git id
+    """
+
+    if request.form['key'] == current_app.config["DEPLOY_KEY"]:
+        git = os.popen('git --git-dir '+basepath+'/../.git rev-parse @').read()
+        resp = resp = jsonify({'resp': git, 'code': 0})
+    else:
+        resp = jsonify({'resp': 'wrong key', 'code': -1})
+
     return resp
