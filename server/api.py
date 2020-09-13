@@ -156,16 +156,24 @@ def calc_con(startbhf, zielbhf, date):
 def connect():
     """
     Gets called when the website is loaded
+    And gets some data from and about the user
+    It returns the trainstations for the autofill forms
 
     Args:
-        You can get something from the post request, but at the moment nothing
+        screen (from request): the users screensize
+        ip (from request): the users public ip
+        User-Agent (from request headers): the useragent, which the user uses
 
     Returns:
         list: a list of strings with all the known train stations
     """
-    logger.info("Screensize: " + request.form['screen'])
-    logger.info("IP: " + request.form['ip'])
-    logger.info("User-Agent: " + request.headers.get('User-Agent'))
+    try:
+        logger.info("Screensize: " + request.form['screen'])
+        logger.info("IP: " + request.form['ip'])
+        logger.info("User-Agent: " + request.headers.get('User-Agent'))
+    except:
+        #the user doesn't have to send us data
+        pass
     data = {"bhf": pd.read_csv(basepath + "/static_data/auto_complete_bhfs.csv", sep=",", index_col=False)["bhf"].tolist()}
     resp = jsonify(data) 
     resp.headers.add('Access-Control-Allow-Origin', '*')
@@ -175,12 +183,13 @@ def connect():
 @bp.route('/trip', methods=['POST'])
 def api():
     """
-    Interface using POST request
     Gets a connection from ```startbhf``` to ```zielbhf``` at a given date ```date``` using marudors HAFAS api.
     And rates the connection
 
     Args:
-        In the POST request
+        startbhf (from request): the trainstation from which to start
+        zielbhf (from request): the trainstation, which is the destination
+        date (from request): the date and time at which the trip should take place
 
     Returns:
         json: All the possible connections
@@ -197,18 +206,22 @@ def api():
 @bp.route('/deploy', methods=['POST'])
 def deploy():
     """
-    Interface using POST request
-    Deploys the project
+    Pulls the newest changes from Github
+    And then restarts the systemctl service
+
+    Can be triggered by using for ex.: ```curl --data 'key=DEPLOY_KEY' http://IP/api/deploy```
 
     Args:
-        In the POST request
+        key (from request): Deploy-key for authenticating the server
 
     Returns:
-        json: Succsees
+        resp: What happend
+        code: Specific codes for each outcome
     """
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
         git = os.popen(basepath + '/checkgit.sh').read()
+
         if git == "1":
             logger.warning("Deploy was requested, but no need to, since I'm up to date")
 
@@ -232,30 +245,30 @@ def deploy():
 
                 return response
             else:
-                return jsonify({'resp': "pull did't succeed", 'code': 2})
+                return jsonify({'resp': "pull did't succeed", 'code': -2})   
 
     else:
         return jsonify({'resp': 'wrong key', 'code': -1})
-
-    return response
+    
+    return jsonify({'resp': 'something went wrong', 'code': -3})
 
 @bp.route('/gitid', methods=['POST'])
 def gitid():
     """
-    Interface using POST request
-    Returns the last commit id the server is on
+    Returns the last commit id the repository is on
 
     Args:
-        The deploy key
+        key (from request): Deploy-key for authenticating the server
 
     Returns:
-        json: Current git id
+        resp: The commitid
+        code: Specific codes for each outcome
     """
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
-        git = os.popen('/usr/bin/git --git-dir '+basepath+'/../.git rev-parse @').read()
+        git = os.popen('/usr/bin/git --git-dir '+basepath+'/../.git rev-parse @').read().replace("\n", "")
         resp = jsonify({'resp': git, 'code': 0})
     else:
-        resp = jsonify({'resp': 'wrong key', 'code': -1})
+        resp = jsonify({'resp': '', 'code': -1})
 
     return resp

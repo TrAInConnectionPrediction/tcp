@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo restarting
+echo restarting the webserver
 sudo systemctl restart webserver
