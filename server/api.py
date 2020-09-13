@@ -230,7 +230,7 @@ def deploy():
 
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
-            pull = subprocess.run(['/usr/bin/git', '--git-dir ', basepath + '/../.git', 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            pull = subprocess.run(["/usr/bin/git", '-C', basepath, 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             logger.warning("git pull said: " + pull)
             git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
@@ -240,7 +240,7 @@ def deploy():
 
                 @response.call_on_close
                 def on_close():
-                    logger.warning(git = subprocess.run(['/bin/bash', basepath + '/restart.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
+                    logger.warning(subprocess.run(['/bin/bash', basepath + '/restart.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
                     return
 
                 response.set_data(str({'resp': 'pull was succesfull restarting webserver', "code": 0}))
@@ -268,7 +268,7 @@ def gitid():
     """
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
-        git = os.popen('/usr/bin/git --git-dir '+basepath+'/../.git rev-parse @').read().replace("\n", "")
+        git = subprocess.run(["/usr/bin/git", '-C', basepath, 'rev-parse', '@'], stdout=subprocess.PIPE).stdout.decode('utf-8').replace("\n", "")
         resp = jsonify({'resp': git, 'code': 0})
     else:
         resp = jsonify({'resp': '', 'code': -1})
