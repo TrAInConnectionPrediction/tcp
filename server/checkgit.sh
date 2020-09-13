@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+export PATH=/usr/bin
 
 #code from https://stackoverflow.com/questions/3258243/check-if-pull-needed-in-git
 #https://stackoverflow.com/a/246128/7246401

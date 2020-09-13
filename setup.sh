@@ -1,4 +1,4 @@
- #!/bin/sh
+#!/bin/bash
 
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
@@ -7,9 +7,16 @@ fi
 
 echo setting up virtual env...
 
-python3 -m venv venv
+#https://stackoverflow.com/a/40950971/7246401
+ver=$(python -V 2>&1 | sed 's/.* \([0-9]\).\([0-9]\).*/\1\2/')
+if [ "$ver" -lt "35" ]; then
+    echo "This script requires python 3.5 or greater"
+    exit 1
+fi
 
-source venv/bin/activate
+python -m venv venv
+
+. venv/bin/activate
 
 echo done
 
@@ -30,10 +37,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 dest="/etc/systemd/system/webserver.service"
 
 sudo sed "s|SOURCE_PATH|${SCRIPT_DIR}|g" server/webserver.service > ${dest}
-sudo sed -i "" "s|SERVER_IP|${1:-"10.16.1.200:5000"}|g" ${dest}
-sudo sed -i "" "s|USERNAME|$(logname)|g" ${dest}
+sudo sed -i "s|SERVER_IP|${1:-"10.16.1.200:5000"}|g" ${dest}
+sudo sed -i "s|USERNAME|$(logname)|g" ${dest}
 
-sudo sytemctl daemon-reload
+sudo systemctl daemon-reload
 
 echo done
 

@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 import logging
 import os
+import subprocess
 
 # self-writen stuff
 from server.predict_data import prediction_data
@@ -220,7 +221,7 @@ def deploy():
     """
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
-        git = os.popen(basepath + '/checkgit.sh').read()
+        git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
         if git == "1":
             logger.warning("Deploy was requested, but no need to, since I'm up to date")
@@ -229,8 +230,9 @@ def deploy():
 
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
-            logger.warning("git pull said: " + os.popen("/usr/bin/git --git-dir " + basepath + "/../.git pull").read())
-            git = os.popen(basepath + '/checkgit.sh').read()
+            pull = subprocess.run(['/usr/bin/git', '--git-dir ', basepath + '/../.git', 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            logger.warning("git pull said: " + pull)
+            git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
             if git == "1":
                 logger.warning('Pull was succesfull restarting webserver...')
@@ -238,7 +240,7 @@ def deploy():
 
                 @response.call_on_close
                 def on_close():
-                    logger.warning(os.popen(basepath + '/restart.sh').read())
+                    logger.warning(git = subprocess.run(['/bin/bash', basepath + '/restart.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
                     return
 
                 response.set_data(str({'resp': 'pull was succesfull restarting webserver', "code": 0}))
