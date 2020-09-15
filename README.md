@@ -19,10 +19,6 @@ TrAIn_Connection_Prediction ║   ║
 
 Winning project of the German National Artificial Intelligence Competition 2019 called [BWKI](https://bw-ki.de).
 
-## TODOS:
-
-[Here](https://github.com/orgs/TrAInConnectionPrediction/projects/1) are the [ToDo's](https://github.com/orgs/TrAInConnectionPrediction/projects/1).
- 
 ## Credits:
 
   - Marius De Kuthy Meurers aka [kuthy](https://github.com/mariusdkm)
