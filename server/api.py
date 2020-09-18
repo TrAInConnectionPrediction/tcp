@@ -226,12 +226,12 @@ def deploy():
         if git == "1":
             logger.warning("Deploy was requested, but no need to, since I'm up to date")
 
-            return jsonify({'resp': 'no need to pull', 'code': 1})
+            return jsonify({"resp": "no need to pull", "code": 1})
 
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
-            reset = subprocess.run(["/usr/bin/git", '-C', basepath, 'reset', '--hard', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-            pull = subprocess.run(["/usr/bin/git", '-C', basepath, 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            reset = subprocess.run(['/usr/bin/git', '-C', basepath, 'reset', '--hard', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            pull = subprocess.run(['/usr/bin/git', '-C', basepath, 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             logger.warning("git pull said: " + pull)
             git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
@@ -244,16 +244,16 @@ def deploy():
                     logger.warning(subprocess.run(['/bin/bash', basepath + '/restart.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
                     return
 
-                response.set_data(str({'resp': 'pull was succesfull restarting webserver', "code": 0}))
+                response.set_data(str({"resp": "pull was succesfull restarting webserver", "code": 0}))
 
                 return response
             else:
-                return jsonify({'resp': "pull did't succeed", 'code': -2})   
+                return jsonify({"resp": "pull did't succeed", "code": -2})   
 
     else:
-        return jsonify({'resp': 'wrong key', 'code': -1})
+        return jsonify({"resp": "wrong key", "code": -1})
     
-    return jsonify({'resp': 'something went wrong', 'code': -3})
+    return jsonify({"resp": "something went wrong", "code": -3})
 
 @bp.route('/gitid', methods=['POST'])
 def gitid():
@@ -270,8 +270,8 @@ def gitid():
 
     if request.form['key'] == current_app.config["DEPLOY_KEY"]:
         git = subprocess.run(["/usr/bin/git", '-C', basepath, 'rev-parse', '@'], stdout=subprocess.PIPE).stdout.decode('utf-8').replace("\n", "")
-        resp = jsonify({'resp': git, 'code': 0})
+        resp = jsonify({"resp": git, "code": 0})
     else:
-        resp = jsonify({'resp': '', 'code': -1})
+        resp = jsonify({"resp": "", "code": -1})
 
     return resp
