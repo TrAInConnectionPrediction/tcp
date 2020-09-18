@@ -3,7 +3,7 @@ name: B0Te
 # Controls when the action will run. Triggers the workflow on push
 on:
   push:
-    branches: [ master ]
+    branches: [ kuthy ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -21,12 +21,16 @@ jobs:
     # Runs a set of commands using the runners shell
     - name: Deploy on Server
       run: |
-        echo Run boy
-        echo test, and deploy your project.
-        
-    - name: Discord notification
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-      uses: Ilshidur/action-discord@master
-      with:
-        args: 'The project {{ EVENT_PAYLOAD.repository.full_name }} has been deployed.'
+        curl=$(curl -s --data 'key=${{ secrets.DEPLOY_KEY }}' ${{ secrets.DEPLOY_URL }}) 
+        echo curl response: $curl
+        code=$(echo $curl | grep -Po '"code":\K(\d*?|.*?[^\\]")(?=,|})')
+        resp=$(echo $curl | grep -Po '"resp":\K(.*?[^\\]")')
+        echo "code equals:" $code
+        if [ $code -eq 1 ] 
+          then
+          echo Success
+          exit 0
+        else
+          echo The deploy failed with message: $resp
+          exit 1
+        fi
