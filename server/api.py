@@ -230,21 +230,21 @@ def deploy():
 
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
-            reset = subprocess.run(['/usr/bin/git', '-C', basepath, 'reset', '--hard', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-            pull = subprocess.run(['/usr/bin/git', '-C', basepath, 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-            logger.warning("git pull said: " + pull)
+            #I went from git pull and reset hard to first fetch and then merge because i can just overwrite local stuff with the merge
+            fetch = subprocess.run(['/usr/bin/git', '-C', basepath, 'fetch'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            merge = subprocess.run(['/usr/bin/git', '-C', basepath, 'merge', '-s' ,'recursive', '-X', 'theirs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            logger.warning("git merge said: " + merge)
             git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
             if git == "1":
                 logger.warning('Pull was succesfull restarting webserver...')
-                response = Response()
+                
+                response = jsonify({"resp": "pull was succesfull restarting webserver", "code": 0})
 
                 @response.call_on_close
                 def on_close():
                     logger.warning(subprocess.run(['/bin/bash', basepath + '/restart.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
                     return
-
-                response.set_data(str({"resp": "pull was succesfull restarting webserver", "code": 0}))
 
                 return response
             else:
