@@ -23,8 +23,8 @@ jobs:
       run: |
         curl=$(curl -s --data 'key=${{ secrets.DEPLOY_KEY }}' ${{ secrets.DEPLOY_URL }}) 
         echo curl response: $curl
-        code=$(echo $curl | jq .code
-        resp=$(echo $curl | jq .resp
+        code=$(echo $curl | jq .code)
+        resp=$(echo $curl | jq .resp)
         echo "code equals:" $code
         if [ $code -eq 0 ] 
           then
