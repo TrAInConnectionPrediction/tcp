@@ -19,9 +19,10 @@ BASE=$(git merge-base @ "$UPSTREAM")
 if [ $LOCAL = $REMOTE ]; then
     printf 1
 elif [ $LOCAL = $BASE ]; then
-    printf 2
+    printf 2 #we need to pull
 elif [ $REMOTE = $BASE ]; then
     printf 3
 else
-    printf -1
+    printf "%d" -1
+    #why doesn't printf understand negative numbers
 fi

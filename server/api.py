@@ -231,8 +231,12 @@ def deploy():
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
             #I went from git pull and reset hard to first fetch and then merge because i can just overwrite local stuff with the merge
+            if "dev" not in request.form and not current_app.debug:
+                #ok maybe i still need a reset, when I delete a commit or smth, but without the hard flag
+                logger.warning("Reseting git repo since not using the dev flag")
+                reset = subprocess.run(["/usr/bin/git", '-C', basepath, 'reset', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             fetch = subprocess.run(['/usr/bin/git', '-C', basepath, 'fetch'], stdout=subprocess.PIPE).stdout.decode('utf-8')
-            merge = subprocess.run(['/usr/bin/git', '-C', basepath, 'merge', '-s' ,'recursive', '-X', 'theirs'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            merge = subprocess.run(['/usr/bin/git', '-C', basepath, 'merge', '-s' ,'recursive', '-X', 'theirs', '--no-commit'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             logger.warning("git merge said: " + merge)
             git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 
@@ -272,6 +276,6 @@ def gitid():
         git = subprocess.run(["/usr/bin/git", '-C', basepath, 'rev-parse', '@'], stdout=subprocess.PIPE).stdout.decode('utf-8').replace("\n", "")
         resp = jsonify({"resp": git, "code": 0})
     else:
-        resp = jsonify({"resp": "", "code": -1})
+        resp = jsonify({"resp": "does it work?", "code": -1})
 
     return resp
