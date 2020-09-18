@@ -23,10 +23,10 @@ jobs:
       run: |
         curl=$(curl -s --data 'key=${{ secrets.DEPLOY_KEY }}' ${{ secrets.DEPLOY_URL }}) 
         echo curl response: $curl
-        code=$(echo $curl | grep -Po '"code":\K(\d*?|.*?[^\\]")(?=,|})')
-        resp=$(echo $curl | grep -Po '"resp":\K(.*?[^\\]")')
+        code=$(echo $curl | jq .code
+        resp=$(echo $curl | jq .resp
         echo "code equals:" $code
-        if [ $code -eq 1 ] 
+        if [ $code -eq 0 ] 
           then
           echo Success
           exit 0

@@ -230,6 +230,7 @@ def deploy():
 
         elif git == "2":
             logger.warning("Deploy was requested, and I'm behind, so pulling")
+            reset = subprocess.run(["/usr/bin/git", '-C', basepath, 'reset', '--hard', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             pull = subprocess.run(["/usr/bin/git", '-C', basepath, 'pull'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             logger.warning("git pull said: " + pull)
             git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
