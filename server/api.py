@@ -234,7 +234,7 @@ def deploy():
             if "dev" not in request.form and not current_app.debug:
                 #ok maybe i still need a reset, when I delete a commit or smth, but without the hard flag
                 logger.warning("Reseting git repo since not using the dev flag")
-                reset = subprocess.run(["/usr/bin/git", '-C', basepath, 'reset', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+                reset = subprocess.run(["/usr/bin/git", '-C', basepath, 'reset','--hard', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             fetch = subprocess.run(['/usr/bin/git', '-C', basepath, 'fetch'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             merge = subprocess.run(['/usr/bin/git', '-C', basepath, 'merge', '-s' ,'recursive', '-X', 'theirs', '--no-commit'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             logger.warning("git merge said: " + merge)
