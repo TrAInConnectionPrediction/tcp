@@ -1,0 +1,7 @@
+include server/ml_models/multiclass_extra.joblib
+graft server/static_data
+graft server/website
+include server/logs/empty.txt
+global-exclude *.pyc
+global-exclude .DS_Store
+prune python

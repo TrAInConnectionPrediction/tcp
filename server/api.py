@@ -1,42 +1,24 @@
-from flask import Flask, render_template, request, redirect, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, Response, current_app
+from flask import Blueprint
 from datetime import datetime, timedelta
 from pytz import timezone
 import json
 import sys
 import pandas as pd
-import warnings
-from flask_cors import CORS
 import logging
-import logging.handlers as handlers
+import os
+import subprocess
 
 # self-writen stuff
-from predict_data import prediction_data
-from connection import get_connection, clean_data
-from random_forest import predictor
-
-logger = logging.getLogger('my_app')
-logger.setLevel(logging.INFO)
-
-# Here we define our formatter
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-logHandler = handlers.TimedRotatingFileHandler('server/logs/website.log', when='M', interval=1, backupCount=10)
-logHandler.setLevel(logging.INFO)
-# Here we set our logHandler's formatter
-logHandler.setFormatter(formatter)
+from server.predict_data import prediction_data
+from server.connection import get_connection, clean_data
+from server.random_forest import predictor
 
 
-logger.addHandler(logHandler)
+bp = Blueprint("api", __name__, url_prefix="/api")
 
-#we need to change the paths  https://stackoverflow.com/a/42791810
-app = Flask(__name__, template_folder='website',static_folder='website/',static_url_path='')
-# TODO add config.py data
-app.config['SECRET_KEY'] = ''
-app.config['DEBUG'] = True
-
-
-
-CORS(app)
+logger = logging.getLogger(__name__)
+basepath = os.path.dirname(os.path.realpath(__file__))
 
 # make a new random-forest-predictor instance
 rfp = predictor()
@@ -57,6 +39,7 @@ def fromUnix(unix):
 
     return datetime.utcfromtimestamp(float(unix)/1000 + 3600).replace(tzinfo=timezone('Europe/Berlin'))
 
+
 def analysis(connection):
     """
     Analyses/evaluates/rates a given connection using machine learning
@@ -66,15 +49,13 @@ def analysis(connection):
     Returns:
         dict: the connection with the evaluation/rating
     """
-
-    logger.info('Mache Analyse...')
     total_score = 0
-    #change between scheduled and predicted time
-    time = 'scheduledTime' # 'time'
+    # change between scheduled and predicted time
+    time = 'scheduledTime'  # 'time'
     connection[-1]['totaltime'] = 0
     connection[-1]['transfers'] = len(connection)-2
-    
-    #sometimes the first segment is a Fußweg. We cannot predict delays for that
+
+    # sometimes the first segment is a Fußweg. We cannot predict delays for that
     index1 = 1 if (connection[0]['train']['name'] == 'Fußweg') else 0
     index2 = 3 if (connection[-2]['train']['name'] == 'Fußweg') else 2
 
@@ -106,7 +87,7 @@ def analysis(connection):
         else:
             connection[i]['train']['d_type'] = 'unknown'
 
-    #there are two segments more than connections (= overall info at the end - 1 bc it is like that)
+    # there are two segments more than connections (= overall info at the end - 1 bc it is like that)
     for i in range(index1, len(connection)-index2):
         if (connection[i]['train']['name'] == 'Fußweg'):
             connection[-1]['transfers'] -= 1
@@ -126,26 +107,26 @@ def analysis(connection):
 
         logger.debug(data1)
         logger.debug(data2)
-        
 
-        logger.info("Score for connection[" + connection[i]['train']['name'] +  ' to ' + connection[i+1]['train']['name'] + ' in ' + connection[i]['segmentDestination']['title'] + "] = " + str(connection[i]['con_score']))
+
+        logger.debug("Score for connection[" + connection[i]['train']['name'] +  ' to ' + connection[i+1]['train']['name'] + ' in ' + connection[i]['segmentDestination']['title'] + "] = " + str(connection[i]['con_score']))
         if (total_score == 0):
             total_score = connection[i]['con_score']
         else:
             total_score *= connection[i]['con_score']
 
     #Calculate total time from start to end
-    totaltime = (fromUnix(connection[-2]['arrival'][time]) - fromUnix(connection[0]['departure'][time]))
+    totaltime = fromUnix(connection[-2]['arrival'][time]) - fromUnix(connection[0]['departure'][time])
     #we strip the seconds off the back
     connection[-1]['totaltime'] = str(totaltime)[:-3] 
     
-    #When there ist no connection we always give 100% score
-    if(len(connection) == 2): 
+    # When there ist no connection we always give 100% score
+    if(len(connection) == 2):
         connection[-1]['total_score'] = 100
     else:
-        connection[-1]['total_score'] =  int(total_score * 100)
+        connection[-1]['total_score'] = int(total_score * 100)
 
-    logger.info('Verbindungsscore:' + str(total_score))
+    logger.debug('Verbindungsscore:' + str(total_score))
     return connection
 
 
@@ -162,10 +143,8 @@ def calc_con(startbhf, zielbhf, date):
     Returns:
         dict: a dict with different connections
     """
-    logger.info("Getting connection(s) for " + startbhf + ", " + zielbhf + ", " + date + "\n")
+    logger.info("Getting connections from " + startbhf + " to " + zielbhf + ", " + date)
     connections = get_connection(startbhf, zielbhf, datetime.strptime(date, '%d.%m.%Y %H:%M'))
-    print("duuude")
-    print(connections)
     connections = json.loads(connections)["routes"]
     connections = clean_data(connections)
 
@@ -173,75 +152,130 @@ def calc_con(startbhf, zielbhf, date):
         connections[i] = analysis(connections[i])
     return connections
 
-@app.route("/")
-@app.route("/home/")
-def home(output = []):
-    """
-    Gets called when somebody requests the website
-    If we want we can redirect to kepiserver.de to the main server
 
-    Args:
-        -
-
-    Returns:
-        html page: the html homepage
-    """
-    #return redirect("http://kepiserver.de/tcp", code=302)
-    return render_template('index.html')
-
-
-@app.route('/connect', methods=['POST'])
+@bp.route('/connect', methods=['POST'])
 def connect():
     """
     Gets called when the website is loaded
+    And gets some data from and about the user
+    It returns the trainstations for the autofill forms
 
     Args:
-        You can get something from the post request, but at the moment nothing
+        screen (from request): the users screensize
+        ip (from request): the users public ip
+        User-Agent (from request headers): the useragent, which the user uses
 
     Returns:
         list: a list of strings with all the known train stations
     """
-    logger.debug("Somebody connected")
-    data = request.form['keyword']
-    bhfs = pd.read_csv("server/static_data/auto_complete_bhfs.csv", sep=",", index_col=False)
-    data = {"bhf": bhfs["bhf"].tolist()}
+    try:
+        logger.info("Screensize: " + request.form['screen'])
+        logger.info("IP: " + request.form['ip'])
+        logger.info("User-Agent: " + request.headers.get('User-Agent'))
+    except:
+        #the user doesn't have to send us data
+        pass
+    data = {"bhf": pd.read_csv(basepath + "/static_data/auto_complete_bhfs.csv", sep=",", index_col=False)["bhf"].tolist()}
     resp = jsonify(data) 
-    #resp.headers.add('Access-Control-Allow-Origin', '*')
+    resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
 
-@app.route('/api', methods=['POST'])
+
+@bp.route('/trip', methods=['POST'])
 def api():
     """
-    Interface using POST request
     Gets a connection from ```startbhf``` to ```zielbhf``` at a given date ```date``` using marudors HAFAS api.
     And rates the connection
 
     Args:
-        In the POST request
+        startbhf (from request): the trainstation from which to start
+        zielbhf (from request): the trainstation, which is the destination
+        date (from request): the date and time at which the trip should take place
 
     Returns:
         json: All the possible connections
     """
 
-
-    #add check for right datetime here
+    # add check for right datetime here
 
     data = calc_con(request.form['startbhf'], request.form['zielbhf'], request.form['date'])
     resp = jsonify(data) 
+    resp.headers.add('Access-Control-Allow-Origin', '*')
     return resp
 
-@app.errorhandler(404)
-def not_found(e): 
-    # inbuilt function which takes error as parameter 
-    # defining function 
-    return render_template("404.html") 
 
-if __name__ == '__main__':
-    #ssl_context='adhoc'
-    logger.info( "\n\x1b[1;32m████████╗ ██████╗██████╗  \n\
-╚══██╔══╝██╔════╝██╔══██╗ \n\
-   ██║   ██║     ██████╔╝ \n\
-   ██║   ██║     ██╔═══╝  \n\
-   ██║   ╚██████╗██║      \n\
-   ╚═╝    ╚═════╝╚═╝ \x1b[0m\n")
-    app.run(host= '127.0.0.1', port=5000)
+@bp.route('/deploy', methods=['POST'])
+def deploy():
+    """
+    Pulls the newest changes from Github
+    And then restarts the systemctl service
+
+    Can be triggered by using for ex.: ```curl --data 'key=DEPLOY_KEY' http://IP/api/deploy```
+
+    Args:
+        key (from request): Deploy-key for authenticating the server
+
+    Returns:
+        resp: What happend
+        code: Specific codes for each outcome
+    """
+
+    if request.form['key'] == current_app.config["DEPLOY_KEY"]:
+        git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+        if git == "1":
+            logger.warning("Deploy was requested, but no need to, since I'm up to date")
+
+            return jsonify({"resp": "no need to pull", "code": 1})
+
+        elif git == "2":
+            logger.warning("Deploy was requested, and I'm behind, so pulling")
+            #I went from git pull and reset hard to first fetch and then merge because i can just overwrite local stuff with the merge
+            if "dev" not in request.form and not current_app.debug:
+                #ok maybe i still need a reset, when I delete a commit or smth, but without the hard flag
+                logger.warning("Reseting git repo since not using the dev flag")
+                reset = subprocess.run(["/usr/bin/git", '-C', basepath, 'reset','--hard', 'HEAD^'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            fetch = subprocess.run(['/usr/bin/git', '-C', basepath, 'fetch'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            merge = subprocess.run(['/usr/bin/git', '-C', basepath, 'merge', '-s' ,'recursive', '-X', 'theirs', '--no-commit'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            logger.warning("git merge said: " + merge)
+            git = subprocess.run(['/bin/bash', basepath + '/checkgit.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+            if git == "1":
+                logger.warning('Pull was succesfull restarting webserver...')
+                
+                response = jsonify({"resp": "pull was succesfull restarting webserver", "code": 0})
+
+                @response.call_on_close
+                def on_close():
+                    logger.warning(subprocess.run(['/bin/bash', basepath + '/restart.sh'], stdout=subprocess.PIPE).stdout.decode('utf-8'))
+                    return
+
+                return response
+            else:
+                return jsonify({"resp": "pull did't succeed", "code": -2})   
+
+    else:
+        return jsonify({"resp": "wrong key", "code": -1})
+    
+    return jsonify({"resp": "something went wrong", "code": -3})
+
+@bp.route('/gitid', methods=['POST'])
+def gitid():
+    """
+    Returns the last commit id the repository is on
+
+    Args:
+        key (from request): Deploy-key for authenticating the server
+
+    Returns:
+        resp: The commitid
+        code: Specific codes for each outcome
+    """
+
+    if request.form['key'] == current_app.config["DEPLOY_KEY"]:
+        git = subprocess.run(["/usr/bin/git", '-C', basepath, 'rev-parse', '@'], stdout=subprocess.PIPE).stdout.decode('utf-8').replace("\n", "")
+        resp = jsonify({"resp": git, "code": 0})
+    else:
+        resp = jsonify({"resp": "", "code": -1})
+
+    return resp
