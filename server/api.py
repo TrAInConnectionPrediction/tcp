@@ -276,6 +276,6 @@ def gitid():
         git = subprocess.run(["/usr/bin/git", '-C', basepath, 'rev-parse', '@'], stdout=subprocess.PIPE).stdout.decode('utf-8').replace("\n", "")
         resp = jsonify({"resp": git, "code": 0})
     else:
-        resp = jsonify({"resp": "does it work?", "code": -1})
+        resp = jsonify({"resp": "", "code": -1})
 
     return resp
