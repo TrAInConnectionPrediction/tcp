@@ -169,7 +169,7 @@ def parse_timetable(timetables):
 
 
 if __name__ == "__main__":
-    from database.engine import engine
+    import fancy_print_tcp
     stations = StationPhillip()
     rtd = RtdManager()
 
