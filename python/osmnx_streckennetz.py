@@ -1,5 +1,4 @@
 import os, sys
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from multiprocessing import Pool
 import osmnx as ox
@@ -11,11 +10,20 @@ import geopy.distance
 import tqdm
 import itertools
 from functools import partial
+import pandas as pd
 from helpers.StationPhillip import StationPhillip
 import matplotlib.pyplot as plt
 
 
 def get_streckennetz_from_osm():
+    """
+    Load Streckennetz from OpenStreetMap.
+
+    Returns
+    -------
+    nx.Graph:
+        Streckennetz without stations.
+    """
     ox.config(log_console=True, use_cache=True)
     rail_filter = '["railway"~"rail|tram|narrow_gauge|light_rail"]'
     streckennetz = ox.graph_from_place('Germany',
@@ -28,22 +36,52 @@ def get_streckennetz_from_osm():
 
 
 def reduce_decimal_precision(line):
+    """Multiply each point in line by 1e6 and round it to 3 decimal places."""
     return LineString((np.array(tuple(zip(line.xy[0], line.xy[1]))) * 1e6).round(decimals=3))
 
 
 def to_geographic_coordinate_system(line):
+    """Inverse of reduce_decimal_precision but without rounding."""
     return LineString((np.array(tuple(zip(line.xy[0], line.xy[1]))) / 1e6))
 
 
 def find_edges_to_split(bhf: str, streckennetz, nodes, edges):
+    """
+    Find edges that are part of a station by setting a cross at the coordinates of a station and finding intersections
+    with Streckennetz edges.
+
+    Parameters
+    ----------
+    bhf: str
+        Station to find.
+    streckennetz: nx.Graph
+        Graph of Streckennetz to find the station in.
+    nodes: gpd.GeoDataFrame
+        Nodes of Streckennetz.
+    edges: gpd.GeoDataFrame
+        Edges of Streckennetz.
+
+    Returns
+    -------
+    list:
+        List of edges to split.
+
+    Notes
+    -----
+def get_nearest_edge(G, point, return_geom=False, return_dist=False, gdf_edges=None):
+    if gdf_edges is None:
+        # get u, v, key, geom from all the graph edges
+        gdf_edges = utils_graph.graph_to_gdfs(G, nodes=False, fill_edge_geometry=True)
+    """
     stations = StationPhillip()
     original_coords = np.array(stations.get_location(name=bhf))
     coords = original_coords.copy()
 
-    closest_edge_index = ox.get_nearest_edge(streckennetz, np.flip(original_coords))
-    closest_edge = streckennetz[closest_edge_index[0]][closest_edge_index[1]][closest_edge_index[2]]
+    closest_edge = ox.get_nearest_edge(streckennetz, np.flip(original_coords), gdf_edges=edges, return_geom=True)
+    closest_geom = closest_edge[3]
+    # closest_edge = streckennetz[closest_edge_index[0]][closest_edge_index[1]][closest_edge_index[2]]
     coords = coords * 1e6
-    points = shapely.ops.nearest_points(Point(coords), reduce_decimal_precision(closest_edge['geometry']))
+    points = shapely.ops.nearest_points(Point(coords), reduce_decimal_precision(closest_geom))
 
     bhf_vec = (np.array([points[0].x - points[1].x,
                          points[0].y - points[1].y]) * 1e6).round(decimals=3)
@@ -81,10 +119,40 @@ def pairwise(iterable):
 
 
 def length_of_line(line) -> int:
+    """
+    Calculate length of line in meters.
+
+    Parameters
+    ----------
+    line: LineString
+        Line (geo points) to calculate length of.
+
+    Returns
+    -------
+    int:
+        Length of line.
+    """
     return sum((geopy.distance.distance(p1, p2).meters for p1, p2 in pairwise(tuple(zip(line.xy[0], line.xy[1])))))
 
 
 def split_edges(to_split: list):
+    """
+    Use result of find_edges_to_split() to generate new edges
+    and nodes and generate those that have to be removed.
+
+    Parameters
+    ----------
+    to_split: list
+        Result of find_edges_to_split().
+
+    Returns
+    -------
+    (list, list, list)
+        List of nodes to add.
+        List of edges to remove.
+        List of edges to add.
+
+    """
     nodes_to_add = {}
     edges_to_remove = []
     edges_to_add = []
@@ -108,13 +176,28 @@ def split_edges(to_split: list):
     return nodes_to_add.items(), edges_to_remove, edges_to_add
 
 
+def upload_minimal(streckennetz):
+    """
+    Upload edges of Streckennetz without attributes except edge length to database.
+
+    Parameters
+    ----------
+    streckennetz: nx.Graph
+        Graph of the Streckennetz
+    """
+    from database.engine import engine
+    streckennetz = ox.graph_to_gdfs(nodes=False)
+    streckennetz = pd.DataFrame(streckennetz[['u', 'v', 'length']])
+    streckennetz.to_sql('minimal_streckennetz', if_exists='replace', method='multi', con=engine)
+
+
 if __name__ == '__main__':
     stations = StationPhillip()
 
     ox.config(log_console=False, use_cache=True)
-    streckennetz = get_streckennetz_from_osm()
+    # streckennetz = get_streckennetz_from_osm()
     streckennetz = nx.read_gpickle("original_osm_rail_graph.gpickle")
-    s_nodes, s_edges = ox.graph_to_gdfs(streckennetz)
+    s_nodes, s_edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
     process_find_edges_to_split = partial(find_edges_to_split,
                                           streckennetz=streckennetz,
                                           nodes=s_nodes,
