@@ -68,6 +68,7 @@ def find_edges_to_split(bhf: str, streckennetz, nodes, edges):
 
     Notes
     -----
+    This function need a change in osmnx/distance.py:
 def get_nearest_edge(G, point, return_geom=False, return_dist=False, gdf_edges=None):
     if gdf_edges is None:
         # get u, v, key, geom from all the graph edges
@@ -79,9 +80,11 @@ def get_nearest_edge(G, point, return_geom=False, return_dist=False, gdf_edges=N
 
     closest_edge = ox.get_nearest_edge(streckennetz, np.flip(original_coords), gdf_edges=edges, return_geom=True)
     closest_geom = closest_edge[3]
-    # closest_edge = streckennetz[closest_edge_index[0]][closest_edge_index[1]][closest_edge_index[2]]
     coords = coords * 1e6
-    points = shapely.ops.nearest_points(Point(coords), reduce_decimal_precision(closest_geom))
+    try:
+        points = shapely.ops.nearest_points(Point(coords), reduce_decimal_precision(closest_geom))
+    except:
+        return []
 
     bhf_vec = (np.array([points[0].x - points[1].x,
                          points[0].y - points[1].y]) * 1e6).round(decimals=3)
