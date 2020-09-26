@@ -2,26 +2,22 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import random
-import sqlalchemy
 
-from config import db_database, db_password, db_server, db_username
 
 class StationPhillip:
     def __init__(self, notebook=False):
+        if notebook:
+            self._BUFFER_PATH = '../data_buffer/station_offline_buffer'
+        else:
+            self._BUFFER_PATH = 'data_buffer/station_offline_buffer'
         try:
-            self.engine = sqlalchemy.create_engine('postgresql://'+ db_username +':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
-            self.station_df = pd.read_sql('SELECT * FROM stations', con=self.engine)
-            if notebook:
-                self.station_df.to_pickle('../data_buffer/station_offline_buffer')
-            else:
-                self.station_df.to_pickle('data_buffer/station_offline_buffer')
-            self.engine.dispose()
+            from database.engine import engine
+            self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
+            engine.dispose()
+            self.station_df.to_pickle(self._BUFFER_PATH)
         except:
             try:
-                if notebook:
-                    self.station_df = pd.read_pickle('../data_buffer/station_offline_buffer')
-                else:
-                    self.station_df = pd.read_pickle('data_buffer/station_offline_buffer')
+                self.station_df = pd.read_pickle(self._BUFFER_PATH)
                 print('Using offline station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')

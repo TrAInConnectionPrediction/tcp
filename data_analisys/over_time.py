@@ -2,6 +2,7 @@ import sqlalchemy
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import matplotlib
 from helpers.StationPhillip import StationPhillip
 import datetime
@@ -15,11 +16,11 @@ class TimeAnalysis:
         try:
             if not use_cache:
                 raise FileNotFoundError
-            self.data = pd.read_csv(self.CACHE_PATH, header=[0, 1], index_col=0)
+            self.data = pd.read_csv(self.CACHE_PATH, header=[0, 1], index_col=0, parse_dates=[0])
             print('using cached data')
         except FileNotFoundError:
-            rtd_df['day'] = rtd_df['ar_pt'].dt.date # round(freq='D')
-            rtd_df['daytime'] = rtd_df['ar_pt'].dt.time # - rtd_df['day']
+            rtd_df['day'] = rtd_df['ar_pt'].dt.date
+            rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
             self.data = rtd_df.groupby('daytime').agg({
                         'ar_pt': ['count'],
                         'ar_delay': ['count', 'mean'],
@@ -40,16 +41,30 @@ class TimeAnalysis:
             self.data.to_csv(self.CACHE_PATH)
 
     def plot_over_day(self):
+        dt_index = self.data.index.to_numpy()
+        hours = mdates.HourLocator()
+
         fig, ax = plt.subplots()
-        ax.plot(self.data.index, self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')], color="blue")
+        date_form = mdates.DateFormatter("%H:%M")
+        ax.xaxis.set_major_formatter(date_form)
+        ax.xaxis.set_major_locator(hours)
+        ax.set_xlim(dt_index.min(), dt_index.max())
+
+        ax.plot(dt_index, self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')], color="blue")
         ax.set_xlabel("Daytime", fontsize=14)
         ax.set_ylabel("Stops", color="blue", fontsize=14)
 
-        ax2 = ax.twinx()
-        ax2.plot(self.data.index, self.data[('ar_delay', 'mean')], color="orange")
-        ax2.set_ylabel("Delay", color="orange", fontsize=14)
+        ax.grid(True)
 
-        # self.data[[('ar_delay', 'count'), ('dp_delay', 'count')]].plot()
+        ax2 = ax.twinx()
+        ax2.xaxis.set_major_formatter(date_form)
+        ax2.xaxis.set_major_locator(hours)
+        ax2.plot(dt_index, self.data[('ar_delay', 'mean')], color="red")
+        ax2.plot(dt_index, self.data[('dp_delay', 'mean')], color="orange")
+        ax2.set_ylabel("Delay", color="orange", fontsize=14)
+        ax2.grid(True)
+
+        fig.autofmt_xdate()
         plt.show()
 
 
