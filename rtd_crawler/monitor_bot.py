@@ -14,6 +14,7 @@ client = discord.Client()
 db = DatabaseOfDoom()
 changes = ChangeManager()
 plan = PlanManager()
+old_change_count = 0
 
 
 @client.event
@@ -24,11 +25,10 @@ async def on_ready():
 
 
 @client.event
-async def monitor_hour():
+async def monitor_hour(old_change_count):
     channel = client.get_channel(720671295129518232)
     # channel = discord.Object(id=720671295129518232)
     hour = datetime.datetime.now().time().hour - 1
-    old_change_count = 0
 
     hour = datetime.datetime.now().time().hour
     date_to_check = datetime.datetime.combine(datetime.date.today(),
@@ -48,7 +48,7 @@ async def monitor_hour():
     print('checked plan ' + str(date_to_check) + ': ' + str(plan_row_count) + ' rows were added')
 
     if hour == 6:
-        new_change_count = changes.count_entries(date_to_check)
+        new_change_count = changes.count_entries()
         count_delta = new_change_count - old_change_count
         if count_delta < 50000:
             message = '''@everyone The recent change gatherer is not working, as {} 
@@ -57,11 +57,13 @@ async def monitor_hour():
             await channel.send(message)
         old_change_count = new_change_count
         print('checked changes ' + str(date_to_check) + ': ' + str(count_delta) + ' rows were added')
+    return old_change_count
 
 
 class Monitor(commands.Cog):
     def __init__(self):
         self.monitor.start()
+        self.old_change_count = 0
 
     def monitor_unload(self):
         self.monitor.cancel()
@@ -69,7 +71,7 @@ class Monitor(commands.Cog):
     @tasks.loop(hours=1)
     async def monitor(self):
         await client.wait_until_ready()
-        await monitor_hour()
+        self.old_change_count = await monitor_hour(old_change_count)
 
 
 if __name__ == "__main__":
