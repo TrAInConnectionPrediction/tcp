@@ -4,12 +4,13 @@ import pandas as pd
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 from database.rtd import Rtd
+from database.engine import DB_CONNECT_STRING
 
 
 class RtdRay(Rtd):
     df_dict = {
-        'ar_ppth': pd.Series([], dtype='str'),
-        'ar_cpth': pd.Series([], dtype='str'),
+        'ar_ppth': pd.Series([], dtype='object'),
+        'ar_cpth': pd.Series([], dtype='object'),
         'ar_pp': pd.Series([], dtype='str'),
         'ar_cp': pd.Series([], dtype='str'),
         'ar_pt': pd.Series([], dtype='datetime64[ns]'),
@@ -29,8 +30,8 @@ class RtdRay(Rtd):
         'ar_m_ts': pd.Series([], dtype='object'),
         'ar_m_c': pd.Series([], dtype='object'),
 
-        'dp_ppth': pd.Series([], dtype='str'),
-        'dp_cpth': pd.Series([], dtype='str'),
+        'dp_ppth': pd.Series([], dtype='object'),
+        'dp_cpth': pd.Series([], dtype='object'),
         'dp_pp': pd.Series([], dtype='str'),
         'dp_cp': pd.Series([], dtype='str'),
         'dp_pt': pd.Series([], dtype='datetime64[ns]'),
@@ -73,18 +74,71 @@ class RtdRay(Rtd):
 
     def __init__(self, notebook=False):
         if notebook:
-            self.LOCAL_BUFFER_PATH = '../data_buffer/' + self.Rtd.__tablename__ + '_local_buffer'
+            self.LOCAL_BUFFER_PATH = '../data_buffer/' + self.__tablename__ + '_local_buffer'
         else:
-            self.LOCAL_BUFFER_PATH = 'data_buffer/' + self.Rtd.__tablename__ + '_local_buffer'
+            self.LOCAL_BUFFER_PATH = 'data_buffer/' + self.__tablename__ + '_local_buffer'
 
     def refresh_local_buffer(self):
         """
         Pull the hole rtd table from db and save it on disk. This takes a while.
         """
         with ProgressBar():
-            rtd = dd.read_sql_table(self.Rtd.__tablename__, self.DB_CONNECT_STRING,
+            rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
                                     index_col='hash_id', meta=self.meta, npartitions=200)
+            rtd = self.parse_unparsed(rtd)
+            # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
             rtd.to_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow')
+
+    @staticmethod
+    def add_missing_changes(df):
+        for prefix in ('ar', 'dp'):
+            no_ct = df[prefix + '_ct'].isna()
+            df.loc[no_ct, prefix + '_ct'] = df.loc[no_ct, prefix + '_pt']
+
+            no_cpth = df[prefix + '_cpth'] == pd.Series([['nan'] for _ in range(len(df))], index=df.index)
+            df.loc[no_cpth, prefix + '_cpth'] = df.loc[no_cpth, prefix + '_ppth']
+
+            no_cp = df[prefix + '_cp'].isna()
+            df.loc[no_cp, prefix + '_cp'] = df.loc[no_cp, prefix + '_pp']
+        return df
+
+    @staticmethod
+    def add_distances(df):
+        from helpers.StreckennetzSteffi import StreckennetzSteffi
+        streckennetz = StreckennetzSteffi()
+        for i, row in df.iterrows():
+            try:
+                df.at[i, 'distance_to_last'] = streckennetz.route_length([row['ar_cpth'][-1]] + [row['station']])
+                df.at[i, 'distance_to_start'] = streckennetz.route_length(row['ar_cpth'] + [row['station']])
+            except KeyError:
+                df.at[i, 'distance_to_last'] = 0
+                df.at[i, 'distance_to_start'] = 0
+
+            try:
+                df.at[i, 'distance_to_next'] = streckennetz.route_length([row['station']] + [row['dp_cpth'][0]])
+                df.at[i, 'distance_to_end'] = streckennetz.route_length([row['station']] + row['dp_cpth'])
+            except KeyError:
+                df.at[i, 'distance_to_next'] = 0
+                df.at[i, 'distance_to_end'] = 0
+        return df.loc[:, ['distance_to_last', 'distance_to_start', 'distance_to_next', 'distance_to_end']]
+
+    @staticmethod
+    def parse_unparsed(rtd):
+        # Convert all arrays from str to list.
+        for arr_col in ('ar_ppth', 'ar_cpth', 'ar_m_id', 'ar_m_t', 'ar_m_ts', 'ar_m_c', 
+                        'dp_ppth', 'dp_cpth', 'dp_m_id', 'dp_m_t', 'dp_m_ts', 'dp_m_c',
+                        'm_id', 'm_t', 'm_ts', 'm_c'):
+            rtd[arr_col] = rtd[arr_col].str.replace('{', '')
+            rtd[arr_col] = rtd[arr_col].str.replace('}', '')
+
+            rtd[arr_col] = rtd[arr_col].astype('str')
+            rtd[arr_col] = rtd[arr_col].str.split('|')
+        rtd = rtd.map_partitions(RtdRay.add_missing_changes, meta=rtd)
+        add_distance_meta = {'distance_to_last': 'f8', 'distance_to_start': 'f8',
+                             'distance_to_next': 'f8', 'distance_to_end': 'f8'}
+        rtd[['distance_to_last', 'distance_to_start',
+             'distance_to_next', 'distance_to_end']] = rtd.map_partitions(RtdRay.add_distances, meta=add_distance_meta)
+        return rtd
 
     def load_data(self, **kwargs):
         """
@@ -100,21 +154,24 @@ class RtdRay(Rtd):
         Returns
         -------
         dask.DataFrame
-            dask.dataframe containing the loaded data
+            dask.DataFrame containing the loaded data
 
         """
         try:
-            data = dd.read_parquet(self.LOCAL_BUFFER_PATH, **kwargs)
+            data = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow', **kwargs)
         except FileNotFoundError:
-            print(
-                'There was no buffer found. A new buffer will be downloaded from the db. This will take a while.')
+            print('There was no buffer found. A new buffer will be downloaded from the db. This will take a while.')
             self.refresh_local_buffer()
-            data = dd.read_parquet(self.LOCAL_BUFFER_PATH, **kwargs)
+            data = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow', **kwargs)
 
         return data
 
 
 if __name__ == "__main__":
+    # from dask.distributed import Client
+    # client = Client()
     rtd_d = RtdRay()
-    rtd_d.refresh_local_buffer()
-    # print(rtd_d.load_data())
+    # rtd_d.refresh_local_buffer()
+    rtd_df = rtd_d.load_data()
+    # print(rtd_d.parse_unparsed(rtd_df))
+    print(rtd_df.head())

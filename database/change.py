@@ -59,11 +59,11 @@ class ChangeManager:
         Parameters
         ----------
         hash_ids: list
-            A list of hash_ids to get the corresponding rows from the db
+            A list of hash_ids to get the corresponding rows from the db.
 
         Returns
         -------
-        Sqlalchemy query with the results
+        Sqlalchemy query with the results.
         """
         return self.session.query(Change).filter(Change.hash_id.in_(hash_ids)).all()
 
@@ -74,6 +74,6 @@ class ChangeManager:
         Returns
         -------
         int
-            Number of Rows
+            Number of Rows.
         """
         return self.session.query(Change).count()
