@@ -27,13 +27,18 @@ logger.addHandler(logHandler)
 
 
 def xml_to_json(xml):
-    """a recursive function to convert xml to list dict mix
+    """
+    A recursive function to convert xml to list dict mix.
 
-    Arguments:
-        xml {etree} -- the xml to convert
+    Parameters
+    ----------
+    xml : lxml.etree
+        The xml to convert
 
-    Returns:
-        dict -- a dict list mix of the xml
+    Returns
+    -------
+    dict
+        A dict list mix of the xml
     """
     parsed = dict(xml.attrib)
     for xml_child in list(xml):
@@ -52,7 +57,7 @@ def get_station_json(station_id, str_date, hour, station, dd):
         str_date {str} -- %y%m%d formatted date
         hour {int} -- hour to get the plan
         station {str} -- station as human readable name
-        dd {DownloarDave} -- DownloadDave instace to download
+        dd {DownloadDave} -- DownloadDave instance to download
 
     Returns:
         dict -- contains the gathered plan_xml and real_xml as well as the station
@@ -67,19 +72,17 @@ def get_station_json(station_id, str_date, hour, station, dd):
         plan_json = list(xml_to_json(part) for part in list(plan_tree))
     else:
         plan_json = None
-    
 
     if changes_xml and changes_xml != 'None' and changes_xml != '<timetable/>\n':
         changes_tree = etree.fromstring(changes_xml.encode(), parser)
         changes_json = list(xml_to_json(part) for part in list(changes_tree))
     else:
         changes_json = None
-    
 
     return {'plan': plan_json, 'changes': changes_json, 'station': station}
 
 
-def get_hourely_batch(_lol):
+def get_hourly_batch(_lol):
     """gathers plan and real xmls of the current date and hour from all stations
     inside of the stations table of the db. This function should be called once every hour.
     """
@@ -116,7 +119,7 @@ def get_hourely_batch(_lol):
         bar.finish()
 
 
-if (__name__ == '__main__'):
+if __name__ == '__main__':
     import fancy_print_tcp
     hour = datetime.datetime.now().time().hour - 1
 
@@ -127,11 +130,10 @@ if (__name__ == '__main__'):
             else:
                 hour = datetime.datetime.now().time().hour
                 try:
-                    result = pool.map_async(get_hourely_batch, range(1))
+                    result = pool.map_async(get_hourly_batch, range(1))
                     result.wait(60 * 50)
                     result.get(timeout=1)
 
                 except Exception as ex:
                     print(ex)
                     logger.exception(ex)
-                    

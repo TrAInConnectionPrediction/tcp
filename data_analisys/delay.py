@@ -33,3 +33,13 @@ def load_with_delay(columns: list, **kwargs):
     rtd = RtdRay()
     rtd_df = rtd.load_data(columns=columns, **kwargs)
     return get_delays(rtd_df)
+
+
+def load_long_distance_with_delay(columns: list, **kwargs):
+    delay_cols = ['ar_ct', 'ar_pt', 'dp_ct', 'dp_pt', 'ar_cs', 'ar_clt', 'dp_cs', 'dp_clt']
+    for col in delay_cols:
+        if col not in columns:
+            columns.append(col)
+    rtd = RtdRay()
+    rtd_df = rtd.load_data(columns=columns, filter=[[('f', '=', 'F')]], **kwargs)
+    return get_delays(rtd_df)
