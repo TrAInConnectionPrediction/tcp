@@ -28,7 +28,7 @@ def get_db_con():
     return connection, cursor
 
 
-def monitor_recent_change(evas: list, save_to_db: int, dd):
+def monitor_recent_change(evas: list, dd):
     new_changes = {}
     start_time = time.time()
     while datetime.datetime.now().hour != 3 or (time.time() - start_time) < 3600:
@@ -40,19 +40,20 @@ def monitor_recent_change(evas: list, save_to_db: int, dd):
             for train_id in reversed(list(changes.keys())):
                 new_changes[train_id] = changes[train_id]
 
-        if save_to_db % 10 == 0:
-            # load changes to local sqlite db
-            conn, c = get_db_con()
-            for train_id in new_changes:
-                c.execute('DELETE from rchg WHERE hash_id = :hash_id',
-                          {'hash_id': train_id})
-                c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
-                          {'hash_id': train_id, 'change': json.dumps(new_changes[train_id])})
-                conn.commit()
-            conn.close()
-            save_to_db = 0
-            new_changes = {}
-        save_to_db += 1
+        # if save_to_db % 10 == 0:
+        # load changes to local sqlite db
+        conn, c = get_db_con()
+        for train_id in new_changes:
+            c.execute('DELETE from rchg WHERE hash_id = :hash_id',
+                      {'hash_id': train_id})
+            c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
+                      {'hash_id': train_id, 'change': json.dumps(new_changes[train_id])})
+            conn.commit()
+        conn.close()
+        new_changes = {}
+        #     save_to_db = 0
+        #     new_changes = {}
+        # save_to_db += 1
 
         # print((time.time() - start_time) % 90.0)
         time.sleep(90 - ((time.time() - start_time) % 90))
@@ -67,6 +68,7 @@ def upload_local_db():
     for change in c:
         db.add_change(hash_id=change[0], change=change[1])
         i += 1
+    db.commit()
     c.execute('DROP TABLE rchg')
     conn.commit()
     db.commit()
@@ -102,7 +104,7 @@ if __name__ == '__main__':
             print('starting crawlers for {}'.format(str(datetime.datetime.now())))
             bar = progressbar.ProgressBar(max_value=len(eva_list)).start()
             for i, evas in enumerate(eva_list):
-                executor.submit(monitor_recent_change, evas, i % 10, dd)
+                executor.submit(monitor_recent_change, evas, dd)
                 bar.update(i)
             bar.finish()
             executor.shutdown(wait=True)
