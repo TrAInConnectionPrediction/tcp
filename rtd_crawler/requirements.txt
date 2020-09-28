@@ -5,7 +5,7 @@ DateTime==4.3
 idna==2.9
 numpy==1.18.3
 pandas==1.0.3
-progress==1.5
+progressbar2
 psycopg2==2.8.5
 PySocks==1.7.1
 python-dateutil==2.8.1
