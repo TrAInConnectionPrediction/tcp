@@ -71,7 +71,7 @@ class Monitor(commands.Cog):
     @tasks.loop(hours=1)
     async def monitor(self):
         await client.wait_until_ready()
-        self.old_change_count = await monitor_hour(old_change_count)
+        self.old_change_count = await monitor_hour(self.old_change_count)
 
 
 if __name__ == "__main__":
