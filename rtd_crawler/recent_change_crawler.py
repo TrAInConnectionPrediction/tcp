@@ -32,25 +32,33 @@ def monitor_recent_change(evas: list, dd):
     new_changes = {}
     start_time = time.time()
     while datetime.datetime.now().hour != 3 or (time.time() - start_time) < 3600:
+        conn, c = get_db_con()
         for eva in evas:
             changes = dd.get_recent_change(eva)
             changes = preparse_changes(changes)
             # There might be two different changes for a specific train in the changes. Looping in reverse makes the
             # most recent change to be added last.
-            for train_id in reversed(list(changes.keys())):
-                new_changes[train_id] = changes[train_id]
-
-        # if save_to_db % 10 == 0:
-        # load changes to local sqlite db
-        conn, c = get_db_con()
-        for train_id in new_changes:
-            c.execute('DELETE from rchg WHERE hash_id = :hash_id',
-                      {'hash_id': train_id})
-            c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
-                      {'hash_id': train_id, 'change': json.dumps(new_changes[train_id])})
-            conn.commit()
+            for train_id in changes:
+                c.execute('DELETE from rchg WHERE hash_id = :hash_id',
+                          {'hash_id': train_id})
+                c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
+                          {'hash_id': train_id, 'change': json.dumps(changes[train_id])})
+                conn.commit()
         conn.close()
-        new_changes = {}
+        #     for train_id in reversed(list(changes.keys())):
+        #         new_changes[train_id] = changes[train_id]
+        #
+        # # if save_to_db % 10 == 0:
+        # # load changes to local sqlite db
+        # conn, c = get_db_con()
+        # for train_id in new_changes:
+        #     c.execute('DELETE from rchg WHERE hash_id = :hash_id',
+        #               {'hash_id': train_id})
+        #     c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
+        #               {'hash_id': train_id, 'change': json.dumps(new_changes[train_id])})
+        #     conn.commit()
+        # conn.close()
+        # new_changes = {}
         #     save_to_db = 0
         #     new_changes = {}
         # save_to_db += 1
@@ -84,21 +92,22 @@ def upload_local_db():
 if __name__ == '__main__':
     import fancy_print_tcp
     # Create database and table if not existing.
+    conn, c = get_db_con()
     try:
-        conn, c = get_db_con()
         c.execute("""CREATE TABLE rchg (
                      hash_id int PRIMARY KEY,
                      change json
                      )""")
         conn.commit()
-        conn.close()
     except:
         pass
+    conn.close()
 
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
     eva_list = [eva_list[i:i + 4] for i in range(0, len(eva_list), 4)]
     dd = SimplestDownloader()
+    # monitor_recent_change([8000207], dd)
     while True:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
             print('starting crawlers for {}'.format(str(datetime.datetime.now())))
