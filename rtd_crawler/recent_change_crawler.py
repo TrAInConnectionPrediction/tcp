@@ -24,6 +24,7 @@ def preparse_changes(changes):
 
 def get_db_con():
     connection = sqlite3.connect('data_buffer/recent_changes.db')
+    connection.execute('pragma journal_mode=wal')
     cursor = connection.cursor()
     return connection, cursor
 
