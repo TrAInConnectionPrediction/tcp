@@ -9,10 +9,10 @@ import time
 import concurrent.futures
 import sqlite3
 import json
+from itertools import chain
 import datetime
 from database.change import ChangeManager
 from rtd_crawler.xml_parser import xml_to_json
-import progressbar
 
 
 def preparse_changes(changes):
@@ -24,48 +24,21 @@ def preparse_changes(changes):
 
 def get_db_con():
     connection = sqlite3.connect('data_buffer/recent_changes.db')
-    connection.execute('pragma journal_mode=wal')
+    # connection.execute('pragma journal_mode=wal')
     cursor = connection.cursor()
     return connection, cursor
 
 
-def monitor_recent_change(evas: list, dd):
+def monitor_recent_change(evas: list):
     new_changes = {}
-    start_time = time.time()
-    while datetime.datetime.now().hour != 3 or (time.time() - start_time) < 3600:
-        conn, c = get_db_con()
-        for eva in evas:
-            changes = dd.get_recent_change(eva)
+    for eva in evas:
+        changes = dd.get_recent_change(eva)
+        if changes:
             changes = preparse_changes(changes)
-            # There might be two different changes for a specific train in the changes. Looping in reverse makes the
-            # most recent change to be added last.
-            for train_id in changes:
-                c.execute('DELETE from rchg WHERE hash_id = :hash_id',
-                          {'hash_id': train_id})
-                c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
-                          {'hash_id': train_id, 'change': json.dumps(changes[train_id])})
-                conn.commit()
-        conn.close()
-        #     for train_id in reversed(list(changes.keys())):
-        #         new_changes[train_id] = changes[train_id]
-        #
-        # # if save_to_db % 10 == 0:
-        # # load changes to local sqlite db
-        # conn, c = get_db_con()
-        # for train_id in new_changes:
-        #     c.execute('DELETE from rchg WHERE hash_id = :hash_id',
-        #               {'hash_id': train_id})
-        #     c.execute('INSERT INTO rchg VALUES (:hash_id, :change)',
-        #               {'hash_id': train_id, 'change': json.dumps(new_changes[train_id])})
-        #     conn.commit()
-        # conn.close()
-        # new_changes = {}
-        #     save_to_db = 0
-        #     new_changes = {}
-        # save_to_db += 1
 
-        # print((time.time() - start_time) % 90.0)
-        time.sleep(90 - ((time.time() - start_time) % 90))
+            for train_id in reversed(list(changes.keys())):
+                new_changes[train_id] = changes[train_id]
+    return new_changes
 
 
 def upload_local_db():
@@ -90,6 +63,7 @@ def upload_local_db():
     print('needed {time} minutes to upload {rows} rows to db'.format(time=(time.time() - start_time) / 60, rows=i))
 
 
+dd = SimplestDownloader()
 if __name__ == '__main__':
     import fancy_print_tcp
     # Create database and table if not existing.
@@ -107,16 +81,28 @@ if __name__ == '__main__':
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
     eva_list = [eva_list[i:i + 4] for i in range(0, len(eva_list), 4)]
-    dd = SimplestDownloader()
     # monitor_recent_change([8000207], dd)
     while True:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
-            print('starting crawlers for {}'.format(str(datetime.datetime.now())))
-            bar = progressbar.ProgressBar(max_value=len(eva_list)).start()
-            for i, evas in enumerate(eva_list):
-                executor.submit(monitor_recent_change, evas, dd)
-                bar.update(i)
-            bar.finish()
-            executor.shutdown(wait=True)
+        while datetime.datetime.now().hour != 3 or (time.time() - start_time) < 3600:
+            start_time = time.time()
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
+                    print('starting crawlers for {}'.format(str(datetime.datetime.now())))
+                    new_changes = executor.map(monitor_recent_change, eva_list, timeout=60 * 4)
+            except TimeoutError:
+                pass
+            # Concat list of dicts to single dict
+            new_changes = dict(chain.from_iterable(d.items() for d in new_changes))
+
+            conn, c = get_db_con()
+            c.executemany('DELETE from rchg WHERE hash_id = :hash_id',
+                          [{'hash_id': train_id} for train_id in new_changes])
+            c.executemany('INSERT INTO rchg VALUES (:hash_id, :change)',
+                          [{'hash_id': train_id, 'change': json.dumps(new_changes[train_id])} for train_id in new_changes])
+            conn.commit()
+
+            print('finished after {0} seconds. Now waiting {1} seconds till restart'
+                  .format(time.time() - start_time, 110 - (time.time() - start_time)))
+            time.sleep(max(0.0, 110 - (time.time() - start_time)))
 
         upload_local_db()
