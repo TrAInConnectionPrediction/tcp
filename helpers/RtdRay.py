@@ -124,10 +124,15 @@ class RtdRay(Rtd):
 
     @staticmethod
     def parse_unparsed(rtd):
+        rtd = rtd.astype({'f': 'category', 't': 'category', 'o': 'category',
+                          'c': 'category', 'n': 'category', 'ar_ps': 'category',
+                          'ar_pp': 'category', 'dp_ps': 'category', 'dp_pp': 'category'})
+
         # Convert all arrays from str to list.
-        for arr_col in ('ar_ppth', 'ar_cpth', 'ar_m_id', 'ar_m_t', 'ar_m_ts', 'ar_m_c', 
-                        'dp_ppth', 'dp_cpth', 'dp_m_id', 'dp_m_t', 'dp_m_ts', 'dp_m_c',
-                        'm_id', 'm_t', 'm_ts', 'm_c'):
+        arr_cols = ['ar_ppth', 'ar_cpth', 'ar_m_id', 'ar_m_t', 'ar_m_ts', 'ar_m_c',
+                    'dp_ppth', 'dp_cpth', 'dp_m_id', 'dp_m_t', 'dp_m_ts', 'dp_m_c',
+                    'm_id', 'm_t', 'm_ts', 'm_c']
+        for arr_col in arr_cols:
             rtd[arr_col] = rtd[arr_col].str.replace('{', '')
             rtd[arr_col] = rtd[arr_col].str.replace('}', '')
 
@@ -168,10 +173,10 @@ class RtdRay(Rtd):
 
 
 if __name__ == "__main__":
-    # from dask.distributed import Client
-    # client = Client()
+    from dask.distributed import Client
+    client = Client()
     rtd_d = RtdRay()
-    # rtd_d.refresh_local_buffer()
+    rtd_d.refresh_local_buffer()
     rtd_df = rtd_d.load_data()
     # print(rtd_d.parse_unparsed(rtd_df))
     print(rtd_df.head())
