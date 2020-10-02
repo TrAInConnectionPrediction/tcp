@@ -83,11 +83,12 @@ if __name__ == '__main__':
     eva_list = [eva_list[i:i + 4] for i in range(0, len(eva_list), 4)]
     # monitor_recent_change([8000207], dd)
     while True:
-        while datetime.datetime.now().hour != 3 or (time.time() - start_time) < 3600:
+        upload_time = time.time()
+        while datetime.datetime.now().hour != 3 or (time.time() - upload_time) < 3600:
             start_time = time.time()
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
-                    print('starting crawlers for {}'.format(str(datetime.datetime.now())))
+                    print('{}: starting crawlers'.format(str(datetime.datetime.now())), end='\r')
                     new_changes = executor.map(monitor_recent_change, eva_list, timeout=60 * 4)
             except TimeoutError:
                 pass
@@ -101,8 +102,10 @@ if __name__ == '__main__':
                           [{'hash_id': train_id, 'change': json.dumps(new_changes[train_id])} for train_id in new_changes])
             conn.commit()
 
-            print('finished after {0} seconds. Now waiting {1} seconds till restart'
-                  .format(time.time() - start_time, 110 - (time.time() - start_time)))
+            print('{datetime}: finished after {time_needed} seconds. Now waiting {time_waiting} seconds till restart'
+                  .format(datetime=(datetime.datetime.now()),
+                          time_needed=time.time() - start_time,
+                          time_waiting=110 - (time.time() - start_time)), end='\r')
             time.sleep(max(0.0, 110 - (time.time() - start_time)))
 
         upload_local_db()
