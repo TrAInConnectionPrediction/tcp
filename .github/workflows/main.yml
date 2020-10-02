@@ -1,23 +1,33 @@
 name: Test and Deploy
 
 # Controls when the action will run. Triggers the workflow on push
-on:
-  push:
-    branches: [ master ]
+on: push
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "deploy"
-  deploy:
-    # The type of runner that the job will run on
+  test:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@master
+      - name: Run tests
+        run: |
+          pip install pytest
+          pytest
 
-    # Runs a set of commands using the runners shell
-    - name: Deploy on Server
-      run: |
-        bash .github/workflows/deploy.sh ${{ secrets.DEPLOY_KEY }} ${{ secrets.DEPLOY_URL }} || exit -1
+  deploy:
+    runs-on: ubuntu-latest
+
+    #we need test to succseed
+    needs: test
+
+    # Only run on masterbranch
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@master
+
+      # Runs a set of commands using the runners shell
+      - name: Deploy on Server
+        run: |
+          bash .github/workflows/deploy.sh ${{ secrets.DEPLOY_KEY }} ${{ secrets.DEPLOY_URL }} || exit -1
