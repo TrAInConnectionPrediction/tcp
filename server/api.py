@@ -17,6 +17,7 @@ from server.predict_data import prediction_data
 from server.connection import get_connection, clean_data
 from server.random_forest import predictor
 
+
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 logger = logging.getLogger(__name__)
