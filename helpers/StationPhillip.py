@@ -1,4 +1,5 @@
 import os, sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import random
@@ -6,10 +7,12 @@ import random
 
 class StationPhillip:
     def __init__(self, notebook=False):
-        if notebook:
-            self._BUFFER_PATH = '../data_buffer/station_offline_buffer'
-        else:
-            self._BUFFER_PATH = 'data_buffer/station_offline_buffer'
+        self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
+                            + '/data_buffer/station_offline_buffer'
+        # if notebook:
+        #     self._BUFFER_PATH = '../data_buffer/station_offline_buffer'
+        # else:
+        #     self._BUFFER_PATH = 'data_buffer/station_offline_buffer'
         try:
             from database.engine import engine
             self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
@@ -35,11 +38,11 @@ class StationPhillip:
     def __iter__(self):
         self.n = 0
         return self
-    
+
     def __next__(self):
         if self.n < self.__len__():
             self.n += 1
-            return self.sta_list[self.n -1]
+            return self.sta_list[self.n - 1]
         else:
             raise StopIteration
 
@@ -51,7 +54,7 @@ class StationPhillip:
         -------
         geopandas.DateFrame
             Stations with coordinates as geometry for geopandas.DataFrame.
-        """        
+        """
         import geopandas as gpd
         return gpd.GeoDataFrame(self.station_df, geometry=gpd.points_from_xy(self.station_df.lon, self.station_df.lat))
 
@@ -70,7 +73,7 @@ class StationPhillip:
         -------
         int
             Eva of station
-        """        
+        """
         if name:
             return self.name_index_stations.at[name, 'eva']
         elif ds100:
@@ -100,7 +103,7 @@ class StationPhillip:
             return self.ds100_index_stations.at[ds100, 'name']
         else:
             return None
-    
+
     def get_ds100(self, name=None, eva=None):
         """
         Get the ds100 from eva or station name.
@@ -116,7 +119,7 @@ class StationPhillip:
         -------
         str
             ds100 of station
-        """      
+        """
         if name:
             return self.name_index_stations.at[name, 'ds100']
         elif eva:
@@ -141,7 +144,7 @@ class StationPhillip:
         -------
         tuple
             longitude and latitide
-        """        
+        """
         if name or ds100:
             return self.get_location(eva=self.get_eva(name=name, ds100=ds100))
         else:
@@ -156,7 +159,7 @@ class StationPhillip:
         -------
         str
             Station names in random order.
-        """        
+        """
         random.shuffle(self.random_sta_list)
         for sta in self.random_sta_list:
             yield sta

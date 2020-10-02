@@ -11,6 +11,8 @@ setup(
         'sklearn',
         'pandas',
         'requests',
-        'gunicorn'
+        'gunicorn',
+        'sqlalchemy',
+        'psycopg2-binary'
     ],
 )
