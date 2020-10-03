@@ -1,18 +1,15 @@
-import os, sys
-
+import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import random
 
 
 class StationPhillip:
-    def __init__(self, notebook=False):
+    def __init__(self):
+
         self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
                             + '/data_buffer/station_offline_buffer'
-        # if notebook:
-        #     self._BUFFER_PATH = '../data_buffer/station_offline_buffer'
-        # else:
-        #     self._BUFFER_PATH = 'data_buffer/station_offline_buffer'
         try:
             from database.engine import engine
             self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
@@ -73,6 +70,10 @@ class StationPhillip:
         -------
         int
             Eva of station
+
+        Notes
+        -----
+        ds100 is not unique and may raise an error
         """
         if name:
             return self.name_index_stations.at[name, 'eva']
@@ -96,6 +97,10 @@ class StationPhillip:
         -------
         str
             official station name
+
+        Notes
+        -----
+        ds100 is not unique and may raise an error
         """
         if eva:
             return self.eva_index_stations.at[eva, 'name']
