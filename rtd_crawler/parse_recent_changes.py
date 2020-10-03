@@ -174,11 +174,11 @@ if __name__ == "__main__":
     rtd = RtdManager()
 
     if input('Do you wish to only parse new data? ([y]/n)') == 'n':
-        start_date = datetime.datetime(2020, 1, 1, 0, 0)
+        start_date = datetime.datetime(2020, 10, 1, 0, 0)
     else:
         start_date = rtd.max_date() - datetime.timedelta(days=2)
 
-    end_date = datetime.datetime.now()
+    end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
     with progressbar.ProgressBar(max_value=len(stations)) as bar:
         buffer = []
         buffer_len = 0
