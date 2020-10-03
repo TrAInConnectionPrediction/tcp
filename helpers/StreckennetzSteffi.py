@@ -44,6 +44,24 @@ class StreckennetzSteffi(StationPhillip):
         """
         return sum(self.distance(waypoints[i], waypoints[i + 1]) for i in range(len(waypoints) - 1))
 
+    def eva_route_length(self, waypoints) -> float:
+        """
+        Calculate approximate length of a route, e.g. the sum of the distances between the waypoints.
+
+        Parameters
+        ----------
+        waypoints: list
+            List of station evas that describe the route.
+
+        Returns
+        -------
+        float:
+            Length of route.
+
+        """
+        return sum(self.distance(self.get_name(eva=waypoints[i]),
+                                 self.get_name(eva=waypoints[i + 1])) for i in range(len(waypoints) - 1))
+
     @functools.lru_cache(maxsize=8000)
     def distance(self, u: str, v: str) -> float:
         """

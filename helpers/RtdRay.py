@@ -126,7 +126,8 @@ class RtdRay(Rtd):
     def parse_unparsed(rtd):
         rtd = rtd.astype({'f': 'category', 't': 'category', 'o': 'category',
                           'c': 'category', 'n': 'category', 'ar_ps': 'category',
-                          'ar_pp': 'category', 'dp_ps': 'category', 'dp_pp': 'category'})
+                          'ar_pp': 'category', 'dp_ps': 'category', 'dp_pp': 'category',
+                          'station': 'category'})
 
         # Convert all arrays from str to list.
         arr_cols = ['ar_ppth', 'ar_cpth', 'ar_m_id', 'ar_m_t', 'ar_m_ts', 'ar_m_c',
@@ -176,7 +177,8 @@ if __name__ == "__main__":
     from dask.distributed import Client
     client = Client()
     rtd_d = RtdRay()
-    rtd_d.refresh_local_buffer()
-    rtd_df = rtd_d.load_data()
+    # rtd_d.refresh_local_buffer()
+    print(rtd_d.load_data().head())
+    # rtd_df = rtd_d.load_data().head().compute().to_clipboard()
     # print(rtd_d.parse_unparsed(rtd_df))
-    print(rtd_df.head())
+    # print(rtd_df.head())
