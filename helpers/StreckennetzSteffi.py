@@ -8,12 +8,10 @@ from helpers.StationPhillip import StationPhillip
 
 
 class StreckennetzSteffi(StationPhillip):
-    def __init__(self, notebook=False):
-        super().__init__(notebook=notebook)
-        if notebook:
-            self._BUFFER_PATH = '../data_buffer/streckennetz_offline_buffer'
-        else:
-            self._BUFFER_PATH = 'data_buffer/streckennetz_offline_buffer'
+    def __init__(self):
+        super().__init__()
+        self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
+                            + '/data_buffer/streckennetz_offline_buffer'
         try:
             from database.engine import engine
             streckennetz_df = pd.read_sql('SELECT u, v, length FROM minimal_streckennetz', con=engine)
@@ -59,8 +57,13 @@ class StreckennetzSteffi(StationPhillip):
             Length of route.
 
         """
-        return sum(self.distance(self.get_name(eva=waypoints[i]),
-                                 self.get_name(eva=waypoints[i + 1])) for i in range(len(waypoints) - 1))
+        length = 0
+        for i in range(len(waypoints) - 1):
+            try:
+                length += self.distance(self.get_name(eva=waypoints[i]),
+                                        self.get_name(eva=waypoints[i + 1]))
+            except KeyError:
+                pass
 
     @functools.lru_cache(maxsize=8000)
     def distance(self, u: str, v: str) -> float:
