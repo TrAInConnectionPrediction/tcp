@@ -2,6 +2,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from functools import lru_cache
 import requests
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -60,17 +61,22 @@ def get_trips_of_trains(connection):
         for n in range(len(connection[i]["segments"])):
             try:
                 jid = connection[i]["segments"][n]["jid"]
-                r = requests.get(
-                    "https://marudor.de/api/hafas/v1/journeyDetails?jid={}?profile=db".format(
-                        jid
-                    )
-                )
-                full_trip = r.json()["stops"]
-                full_trip = [int(part["station"]["id"]) for part in full_trip]
-                connection[i]["segments"][n]["full_trip"] = full_trip
+                connection[i]["segments"][n]["full_trip"] = get_trip_of_train(jid)
             except KeyError:
                 pass  # Fußweg has no jid
     return connection
+
+
+@lru_cache
+def get_trip_of_train(jid):
+    r = requests.get(
+        "https://marudor.de/api/hafas/v1/journeyDetails?jid={}?profile=db".format(
+            jid
+        )
+    )
+    trip = r.json()["stops"]
+    trip = [int(stop["station"]["id"]) for stop in trip]
+    return trip
 
 
 def clean_data(connection):
