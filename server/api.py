@@ -11,7 +11,6 @@ import logging
 import os
 import subprocess
 
-# self-writen stuff
 from helpers.StationPhillip import StationPhillip
 from server.connection import get_connection, clean_data, get_trips_of_trains
 from server.predictor import Predictor
@@ -21,7 +20,6 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
 basepath = os.path.dirname(os.path.realpath(__file__))
 
-# make a new random-forest-predictor instance
 stations = StationPhillip()
 pred = Predictor()
 
@@ -65,10 +63,10 @@ def analysis(connection):
     # add adelay5 to first and last station
     fs_data = pred.get_pred_data(connection[index1])
     ls_data = pred.get_pred_data(connection[-index2])
-    _x, _x, _x, _x, _x, connection[index1]["ddelay5"], _x, _x = pred.predict(fs_data, 0)
+    _x, _x, _x, _x, _x, connection[index1]["ddelay5"], _x, _x = pred.predict(fs_data, 0).values()
     _x, connection[-index2]["adelay5"], _x, _x, _x, _x, _x, _x = pred.predict(
         ls_data, 1
-    )
+    ).values()
 
     # there are two segments more than connections (= overall info at the end - 1 bc it is like that)
     for i in range(index1, len(connection) - index2):
@@ -85,13 +83,6 @@ def analysis(connection):
                 ).seconds
                 // 60
             ) % 60  # we just want minutes
-            logger.debug(
-                str(fromUnix(connection[i + 1]["departure"][time]))
-                + " - "
-                + str(fromUnix(connection[i]["arrival"][time]))
-                + " = "
-                + str(transtime)
-            )
             (
                 connection[i]["con_score"],
                 connection[i]["adelay5"],
@@ -107,32 +98,11 @@ def analysis(connection):
                 ).seconds
                 // 60
             ) % 60  # we just want minutes
-            logger.debug(
-                str(fromUnix(connection[i + 2]["departure"][time]))
-                + " - "
-                + str(fromUnix(connection[i]["arrival"][time]))
-                + " = "
-                + str(transtime)
-            )
             (
                 connection[i]["con_score"],
                 connection[i]["adelay5"],
                 connection[i + 2]["ddelay5"],
             ) = pred.predict_con(data1, data2, transtime)
-
-        logger.debug(data1)
-        logger.debug(data2)
-
-        logger.debug(
-            "Score for connection["
-            + connection[i]["train"]["name"]
-            + " to "
-            + connection[i + 1]["train"]["name"]
-            + " in "
-            + connection[i]["segmentDestination"]["title"]
-            + "] = "
-            + str(connection[i]["con_score"])
-        )
         if total_score == 0:
             total_score = connection[i]["con_score"]
         else:
@@ -151,7 +121,7 @@ def analysis(connection):
     else:
         connection[-1]["total_score"] = int(total_score * 100)
 
-    logger.debug("Verbindungsscore:" + str(total_score))
+    # logger.debug("Verbindungsscore:" + str(total_score))
 
     for i in range(len(connection) - 1):
         if "ICE" in connection[i]["train"]["name"]:

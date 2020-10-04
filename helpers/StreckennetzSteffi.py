@@ -64,6 +64,7 @@ class StreckennetzSteffi(StationPhillip):
                                         self.get_name(eva=waypoints[i + 1]))
             except KeyError:
                 pass
+        return length
 
     @functools.lru_cache(maxsize=8000)
     def distance(self, u: str, v: str) -> float:
