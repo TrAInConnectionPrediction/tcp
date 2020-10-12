@@ -9,6 +9,7 @@ from rtd_crawler.hash64 import hash64
 from database.plan import PlanManager
 from database.change import ChangeManager
 from database.rtd import RtdManager, sql_types
+from helpers.StreckennetzSteffi import StreckennetzSteffi
 import json
 
 empty_rtd = {key: None for key in sql_types.keys()}
@@ -48,7 +49,6 @@ def parse_stop_plan(stop: dict) -> dict:
     -------
     dict
         Parsed Stop
-
     """
     # Create a int64 hash to be used as index.
     stop['hash_id'] = hash64(stop['id'])
@@ -88,7 +88,6 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
     -------
     dict
         The stop with realtime changes added to it.
-
     """
     # Add arrival changes
     if 'ar' in change:
@@ -147,6 +146,48 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
     return stop
 
 
+def add_distance(rtd):
+    for prefix in ('ar', 'dp'):
+        if prefix + '_ct' in rtd.columns:
+            no_ct = rtd[prefix + '_ct'].isna()
+            rtd.loc[no_ct, prefix + '_ct'] = rtd.loc[no_ct, prefix + '_pt']
+        else:
+            rtd[prefix + '_ct'] = rtd[prefix + '_pt']
+
+        if prefix + '_cpth' in rtd.columns:
+            no_cpth = rtd[prefix + '_cpth'].isna()
+            rtd.loc[no_cpth, prefix + '_cpth'] = rtd.loc[no_cpth, prefix + '_ppth']
+        else:
+            rtd[prefix + '_cpth'] = rtd[prefix + '_ppth']
+
+        if prefix + '_cp' in rtd.columns:
+            no_cp = rtd[prefix + '_cp'].isna()
+            rtd.loc[no_cp, prefix + '_cp'] = rtd.loc[no_cp, prefix + '_pp']
+        else:
+            rtd[prefix + '_cp'] = rtd[prefix + '_pp']
+
+    arr_cols = ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']
+    for arr_col in arr_cols:
+        rtd[arr_col] = rtd[arr_col].astype('str')
+        rtd[arr_col] = rtd[arr_col].str.split('|')
+
+    for i, row in rtd.iterrows():
+            try:
+                rtd.at[i, 'distance_to_last'] = streckennetz.route_length([row['ar_cpth'][-1]] + [row['station']])
+                rtd.at[i, 'distance_to_start'] = streckennetz.route_length(row['ar_cpth'] + [row['station']])
+            except KeyError:
+                rtd.at[i, 'distance_to_last'] = 0
+                rtd.at[i, 'distance_to_start'] = 0
+
+            try:
+                rtd.at[i, 'distance_to_next'] = streckennetz.route_length([row['station']] + [row['dp_cpth'][0]])
+                rtd.at[i, 'distance_to_end'] = streckennetz.route_length([row['station']] + row['dp_cpth'])
+            except KeyError:
+                rtd.at[i, 'distance_to_next'] = 0
+                rtd.at[i, 'distance_to_end'] = 0
+    return rtd
+
+
 def parse_timetable(timetables):
     parsed = []
     timetables = [timetable.plan for timetable in timetables]
@@ -172,6 +213,7 @@ if __name__ == "__main__":
     import fancy_print_tcp
     stations = StationPhillip()
     rtd = RtdManager()
+    streckennetz = StreckennetzSteffi()
 
     if input('Do you wish to only parse new data? ([y]/n)') == 'n':
         start_date = datetime.datetime(2020, 10, 1, 0, 0)
@@ -194,11 +236,12 @@ if __name__ == "__main__":
                 # It than reappears in the planned timetable of the next hour.
                 parsed = parsed.loc[~parsed.index.duplicated(keep='last')]
                 parsed['station'] = station
+                parsed = add_distance(parsed)
                 buffer.append(parsed)
                 buffer_len += len(parsed)
 
-                if buffer_len > 10000:
-                    rtd.upsert(pd.concat(buffer, ignore_index=False))
+                if buffer_len > 1000:
+                    rtd.upsert(pd.concat(buffer, ignore_index=False).iloc[:10, :])
                     buffer = []
                     buffer_len = 0
 

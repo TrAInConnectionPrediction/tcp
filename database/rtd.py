@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pangres
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT
+from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float
 from sqlalchemy.dialects.postgresql import JSON, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -19,8 +19,8 @@ class Rtd(Base):
     Scheme for parsed data.
     """
     __tablename__ = 'recent_change_rtd'
-    ar_ppth = Column(Text)
-    ar_cpth = Column(Text)
+    ar_ppth = Column(ARRAY(Text))
+    ar_cpth = Column(ARRAY(Text))
     ar_pp = Column(Text)
     ar_cp = Column(Text)
     ar_pt = Column(DateTime)
@@ -40,8 +40,8 @@ class Rtd(Base):
     ar_m_ts = Column(ARRAY(DateTime))
     ar_m_c = Column(ARRAY(Integer))
 
-    dp_ppth = Column(Text)
-    dp_cpth = Column(Text)
+    dp_ppth = Column(ARRAY(Text))
+    dp_cpth = Column(ARRAY(Text))
     dp_pp = Column(Text)
     dp_cp = Column(Text)
     dp_pt = Column(DateTime)
@@ -76,6 +76,11 @@ class Rtd(Base):
     conn = Column(JSON)
     rtr = Column(JSON)
 
+    distance_to_start = Column(Float)
+    distance_to_end = Column(Float)
+    distance_to_last = Column(Float)
+    distance_to_next = Column(Float)
+
     station = Column(Text)
     id = Column(Text)
     hash_id = Column(BIGINT, primary_key=True)
@@ -83,8 +88,8 @@ class Rtd(Base):
 
 # This is the same as Rtd(Base) but as dict. Pangres cannot use the Rtd(Base) class
 sql_types = {
-    'ar_ppth': Text,
-    'ar_cpth': Text,
+    'ar_ppth': ARRAY(Text),
+    'ar_cpth': ARRAY(Text),
     'ar_pp': Text,
     'ar_cp': Text,
     'ar_pt': DateTime,
@@ -104,8 +109,8 @@ sql_types = {
     'ar_m_ts': ARRAY(DateTime),
     'ar_m_c': ARRAY(Integer),
 
-    'dp_ppth': Text,
-    'dp_cpth': Text,
+    'dp_ppth': ARRAY(Text),
+    'dp_cpth': ARRAY(Text),
     'dp_pp': Text,
     'dp_cp': Text,
     'dp_pt': DateTime,
@@ -142,7 +147,12 @@ sql_types = {
 
     'station': Text,
     'id': Text,
-    'hash_id': Integer
+    'hash_id': Integer,
+    
+    'distance_to_start': Float,
+    'distance_to_end': Float,
+    'distance_to_last': Float,
+    'distance_to_next': Float
 }
 
 try:
