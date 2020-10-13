@@ -151,20 +151,29 @@ def add_distance(rtd):
         if prefix + '_ct' in rtd.columns:
             no_ct = rtd[prefix + '_ct'].isna()
             rtd.loc[no_ct, prefix + '_ct'] = rtd.loc[no_ct, prefix + '_pt']
-        else:
+        elif prefix + '_pt' in rtd.columns:
             rtd[prefix + '_ct'] = rtd[prefix + '_pt']
+        else:
+            rtd[prefix + '_pt'] = ''
+            rtd[prefix + '_ct'] = ''
 
         if prefix + '_cpth' in rtd.columns:
             no_cpth = rtd[prefix + '_cpth'].isna()
             rtd.loc[no_cpth, prefix + '_cpth'] = rtd.loc[no_cpth, prefix + '_ppth']
-        else:
+        elif prefix + '_ppth' in rtd.columns:
             rtd[prefix + '_cpth'] = rtd[prefix + '_ppth']
+        else:
+            rtd[prefix + '_ppth'] = ''
+            rtd[prefix + '_cpth'] = ''
 
         if prefix + '_cp' in rtd.columns:
             no_cp = rtd[prefix + '_cp'].isna()
             rtd.loc[no_cp, prefix + '_cp'] = rtd.loc[no_cp, prefix + '_pp']
-        else:
+        elif prefix + '_pp' in rtd.columns:
             rtd[prefix + '_cp'] = rtd[prefix + '_pp']
+        else:
+            rtd[prefix + '_pp'] = ''
+            rtd[prefix + '_cp'] = ''
 
     arr_cols = ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']
     for arr_col in arr_cols:
