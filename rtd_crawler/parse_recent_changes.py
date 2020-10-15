@@ -154,8 +154,8 @@ def add_distance(rtd):
         elif prefix + '_pt' in rtd.columns:
             rtd[prefix + '_ct'] = rtd[prefix + '_pt']
         else:
-            rtd[prefix + '_pt'] = ''
-            rtd[prefix + '_ct'] = ''
+            rtd[prefix + '_pt'] = pd.NaT
+            rtd[prefix + '_ct'] = pd.NaT
 
         if prefix + '_cpth' in rtd.columns:
             no_cpth = rtd[prefix + '_cpth'].isna()
