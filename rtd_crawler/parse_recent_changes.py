@@ -250,7 +250,7 @@ if __name__ == "__main__":
                 buffer_len += len(parsed)
 
                 if buffer_len > 1000:
-                    rtd.upsert(pd.concat(buffer, ignore_index=False).iloc[:10, :])
+                    rtd.upsert(pd.concat(buffer, ignore_index=False))
                     buffer = []
                     buffer_len = 0
 
