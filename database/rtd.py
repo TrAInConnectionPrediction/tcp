@@ -35,7 +35,7 @@ class Rtd(Base):
     ar_cde = Column(Text)
     ar_dc = Column(Integer)
     ar_l = Column(Text)
-    ar_m_id = Column(ARRAY(String(length=10)))
+    ar_m_id = Column(ARRAY(Text))
     ar_m_t = Column(ARRAY(String(length=1)))
     ar_m_ts = Column(ARRAY(DateTime))
     ar_m_c = Column(ARRAY(Integer))
@@ -56,7 +56,7 @@ class Rtd(Base):
     dp_cde = Column(Text)
     dp_dc = Column(Integer)
     dp_l = Column(Text)
-    dp_m_id = Column(ARRAY(String(length=10)))
+    dp_m_id = Column(ARRAY(Text))
     dp_m_t = Column(ARRAY(String(length=1)))
     dp_m_ts = Column(ARRAY(DateTime))
     dp_m_c = Column(ARRAY(Integer))
@@ -67,7 +67,7 @@ class Rtd(Base):
     c = Column(Text)
     n = Column(Text)
 
-    m_id = Column(ARRAY(String(length=10)))
+    m_id = Column(ARRAY(Text))
     m_t = Column(ARRAY(String(length=1)))
     m_ts = Column(ARRAY(DateTime))
     m_c = Column(ARRAY(Integer))
@@ -104,7 +104,7 @@ sql_types = {
     'ar_cde': Text,
     'ar_dc': Integer,
     'ar_l': Text,
-    'ar_m_id': ARRAY(String(length=10)),
+    'ar_m_id': ARRAY(Text),
     'ar_m_t': ARRAY(String(length=1)),
     'ar_m_ts': ARRAY(DateTime),
     'ar_m_c': ARRAY(Integer),
@@ -125,7 +125,7 @@ sql_types = {
     'dp_cde': Text,
     'dp_dc': Integer,
     'dp_l': Text,
-    'dp_m_id': ARRAY(String(length=10)),
+    'dp_m_id': ARRAY(Text),
     'dp_m_t': ARRAY(String(length=1)),
     'dp_m_ts': ARRAY(DateTime),
     'dp_m_c': ARRAY(Integer),
@@ -136,7 +136,7 @@ sql_types = {
     'c': Text,
     'n': Text,
 
-    'm_id': ARRAY(String(length=10)),
+    'm_id': ARRAY(Text),
     'm_t': ARRAY(String(length=1)),
     'm_ts': ARRAY(DateTime),
     'm_c': ARRAY(Integer),
