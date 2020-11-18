@@ -6,6 +6,7 @@ import shapely
 from shapely.geometry import Point, LineString
 import numpy as np
 import geopy.distance
+# import matplotlib.pyplot as plt
 import itertools
 import progressbar
 import pandas as pd
@@ -92,6 +93,21 @@ def find_edges_to_split(bhf: str, nearest_edge: list, streckennetz, nodes, edges
                                 original_coords[0] + 0.001, original_coords[1] + 0.001)
     join_gdf = gpd.GeoDataFrame({'geometry': [bbox]}, crs=edges.crs)
     close_edges = edges.loc[gpd.sjoin(join_gdf, edges, how='inner')['index_right'].to_list()]
+
+    # Plot Station
+    # fig, ax = plt.subplots(figsize=(50,50))
+    # ax.set_aspect('equal', 'datalim')
+    #
+    # for index, edge in close_edges.iterrows():
+    #     geom = reduce_decimal_precision(edge['geometry'])
+    #     # xs, ys = geom.exterior.xy
+    #     # ax.fill(xs, ys, alpha=1, fc='r', ec='none')
+    #     ax.plot(*geom.xy)
+    #
+    # # ax.plot(*line1.xy)
+    # # ax.plot(*line2.xy)
+
+    # plt.show()
 
     edges_split = []
     for index, edge in close_edges.iterrows():
@@ -194,7 +210,7 @@ if __name__ == '__main__':
 
     ox.config(log_console=True, use_cache=True)
     streckennetz = get_streckennetz_from_osm()
-    # streckennetz = nx.read_gpickle("original_osm_rail_graph.gpickle")
+    # streckennetz = nx.read_gpickle("data_buffer/original_osm_rail_graph.gpickle")
     s_nodes, s_edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
     s_edges.sindex
 

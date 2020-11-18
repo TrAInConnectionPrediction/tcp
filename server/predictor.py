@@ -61,7 +61,7 @@ class Predictor:
 
         con_score = 0
         if transfer_time > 17:
-            con_score = 1  # if the transfer time is higher than our highest lable, we can only predict the connection as working
+            con_score = 1  # if the transfer time is higher than our highest label, we can only predict the connection as working
 
         elif transfer_time > 12:
             p1 = pred1["ar_15"] * (1 - pred2["dp_5"])

@@ -4,7 +4,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import datetime
 import progressbar
-from helpers.StationPhillip import StationPhillip
 from rtd_crawler.hash64 import hash64
 from database.plan import PlanManager
 from database.change import ChangeManager
@@ -220,7 +219,6 @@ def parse_timetable(timetables):
 
 if __name__ == "__main__":
     import fancy_print_tcp
-    stations = StationPhillip()
     rtd = RtdManager()
     streckennetz = StreckennetzSteffi()
 
@@ -230,10 +228,10 @@ if __name__ == "__main__":
         start_date = rtd.max_date() - datetime.timedelta(days=2)
 
     end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-    with progressbar.ProgressBar(max_value=len(stations)) as bar:
+    with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
         buffer = []
         buffer_len = 0
-        for i, station in enumerate(stations):
+        for i, station in enumerate(streckennetz):
             stations_timetables = plan_db.plan_of_station(station, date1=start_date, date2=end_date)
 
             parsed = parse_timetable(stations_timetables)
@@ -246,14 +244,6 @@ if __name__ == "__main__":
                 parsed = parsed.loc[~parsed.index.duplicated(keep='last')]
                 parsed['station'] = station
                 parsed = add_distance(parsed)
-                buffer.append(parsed)
-                buffer_len += len(parsed)
-
-                if buffer_len > 1000:
-                    rtd.upsert(pd.concat(buffer, ignore_index=False))
-                    buffer = []
-                    buffer_len = 0
+                rtd.upsert(parsed)
 
             bar.update(i)
-        if buffer:
-            rtd.upsert(pd.concat(buffer, ignore_index=False))
