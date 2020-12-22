@@ -33,30 +33,46 @@ async def monitor_hour(old_change_count):
     hour = datetime.datetime.now().time().hour
     date_to_check = datetime.datetime.combine(datetime.date.today(),
                                               datetime.time(hour, 0)) - datetime.timedelta(hours=1)
-    new_row_cont = db.count_entries_at_date(date_to_check)
-    if new_row_cont < 7000:
-        message = '@everyone The gatherer is not working, as {} new entries where added to database at {}'\
-                  .format(str(new_row_cont), str(date_to_check))
+    try:
+        new_row_cont = db.count_entries_at_date(date_to_check)
+        if new_row_cont < 7000:
+            message = '@everyone The gatherer is not working, as {} new entries where added to database at {}'\
+                    .format(str(new_row_cont), str(date_to_check))
+            await channel.send(message)
+        print('checked ' + str(date_to_check) + ': ' + str(new_row_cont) + ' rows were added')
+    except Exception as ex:
+        message = '@everyone Error reading Database:\n{}'.format(str(ex))
         await channel.send(message)
-    print('checked ' + str(date_to_check) + ': ' + str(new_row_cont) + ' rows were added')
+        print('checked ' + str(date_to_check) + ': ???? rows were added')
 
-    plan_row_count = plan.count_entries_at_date(date_to_check)
-    if plan_row_count < 7000:
-        message = '@everyone The plan gatherer is not working, as {} new entries where added to database at {}'\
-                  .format(str(plan_row_count), str(date_to_check))
+    try:
+        plan_row_count = plan.count_entries_at_date(date_to_check)
+        if plan_row_count < 7000:
+            message = '@everyone The plan gatherer is not working, as {} new entries where added to database at {}'\
+                    .format(str(plan_row_count), str(date_to_check))
+            await channel.send(message)
+        print('checked plan ' + str(date_to_check) + ': ' + str(plan_row_count) + ' rows were added')
+    except Exception as ex:
+        message = '@everyone Error reading Database:\n{}'.format(str(ex))
         await channel.send(message)
-    print('checked plan ' + str(date_to_check) + ': ' + str(plan_row_count) + ' rows were added')
+        print('checked ' + str(date_to_check) + ': ???? rows were added')
 
     if hour == 6:
-        new_change_count = changes.count_entries()
-        count_delta = new_change_count - old_change_count
-        if count_delta < 50000:
-            message = '''@everyone The recent change gatherer is not working, as {} 
-                      new entries where added to database at {}'''\
-                      .format(str(count_delta), str(date_to_check))
+        try:
+            new_change_count = changes.count_entries()
+            count_delta = new_change_count - old_change_count
+            if count_delta < 50000:
+                message = '''@everyone The recent change gatherer is not working, as {} 
+                        new entries where added to database at {}'''\
+                        .format(str(count_delta), str(date_to_check))
+                await channel.send(message)
+            old_change_count = new_change_count
+            print('checked changes ' + str(date_to_check) + ': ' + str(count_delta) + ' rows were added')
+        except Exception as ex:
+            message = '@everyone Error reading Database:\n{}'.format(str(ex))
             await channel.send(message)
-        old_change_count = new_change_count
-        print('checked changes ' + str(date_to_check) + ': ' + str(count_delta) + ' rows were added')
+            print('checked ' + str(date_to_check) + ': ???? rows were added')
+
     return old_change_count
 
 
