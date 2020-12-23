@@ -10,6 +10,7 @@ from database.change import ChangeManager
 from database.rtd import RtdManager, sql_types
 from helpers.StreckennetzSteffi import StreckennetzSteffi
 import json
+import re
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
@@ -51,6 +52,10 @@ def parse_stop_plan(stop: dict) -> dict:
     """
     # Create a int64 hash to be used as index.
     stop['hash_id'] = hash64(stop['id'])
+    id_parts = re.split(r'(?<=\d)(-)(?=\d)', stop['id'])
+    stop['dayly_id'] = int(id_parts[0])
+    stop['date_id'] = db_to_datetime(id_parts[1])
+    stop['stop_id'] = int(id_parts[2])
     if 'tl' in stop:
         for key in stop['tl'][0]:
             stop[key] = stop['tl'][0][key]

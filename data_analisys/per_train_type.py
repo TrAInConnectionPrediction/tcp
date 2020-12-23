@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from packed_bubbles import BubbleChart
-from delay import load_with_delay
+from data_analisys.packed_bubbles import BubbleChart
+from data_analisys.delay import load_with_delay
 
 
 class TrainTypeAnalysis:

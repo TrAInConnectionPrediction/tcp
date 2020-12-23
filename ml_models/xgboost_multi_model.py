@@ -5,45 +5,114 @@ import pickle
 from xgboost import XGBClassifier
 from helpers.RtdRay import RtdRay
 from data_analisys.delay import load_for_ml_model
+import datetime
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-if __name__ == '__main__':
-    import fancy_print_tcp
+
+def train_models():
     from dask.distributed import Client
 
     client = Client()
     rtd = RtdRay()
-    rtd_df = load_for_ml_model()
+    rtd_df = load_for_ml_model(max_date=datetime.datetime.today(), min_date=datetime.datetime.today() - datetime.timedelta(days=7*3))
     print('loaded data')
 
-    # Split into training and testing data
-    train, test = rtd_df.random_split([0.9, 0.1])
-    print('split data')
+    CLASSES_TO_COMPUTE = range(40)
+
+    # Buffer data loading
+    # rtd_df.compute().to_pickle('data_buffer/training_rtd.pkl')
+
+    train = rtd_df
+    del rtd_df
     train = train.compute()
+    ar_train = train.dropna(subset=['ar_delay'])
+    dp_train = train.dropna(subset=['dp_delay'])
+    del train
 
-    labels = {}
-    labels['ar_0'] = train['ar_delay'] <= 5
-    labels['ar_5'] = train['ar_delay'] > 5
-    labels['ar_10'] = train['ar_delay'] > 10
-    labels['ar_15'] = train['ar_delay'] > 15
+    ar_labels = {}
+    dp_labels = {}
+    for label in CLASSES_TO_COMPUTE:
+        ar_labels[label] = (ar_train['ar_delay'] <= label)
+        dp_labels[label] = (dp_train['dp_delay'] >= label)
 
-    labels['dp_0'] = train['dp_delay'] <= 5
-    labels['dp_5'] = train['dp_delay'] > 5
-    labels['dp_10'] = train['dp_delay'] > 10
-    labels['dp_15'] = train['dp_delay'] > 15
-
-    del train['ar_delay']
-    del test['ar_delay']
-    del train['dp_delay']
-    del test['dp_delay']
+    del ar_train['ar_delay']
+    del ar_train['dp_delay']
+    del dp_train['ar_delay']
+    del dp_train['dp_delay']
 
     models = {}
-    for key in labels:
-        est = XGBClassifier(n_estimators=70, max_depth=12, n_jobs=-1,
-                            random_state=0)
-        est.fit(train, labels[key])
-        print('trained', key)
-        pickle.dump(est, open("data_buffer/model_{}.pkl".format(key), "wb"))
-        print('saved', key)
+    for label in CLASSES_TO_COMPUTE:
+        est = XGBClassifier(n_estimators=50, max_depth=6, n_jobs=-1, objective='binary:logistic',
+                            random_state=0, tree_method='gpu_hist', gpu_id=0)
+        est.fit(ar_train, ar_labels[label])
+        pickle.dump(est, open("data_buffer/ar_models/model_{}.pkl".format(label), "wb"))
+        print('trained', label)
 
-    print('you are using these columns for training:')
-    print(len(train), len(train.columns), train.head())
+        est = XGBClassifier(n_estimators=50, max_depth=6, n_jobs=-1, objective='binary:logistic',
+                            random_state=0, tree_method='gpu_hist', gpu_id=0)
+        est.fit(dp_train, dp_labels[label])
+        pickle.dump(est, open("data_buffer/dp_models/model_{}.pkl".format(label), "wb"))
+        print('trained', label)
+
+
+def test_model(model, x_test, y_test):
+    from sklearn.dummy import DummyClassifier
+    clf = DummyClassifier(strategy='most_frequent', random_state=0)
+    clf.fit(x_test, y_test)
+    baseline = clf.score(x_test, y_test)
+    print('Majority baseline:\t', round(baseline * 100, 4), '%')
+
+    prediction = model.predict(x_test)
+    model_score = np.sum(prediction == y_test) / len(y_test)
+    print('Model accuracy:\t\t', round(model_score * 100, 4), '%')
+
+    print('Model improvement:\t', round((model_score - baseline) * 100, 4), '%')
+
+    # fig1, ax1 = plt.subplots()
+    # ax1.set_title('Predictions')
+    # ax1.boxplot(prediction)
+    # plt.show()
+
+    # plt.scatter(prediction, y_test, color='red', label='prediction')
+    # from sklearn import linear_model
+    # # Create linear regression object
+    # regr = linear_model.LinearRegression()
+
+    # # Train the model using the training sets
+    # regr.fit(prediction.reshape(-1, 1), y_test)
+    # reg_y = regr.predict(prediction.reshape(-1, 1))
+    # plt.plot(prediction, reg_y, color='blue', linewidth=3)
+
+    # # plt.axis('tight')
+    # plt.axis('scaled')
+    # plt.legend()
+
+    # plt.tight_layout()
+    # plt.show()
+
+    # from sklearn.metrics import precision_recall_curve
+    # from sklearn.metrics import plot_precision_recall_curve
+
+    # disp = plot_precision_recall_curve(model, x_test, y_test)
+    # disp.ax_.set_title('2-class Precision-Recall curve')
+    # plt.show()
+
+
+if __name__ == '__main__':
+    import fancy_print_tcp
+    # train_models()
+
+    rtd_df = pd.read_pickle('data_buffer/training_rtd.pkl')# .sample(frac=0.01)
+    rtd_df = rtd_df.dropna(subset=['ar_delay'])
+    test_x = rtd_df.copy()
+    del test_x['ar_delay']
+    del test_x['dp_delay']
+
+    for model_number in range(40):
+        print('test_results for model {}'.format(model_number))
+        test_y = rtd_df['ar_delay'] <= model_number
+        model = pickle.load(open("data_buffer/ar_models/model_{}.pkl".format(model_number), "rb"))
+        test_model(model, test_x, test_y)
+        print('')
