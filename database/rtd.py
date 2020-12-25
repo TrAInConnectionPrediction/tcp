@@ -83,6 +83,9 @@ class Rtd(Base):
 
     station = Column(Text)
     id = Column(Text)
+    dayly_id = Column(BIGINT)
+    date_id = Column(DateTime)
+    stop_id = Column(Integer)
     hash_id = Column(BIGINT, primary_key=True)
 
 
@@ -147,6 +150,9 @@ sql_types = {
 
     'station': Text,
     'id': Text,
+    'dayly_id': BIGINT,
+    'date_id': DateTime,
+    'stop_id': Integer,
     'hash_id': Integer,
     
     'distance_to_start': Float,
