@@ -54,8 +54,8 @@ def parse_stop_plan(stop: dict) -> dict:
     stop['hash_id'] = hash64(stop['id'])
     id_parts = re.split(r'(?<=\d)(-)(?=\d)', stop['id'])
     stop['dayly_id'] = int(id_parts[0])
-    stop['date_id'] = db_to_datetime(id_parts[1])
-    stop['stop_id'] = int(id_parts[2])
+    stop['date_id'] = db_to_datetime(id_parts[2])
+    stop['stop_id'] = int(id_parts[4])
     if 'tl' in stop:
         for key in stop['tl'][0]:
             stop[key] = stop['tl'][0][key]
