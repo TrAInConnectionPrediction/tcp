@@ -1,5 +1,6 @@
 import os
 import sys
+from numpy.core.numeric import True_
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import datetime
@@ -7,15 +8,18 @@ import progressbar
 from rtd_crawler.hash64 import hash64
 from database.plan import PlanManager
 from database.change import ChangeManager
-from database.rtd import RtdManager, sql_types
+from database.rtd import RtdManager, sql_types, Rtd, RtdArrays
 from helpers.StreckennetzSteffi import StreckennetzSteffi
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
 plan_db = PlanManager()
 change_db = ChangeManager()
+rtd = RtdManager()
+streckennetz = StreckennetzSteffi(prefer_cache=False)
 
 
 # These are the names of columns that contain time information and should be parsed into a datetime
@@ -52,6 +56,8 @@ def parse_stop_plan(stop: dict) -> dict:
     """
     # Create a int64 hash to be used as index.
     stop['hash_id'] = hash64(stop['id'])
+
+    # Split id into the three id parts: the id unique on the date, the date, the stop number
     id_parts = re.split(r'(?<=\d)(-)(?=\d)', stop['id'])
     stop['dayly_id'] = int(id_parts[0])
     stop['date_id'] = db_to_datetime(id_parts[2])
@@ -179,10 +185,10 @@ def add_distance(rtd):
             rtd[prefix + '_pp'] = ''
             rtd[prefix + '_cp'] = ''
 
-    arr_cols = ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']
-    for arr_col in arr_cols:
-        rtd[arr_col] = rtd[arr_col].astype('str')
-        rtd[arr_col] = rtd[arr_col].str.split('|')
+    for col in ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']:
+        if col in rtd.columns:
+            rtd[col] = rtd[col].astype('str')
+            rtd[col] = rtd[col].str.split('|')
 
     for i, row in rtd.iterrows():
             try:
@@ -222,10 +228,28 @@ def parse_timetable(timetables):
     return parsed
 
 
+def parse_station(station, start_date, end_date):
+    stations_timetables = plan_db.plan_of_station(station, date1=start_date, date2=end_date)
+    parsed = parse_timetable(stations_timetables)
+
+    if parsed:
+        parsed = pd.DataFrame(parsed)
+        parsed = parsed.set_index('hash_id')
+        # Remove duplicates. Duplicates may happen if a stop is shifted to the next hour due to delays.
+        # It than reappears in the planned timetable of the next hour.
+        parsed = parsed.loc[~parsed.index.duplicated(keep='last')]
+        parsed['station'] = station
+        parsed = add_distance(parsed)
+        current_array_cols = [col for col in RtdArrays.__table__.columns.keys() if col in parsed.columns]
+        rtd_arrays_df = parsed.loc[:, current_array_cols]
+        rtd.upsert_arrays(rtd_arrays_df)
+        rtd_df = parsed.drop(current_array_cols)
+        rtd.upsert(rtd_df)
+    return True
+
+
 if __name__ == "__main__":
     import fancy_print_tcp
-    rtd = RtdManager()
-    streckennetz = StreckennetzSteffi()
 
     if input('Do you wish to only parse new data? ([y]/n)') == 'n':
         start_date = datetime.datetime(2020, 10, 1, 0, 0)
@@ -233,22 +257,10 @@ if __name__ == "__main__":
         start_date = rtd.max_date() - datetime.timedelta(days=2)
 
     end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-    with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
-        buffer = []
-        buffer_len = 0
-        for i, station in enumerate(streckennetz):
-            stations_timetables = plan_db.plan_of_station(station, date1=start_date, date2=end_date)
-
-            parsed = parse_timetable(stations_timetables)
-
-            if parsed:
-                parsed = pd.DataFrame(parsed)
-                parsed = parsed.set_index('hash_id')
-                # Remove duplicates. Duplicates may happen if a stop is shifted to the next hour due to delays.
-                # It than reappears in the planned timetable of the next hour.
-                parsed = parsed.loc[~parsed.index.duplicated(keep='last')]
-                parsed['station'] = station
-                parsed = add_distance(parsed)
-                rtd.upsert(parsed)
-
-            bar.update(i)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        tasks = [executor.submit(lambda s: parse_station(s, start_date, end_date), station) for station in streckennetz]
+        i = 1
+        with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
+            for thread in as_completed(tasks):
+                bar.update(i)
+                i += 1
