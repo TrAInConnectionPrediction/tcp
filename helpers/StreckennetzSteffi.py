@@ -4,12 +4,17 @@ import pandas as pd
 import networkx as nx
 import functools
 import geopy.distance
+import logging
 from helpers.StationPhillip import StationPhillip
 
+logger = logging.getLogger("webserver." + __name__)
 
 class StreckennetzSteffi(StationPhillip):
     def __init__(self):
         super().__init__()
+
+        logger.info("Getting streckennetz...")
+
         self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
                             + '/data_buffer/streckennetz_offline_buffer'
         try:
@@ -19,11 +24,13 @@ class StreckennetzSteffi(StationPhillip):
         except:
             try:
                 streckennetz_df = pd.read_pickle(self._BUFFER_PATH)
-                print('Using offline streckennetz buffer')
+                logger.warning('Using offline streckennetz buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
 
         self.streckennetz = nx.from_pandas_edgelist(streckennetz_df, source='u', target='v', edge_attr=True)
+
+        logger.info("Done")
 
     def route_length(self, waypoints) -> float:
         """
