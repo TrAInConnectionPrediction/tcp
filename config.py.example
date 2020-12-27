@@ -15,3 +15,5 @@ website_secret = ''
 
 
 meteoblue_apikey = ''
+
+station_to_monitor_per_thread = 256
