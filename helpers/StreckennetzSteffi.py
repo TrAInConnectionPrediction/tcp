@@ -4,29 +4,35 @@ import pandas as pd
 import networkx as nx
 import functools
 import geopy.distance
-import logging
 from helpers.StationPhillip import StationPhillip
 
 logger = logging.getLogger("webserver." + __name__)
 
 class StreckennetzSteffi(StationPhillip):
-    def __init__(self):
+    def __init__(self, prefer_cache=False):
         super().__init__()
-
-        logger.info("Getting streckennetz...")
-
-        self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
-                            + '/data_buffer/streckennetz_offline_buffer'
-        try:
-            from database.engine import engine
-            streckennetz_df = pd.read_sql('SELECT u, v, length FROM minimal_streckennetz', con=engine)
-            streckennetz_df.to_pickle(self._BUFFER_PATH)
-        except:
+        self._CACHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
+                            + '/cache/streckennetz_cache'
+        self.using_cache = False
+        if prefer_cache:
             try:
-                streckennetz_df = pd.read_pickle(self._BUFFER_PATH)
-                logger.warning('Using offline streckennetz buffer')
+                streckennetz_df = pd.read_pickle(self._CACHE_PATH)
+                self.using_cache = True
+                print('Using streckennetz cache')
             except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local buffer')
+                pass
+
+        if not self.using_cache:
+            try:
+                from database.engine import engine
+                streckennetz_df = pd.read_sql('SELECT u, v, length FROM minimal_streckennetz', con=engine)
+                streckennetz_df.to_pickle(self._CACHE_PATH)
+            except:
+                try:
+                    streckennetz_df = pd.read_pickle(self._CACHE_PATH)
+                    print('Using streckennetz cache')
+                except FileNotFoundError:
+                    raise FileNotFoundError('There is no connection to the database and no cache of it')
 
         self.streckennetz = nx.from_pandas_edgelist(streckennetz_df, source='u', target='v', edge_attr=True)
 
