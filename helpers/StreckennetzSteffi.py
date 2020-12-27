@@ -5,6 +5,7 @@ import networkx as nx
 import functools
 import geopy.distance
 from helpers.StationPhillip import StationPhillip
+import logging
 
 logger = logging.getLogger("webserver." + __name__)
 

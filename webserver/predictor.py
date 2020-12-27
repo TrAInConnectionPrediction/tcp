@@ -32,6 +32,12 @@ class Predictor:
             self.cat_encoders[cat] = pickle.load(
                 open("data_buffer/LabelEncoder_{}.pkl".format(cat), "rb")
             )
+        self.ar_models = []
+        self.dp_models = []
+        for model in range(40):
+            self.ar_models.append(pickle.load(open("data_buffer/ar_models/model_{}.pkl".format(model), "rb")))
+            self.dp_models.append(pickle.load(open("data_buffer/dp_models/model_{}.pkl".format(model), "rb")))
+
         self.models = {}
         for model in [
             "ar_0",
@@ -47,6 +53,18 @@ class Predictor:
                 open("data_buffer/model_{}.pkl".format(model), "rb")
             )
 
+    def predict_ar(self, features):
+        prediction = np.empty(40)
+        for model in range(40):
+            prediction[model] = self.ar_models[model].predict_proba(features, validate_features=True)[0, 1]
+        return prediction
+
+    def predict_dp(self, features):
+        prediction = np.empty(40)
+        for model in range(40):
+            prediction[model] = self.dp_models[model].predict_proba(features, validate_features=True)[0, 1]
+        return prediction
+
     def predict(self, data, which):
         predictions = {'ar_0': 0.95, 'ar_5': 1 - 0.95, 'ar_10': 1 - 0.97, 'ar_15': 1 - 0.99,
                        'dp_0': 0.95, 'dp_5': 1 - 0.95, 'dp_10': 1 - 0.97, 'dp_15': 1 - 0.99,}
@@ -55,33 +73,41 @@ class Predictor:
                 predictions[model] = float(self.models[model].predict_proba(data)[which, 1])
         return predictions
 
-    def predict_con(self, data1, data2, transfer_time):
-        pred1 = self.predict(data1, 1)
-        pred2 = self.predict(data2, 0)
+    def predict_con(self, ar_features, dp_features, transfer_time):
+        ar_prediction = self.predict_ar(ar_features.loc[0:1, :])
+        dp_prediction = self.predict_dp(dp_features.loc[1:, :])
+        if transfer_time > 39:
+            return 1, ar_prediction[5], dp_prediction[5]
+        con_score = ar_prediction[transfer_time - 2] * dp_prediction[0]
+        con_score += np.sum((ar_prediction[transfer_time-1:] - ar_prediction[transfer_time-2:-1]) * dp_prediction[1:-transfer_time + 2])
+        return con_score, ar_prediction[5], dp_prediction[5]
 
-        con_score = 0
-        if transfer_time > 17:
-            con_score = 1  # if the transfer time is higher than our highest label, we can only predict the connection as working
-
-        elif transfer_time > 12:
-            p1 = pred1["ar_15"] * (1 - pred2["dp_5"])
-            con_score = 1 - p1
-
-        elif transfer_time > 7:
-            # If the arrival train has 10 min delay, and the departure one does not have 5 min delay
-            p1 = (pred1["ar_10"] - pred1["ar_15"]) * (1 - pred2["dp_5"])
-
-            # if the arrival train has 15 min delay, and the departure one does not have 10 min delay
-            p2 = pred1["ar_15"] * (1 - pred2["dp_10"])
-            con_score = 1 - (p1 + p2)
-
-        else:
-            p1 = (pred1["ar_5"] - pred1["ar_10"]) * (1 - pred2["dp_5"])
-            p2 = (pred1["ar_10"] - pred1["ar_15"]) * (1 - pred2["dp_10"])
-            p3 = pred1["ar_15"] * (1 - pred2["dp_15"])
-            con_score = 1 - (p1 + p2 + p3)
-
-        return con_score, pred1["ar_5"], pred2["dp_5"]
+        # pred1 = self.predict(data1, 1)
+        # pred2 = self.predict(data2, 0)
+        #
+        # con_score = 0
+        # if transfer_time > 17:
+        #     con_score = 1  # if the transfer time is higher than our highest label, we can only predict the connection as working
+        #
+        # elif transfer_time > 12:
+        #     p1 = pred1["ar_15"] * (1 - pred2["dp_5"])
+        #     con_score = 1 - p1
+        #
+        # elif transfer_time > 7:
+        #     # If the arrival train has 10 min delay, and the departure one does not have 5 min delay
+        #     p1 = (pred1["ar_10"] - pred1["ar_15"]) * (1 - pred2["dp_5"])
+        #
+        #     # if the arrival train has 15 min delay, and the departure one does not have 10 min delay
+        #     p2 = pred1["ar_15"] * (1 - pred2["dp_10"])
+        #     con_score = 1 - (p1 + p2)
+        #
+        # else:
+        #     p1 = (pred1["ar_5"] - pred1["ar_10"]) * (1 - pred2["dp_5"])
+        #     p2 = (pred1["ar_10"] - pred1["ar_15"]) * (1 - pred2["dp_10"])
+        #     p3 = pred1["ar_15"] * (1 - pred2["dp_15"])
+        #     con_score = 1 - (p1 + p2 + p3)
+        #
+        # return con_score, pred1["ar_5"], pred2["dp_5"]
 
     def get_pred_data(self, connection):
         try:
@@ -98,9 +124,7 @@ class Predictor:
                 ]
             )
             # departure of segment
-            data.loc[0, "station"] = self.streckennetz.get_name(
-                eva=int(connection["segmentStart"]["id"])
-            )
+            data.loc[0, "station"] = self.streckennetz.get_name(eva=int(connection["segmentStart"]["id"]))
             trip = connection["full_trip"][
                 : connection["full_trip"].index(
                     self.streckennetz.get_eva(name=data.at[0, "station"])
@@ -121,6 +145,7 @@ class Predictor:
                 data.at[0, "distance_to_end"] = 0
             else:
                 data.at[0, "distance_to_end"] = self.streckennetz.eva_route_length(trip)
+
             time = from_unix(connection["departure"]["time"])
             data.at[0, "hour"] = time.hour
             data.at[0, "day"] = time.weekday()

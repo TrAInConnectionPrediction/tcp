@@ -57,8 +57,10 @@ def train_models():
         print('trained', label)
 
 
-def test_model(model, x_test, y_test):
+def test_model(model, x_test, y_test, model_number):
     from sklearn.dummy import DummyClassifier
+    from sklearn.metrics import roc_curve, auc
+
     clf = DummyClassifier(strategy='most_frequent', random_state=0)
     clf.fit(x_test, y_test)
     baseline = clf.score(x_test, y_test)
@@ -69,6 +71,21 @@ def test_model(model, x_test, y_test):
     print('Model accuracy:\t\t', round(model_score * 100, 4), '%')
 
     print('Model improvement:\t', round((model_score - baseline) * 100, 4), '%')
+
+    prediction = model.predict_proba(x_test)[:, 1]
+    fpr, tpr, thresholds = roc_curve(y_test, prediction, pos_label=1)
+    roc_auc = auc(fpr, tpr)
+
+    lw = 2
+    axs[model_number % 5, model_number // 5].plot(fpr, tpr, color='darkorange',
+        lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    axs[model_number % 5, model_number // 5].plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    axs[model_number % 5, model_number // 5].set_xlim([0.0, 1.0])
+    axs[model_number % 5, model_number // 5].set_ylim([0.0, 1.05])
+    axs[model_number % 5, model_number // 5].set_xlabel('False Positive Rate')
+    axs[model_number % 5, model_number // 5].set_ylabel('True Positive Rate')
+    axs[model_number % 5, model_number // 5].set_title('Receiver operating characteristic model {}'.format(model_number))
+    axs[model_number % 5, model_number // 5].legend(loc="lower right")
 
     # fig1, ax1 = plt.subplots()
     # ax1.set_title('Predictions')
@@ -109,10 +126,12 @@ if __name__ == '__main__':
     test_x = rtd_df.copy()
     del test_x['ar_delay']
     del test_x['dp_delay']
+    fig, axs = plt.subplots(5, 8)
 
     for model_number in range(40):
         print('test_results for model {}'.format(model_number))
         test_y = rtd_df['ar_delay'] <= model_number
         model = pickle.load(open("data_buffer/ar_models/model_{}.pkl".format(model_number), "rb"))
-        test_model(model, test_x, test_y)
+        test_model(model, test_x, test_y, model_number)
         print('')
+    plt.show()
