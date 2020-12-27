@@ -8,12 +8,12 @@ from helpers.StationPhillip import StationPhillip
 
 
 class StreckennetzSteffi(StationPhillip):
-    def __init__(self, prefere_cache=False):
+    def __init__(self, prefer_cache=False):
         super().__init__()
         self._CACHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
                             + '/cache/streckennetz_cache'
         self.using_cache = False
-        if prefere_cache:
+        if prefer_cache:
             try:
                 streckennetz_df = pd.read_pickle(self._CACHE_PATH)
                 self.using_cache = True
