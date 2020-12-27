@@ -19,8 +19,6 @@ class Rtd(Base):
     Scheme for parsed data.
     """
     __tablename__ = 'recent_change_rtd'
-    ar_ppth = Column(ARRAY(Text))
-    ar_cpth = Column(ARRAY(Text))
     ar_pp = Column(Text)
     ar_cp = Column(Text)
     ar_pt = Column(DateTime)
@@ -35,13 +33,7 @@ class Rtd(Base):
     ar_cde = Column(Text)
     ar_dc = Column(Integer)
     ar_l = Column(Text)
-    ar_m_id = Column(ARRAY(Text))
-    ar_m_t = Column(ARRAY(String(length=1)))
-    ar_m_ts = Column(ARRAY(DateTime))
-    ar_m_c = Column(ARRAY(Integer))
-
-    dp_ppth = Column(ARRAY(Text))
-    dp_cpth = Column(ARRAY(Text))
+    
     dp_pp = Column(Text)
     dp_cp = Column(Text)
     dp_pt = Column(DateTime)
@@ -56,10 +48,6 @@ class Rtd(Base):
     dp_cde = Column(Text)
     dp_dc = Column(Integer)
     dp_l = Column(Text)
-    dp_m_id = Column(ARRAY(Text))
-    dp_m_t = Column(ARRAY(String(length=1)))
-    dp_m_ts = Column(ARRAY(DateTime))
-    dp_m_c = Column(ARRAY(Integer))
 
     f = Column(String(length=1))
     t = Column(Text)
@@ -67,10 +55,6 @@ class Rtd(Base):
     c = Column(Text)
     n = Column(Text)
 
-    m_id = Column(ARRAY(Text))
-    m_t = Column(ARRAY(String(length=1)))
-    m_ts = Column(ARRAY(DateTime))
-    m_c = Column(ARRAY(Integer))
     hd = Column(JSON)
     hdc = Column(JSON)
     conn = Column(JSON)
@@ -86,6 +70,29 @@ class Rtd(Base):
     dayly_id = Column(BIGINT)
     date_id = Column(DateTime)
     stop_id = Column(Integer)
+    hash_id = Column(BIGINT, primary_key=True)
+
+
+class RtdArrays(Base):
+    __tablename__ = 'recent_change_rtd_arrays'
+    ar_ppth = Column(ARRAY(Text))
+    ar_cpth = Column(ARRAY(Text))
+    ar_m_id = Column(ARRAY(Text))
+    ar_m_t = Column(ARRAY(String(length=1)))
+    ar_m_ts = Column(ARRAY(DateTime))
+    ar_m_c = Column(ARRAY(Integer))
+
+    dp_ppth = Column(ARRAY(Text))
+    dp_cpth = Column(ARRAY(Text))
+    dp_m_id = Column(ARRAY(Text))
+    dp_m_t = Column(ARRAY(String(length=1)))
+    dp_m_ts = Column(ARRAY(DateTime))
+    dp_m_c = Column(ARRAY(Integer))
+
+    m_id = Column(ARRAY(Text))
+    m_t = Column(ARRAY(String(length=1)))
+    m_ts = Column(ARRAY(DateTime))
+    m_c = Column(ARRAY(Integer))
     hash_id = Column(BIGINT, primary_key=True)
 
 
@@ -197,6 +204,27 @@ class RtdManager:
                            df,
                            if_row_exists='update',
                            table_name=Rtd.__tablename__,
+                           dtype=sql_types,
+                           create_schema=False,
+                           add_new_columns=False,
+                           adapt_dtype_of_empty_db_columns=False)
+
+    
+    @staticmethod
+    def upsert_arrays(df: pd.DataFrame):
+        """
+        Upsert dataframe to db using pangres
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Arrays to upsert
+        """
+        if not df.empty:
+            pangres.upsert(engine,
+                           df,
+                           if_row_exists='update',
+                           table_name=RtdArrays.__tablename__,
                            dtype=sql_types,
                            create_schema=False,
                            add_new_columns=False,
