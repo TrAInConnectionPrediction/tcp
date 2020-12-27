@@ -57,7 +57,7 @@ def create_app(test_config=None):
         # defining function
         return render_template("404.html")
 
-    from server import api
+    from webserver import api
 
     app.register_blueprint(api.bp)
 

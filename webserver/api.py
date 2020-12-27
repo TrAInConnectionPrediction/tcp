@@ -12,8 +12,8 @@ import os
 import subprocess
 
 from helpers.StationPhillip import StationPhillip
-from server.connection import get_connection, clean_data, get_trips_of_trains
-from server.predictor import Predictor
+from webserver.connection import get_connection, clean_data, get_trips_of_trains
+from webserver.predictor import Predictor
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 

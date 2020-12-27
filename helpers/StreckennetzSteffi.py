@@ -6,6 +6,7 @@ import functools
 import geopy.distance
 from helpers.StationPhillip import StationPhillip
 
+logger = logging.getLogger("webserver." + __name__)
 
 class StreckennetzSteffi(StationPhillip):
     def __init__(self, prefer_cache=False):
@@ -34,6 +35,8 @@ class StreckennetzSteffi(StationPhillip):
                     raise FileNotFoundError('There is no connection to the database and no cache of it')
 
         self.streckennetz = nx.from_pandas_edgelist(streckennetz_df, source='u', target='v', edge_attr=True)
+
+        logger.info("Done")
 
     def route_length(self, waypoints) -> float:
         """

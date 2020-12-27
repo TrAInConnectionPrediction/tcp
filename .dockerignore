@@ -1,0 +1,9 @@
+#Ignore everything
+*
+
+#Except
+!webserver/
+!data_buffer/
+!database/
+!helpers/
+!config.py
