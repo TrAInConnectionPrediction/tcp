@@ -3,10 +3,15 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import random
+import logging
+
+logger = logging.getLogger("webserver." + __name__)
 
 
 class StationPhillip:
     def __init__(self):
+
+        logger.info("Getting stations...")
 
         self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
                             + '/data_buffer/station_offline_buffer'
@@ -18,9 +23,11 @@ class StationPhillip:
         except:
             try:
                 self.station_df = pd.read_pickle(self._BUFFER_PATH)
-                print('Using offline station buffer')
+                logger.warning('Using offline station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
+        
+        logger.info("Done")
 
         self.station_df['eva'] = self.station_df['eva'].astype(int)
         self.name_index_stations = self.station_df.set_index('name')

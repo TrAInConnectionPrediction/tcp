@@ -1,0 +1,14 @@
+version: '3.7'
+
+services:
+  webserver:
+    build:
+      context: .
+      dockerfile: ./webserver/Dockerfile
+    command: gunicorn -b 0.0.0.0:5000 "webserver:create_app()" -t 40 -w 4
+    volumes:
+      - ./:/usr/src/webserver/
+    ports:
+      - 5000:5000
+    env_file:
+      - ./.env.dev
