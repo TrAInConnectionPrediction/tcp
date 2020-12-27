@@ -1,3 +1,4 @@
+from concurrent.futures.process import ProcessPoolExecutor
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,6 +11,7 @@ import datetime
 from database.plan import PlanManager
 from rtd_crawler.xml_parser import xml_to_json
 import progressbar
+from concurrent.futures import ThreadPoolExecutor
 
 
 def preparse_plan(plan):
@@ -18,6 +20,9 @@ def preparse_plan(plan):
     plan = {hash64(stop['id']): stop for stop in plan}
     return plan
 
+
+def get_plan(eva, str_date, hour):
+    return dd.get_plan(station_id=eva, date=str_date, hour=hour)
 
 if __name__ == '__main__':
     import fancy_print_tcp
@@ -37,8 +42,9 @@ if __name__ == '__main__':
             try:
                 bar = progressbar.ProgressBar(max_value=len(stations)).start()
                 i = 0
-                for eva, bhf in zip(evas, stations.sta_list):
-                    plan = dd.get_plan(station_id=eva, date=str_date, hour=hour)
+                with ThreadPoolExecutor(max_workers=4) as executor:
+                    plans = executor.map(lambda eva: get_plan(eva, str_date, hour), evas)
+                for bhf, plan in zip(stations.sta_list, plans):
                     if plan is not None:
                         plan = preparse_plan(plan)
                         db.add_plan(plan=plan, bhf=bhf, date=date, hour=hour)
