@@ -13,6 +13,7 @@ from itertools import chain
 import datetime
 from database.change import ChangeManager
 from rtd_crawler.xml_parser import xml_to_json
+from config import station_to_monitor_per_thread
 
 
 def preparse_changes(changes):
@@ -66,7 +67,7 @@ def upload_local_db():
 dd = SimplestDownloader()
 if __name__ == '__main__':
     import fancy_print_tcp
-    # Create database and table if not existing.
+    # Create local database and table if not existing.
     conn, c = get_db_con()
     try:
         c.execute("""CREATE TABLE rchg (
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
-    eva_list = [eva_list[i:i + 4] for i in range(0, len(eva_list), 4)]
+    eva_list = [eva_list[i:i + station_to_monitor_per_thread] for i in range(0, len(eva_list), station_to_monitor_per_thread)]
     # monitor_recent_change([8000207], dd)
     while True:
         upload_time = time.time()
@@ -105,7 +106,7 @@ if __name__ == '__main__':
             print('{datetime}: finished after {time_needed} seconds. Now waiting {time_waiting} seconds till restart'
                   .format(datetime=(datetime.datetime.now()),
                           time_needed=time.time() - start_time,
-                          time_waiting=110 - (time.time() - start_time)), end='\r')
-            time.sleep(max(0.0, 110 - (time.time() - start_time)))
+                          time_waiting=120 - (time.time() - start_time)), end='\r')
+            time.sleep(max(0.0, 120 - (time.time() - start_time)))
 
         upload_local_db()
