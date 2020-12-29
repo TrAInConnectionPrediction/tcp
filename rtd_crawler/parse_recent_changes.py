@@ -257,10 +257,15 @@ if __name__ == "__main__":
         start_date = rtd.max_date() - datetime.timedelta(days=2)
 
     end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        tasks = [executor.submit(lambda s: parse_station(s, start_date, end_date), station) for station in streckennetz]
-        i = 1
-        with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
-            for thread in as_completed(tasks):
-                bar.update(i)
-                i += 1
+    with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
+        for i, station in enumerate(streckennetz):
+            parse_station(station, start_date, end_date)
+            bar.update(i)
+
+    # with ThreadPoolExecutor(max_workers=10) as executor:
+    #     tasks = [executor.submit(lambda s: parse_station(s, start_date, end_date), station) for station in streckennetz]
+    #     i = 1
+    #     with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
+    #         for thread in as_completed(tasks):
+    #             bar.update(i)
+    #             i += 1
