@@ -88,12 +88,15 @@ class StationPhillip:
         -----
         ds100 is not unique and may raise an error
         """
-        if name:
-            return self.name_index_stations.at[name, 'eva']
-        elif ds100:
-            return self.ds100_index_stations.at[ds100, 'eva']
-        else:
-            return None
+        try:
+            if name:
+                return self.name_index_stations.at[name, 'eva']
+            elif ds100:
+                return self.ds100_index_stations.at[ds100, 'eva']
+            else:
+                return None
+        except KeyError:
+            return 0
 
     def get_name(self, eva=None, ds100=None):
         """
@@ -115,12 +118,15 @@ class StationPhillip:
         -----
         ds100 is not unique and may raise an error
         """
-        if eva:
-            return self.eva_index_stations.at[eva, 'name']
-        elif ds100:
-            return self.ds100_index_stations.at[ds100, 'name']
-        else:
-            return None
+        try:
+            if eva:
+                return self.eva_index_stations.at[eva, 'name']
+            elif ds100:
+                return self.ds100_index_stations.at[ds100, 'name']
+            else:
+                return None
+        except KeyError:
+            return 'unknown'
 
     def get_ds100(self, name=None, eva=None):
         """
@@ -138,12 +144,15 @@ class StationPhillip:
         str
             ds100 of station
         """
-        if name:
-            return self.name_index_stations.at[name, 'ds100']
-        elif eva:
-            return self.eva_index_stations.at[eva, 'ds100']
-        else:
-            return None
+        try:
+            if name:
+                return self.name_index_stations.at[name, 'ds100']
+            elif eva:
+                return self.eva_index_stations.at[eva, 'ds100']
+            else:
+                return None
+        except KeyError:
+            return 'unknown'
 
     def get_location(self, name=None, eva=None, ds100=None):
         """

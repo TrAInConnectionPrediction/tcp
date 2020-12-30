@@ -3,6 +3,15 @@ import os
 from flask import Flask, render_template
 import logging
 import logging.handlers as handlers
+from helpers.StreckennetzSteffi import StreckennetzSteffi
+
+
+streckennetz = StreckennetzSteffi()
+logger = logging.getLogger(__name__)
+basepath = os.path.dirname(os.path.realpath(__file__))
+
+from webserver.predictor import Predictor
+pred = Predictor()
 
 
 def create_app(test_config=None):
