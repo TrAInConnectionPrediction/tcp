@@ -12,6 +12,9 @@ logger = logging.getLogger("webserver." + __name__)
 class StreckennetzSteffi(StationPhillip):
     def __init__(self, prefer_cache=False):
         super().__init__()
+
+        logger.info("Getting streckennetz...")
+
         self._CACHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
                             + '/cache/streckennetz_cache'
         self.using_cache = False
@@ -19,7 +22,7 @@ class StreckennetzSteffi(StationPhillip):
             try:
                 streckennetz_df = pd.read_pickle(self._CACHE_PATH)
                 self.using_cache = True
-                print('Using streckennetz cache')
+                logger.info('Using streckennetz cache')
             except FileNotFoundError:
                 pass
 
@@ -31,7 +34,7 @@ class StreckennetzSteffi(StationPhillip):
             except:
                 try:
                     streckennetz_df = pd.read_pickle(self._CACHE_PATH)
-                    print('Using streckennetz cache')
+                    warning.info('Using streckennetz cache')
                 except FileNotFoundError:
                     raise FileNotFoundError('There is no connection to the database and no cache of it')
 

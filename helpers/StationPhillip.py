@@ -10,11 +10,17 @@ logger = logging.getLogger("webserver." + __name__)
 
 class StationPhillip:
     def __init__(self):
+        cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
+        if not os.path.isdir(cache_dir):
+            logger.info("Creating cache dir")
+            try:
+                os.mkdir(cache_dir)
+            except OSError:
+                logger.error("Creation of the cache directory failed")
 
         logger.info("Getting stations...")
 
-        self._BUFFER_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
-                            + '/data_buffer/station_offline_buffer'
+        self._BUFFER_PATH = cache_dir + 'station_cache'
         try:
             from database.engine import engine
             self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
