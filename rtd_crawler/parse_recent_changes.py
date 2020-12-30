@@ -243,7 +243,7 @@ def parse_station(station, start_date, end_date):
         current_array_cols = [col for col in RtdArrays.__table__.columns.keys() if col in parsed.columns]
         rtd_arrays_df = parsed.loc[:, current_array_cols]
         rtd.upsert_arrays(rtd_arrays_df)
-        rtd_df = parsed.drop(current_array_cols)
+        rtd_df = parsed.drop(current_array_cols, axis=1)
         rtd.upsert(rtd_df)
     return True
 

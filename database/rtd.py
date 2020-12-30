@@ -10,6 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from database.engine import engine
 import datetime
+from sqlalchemy import exc
 
 Base = declarative_base()
 
@@ -55,11 +56,6 @@ class Rtd(Base):
     c = Column(Text)
     n = Column(Text)
 
-    hd = Column(JSON)
-    hdc = Column(JSON)
-    conn = Column(JSON)
-    rtr = Column(JSON)
-
     distance_to_start = Column(Float)
     distance_to_end = Column(Float)
     distance_to_last = Column(Float)
@@ -93,6 +89,12 @@ class RtdArrays(Base):
     m_t = Column(ARRAY(String(length=1)))
     m_ts = Column(ARRAY(DateTime))
     m_c = Column(ARRAY(Integer))
+
+    hd = Column(JSON)
+    hdc = Column(JSON)
+    conn = Column(JSON)
+    rtr = Column(JSON)
+    
     hash_id = Column(BIGINT, primary_key=True)
 
 
@@ -200,14 +202,21 @@ class RtdManager:
             Data to upsert
         """
         if not df.empty:
-            pangres.upsert(engine,
-                           df,
-                           if_row_exists='update',
-                           table_name=Rtd.__tablename__,
-                           dtype=sql_types,
-                           create_schema=False,
-                           add_new_columns=False,
-                           adapt_dtype_of_empty_db_columns=False)
+            try:
+                df.to_sql(name=Rtd.__tablename__,
+                          if_exists='append',
+                          con=engine,
+                          method='multi',
+                          dtype=sql_types)
+            except exc.IntegrityError:
+                pangres.upsert(engine,
+                            df,
+                            if_row_exists='update',
+                            table_name=Rtd.__tablename__,
+                            dtype=sql_types,
+                            create_schema=False,
+                            add_new_columns=False,
+                            adapt_dtype_of_empty_db_columns=False)
 
     
     @staticmethod
@@ -221,11 +230,18 @@ class RtdManager:
             Arrays to upsert
         """
         if not df.empty:
-            pangres.upsert(engine,
-                           df,
-                           if_row_exists='update',
-                           table_name=RtdArrays.__tablename__,
-                           dtype=sql_types,
-                           create_schema=False,
-                           add_new_columns=False,
-                           adapt_dtype_of_empty_db_columns=False)
+            try:
+                df.to_sql(name=RtdArrays.__tablename__,
+                          if_exists='append',
+                          con=engine,
+                          method='multi',
+                          dtype=sql_types)
+            except exc.IntegrityError:
+                pangres.upsert(engine,
+                            df,
+                            if_row_exists='update',
+                            table_name=RtdArrays.__tablename__,
+                            dtype=sql_types,
+                            create_schema=False,
+                            add_new_columns=False,
+                            adapt_dtype_of_empty_db_columns=False)

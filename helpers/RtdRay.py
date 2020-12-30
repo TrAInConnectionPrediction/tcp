@@ -82,8 +82,8 @@ Output of \d+ recent_change_rtd
 
 class RtdRay(Rtd):
     df_dict = {
-        'ar_ppth': pd.Series([], dtype='object'),
-        'ar_cpth': pd.Series([], dtype='object'),
+        # 'ar_ppth': pd.Series([], dtype='object'),
+        # 'ar_cpth': pd.Series([], dtype='object'),
         'ar_pp': pd.Series([], dtype='str'),
         'ar_cp': pd.Series([], dtype='str'),
         'ar_pt': pd.Series([], dtype='datetime64[ns]'),
@@ -98,13 +98,13 @@ class RtdRay(Rtd):
         'ar_cde': pd.Series([], dtype='str'),
         'ar_dc': pd.Series([], dtype='Int64'),
         'ar_l': pd.Series([], dtype='str'),
-        'ar_m_id': pd.Series([], dtype='object'),
-        'ar_m_t': pd.Series([], dtype='object'),
-        'ar_m_ts': pd.Series([], dtype='object'),
-        'ar_m_c': pd.Series([], dtype='object'),
+        # 'ar_m_id': pd.Series([], dtype='object'),
+        # 'ar_m_t': pd.Series([], dtype='object'),
+        # 'ar_m_ts': pd.Series([], dtype='object'),
+        # 'ar_m_c': pd.Series([], dtype='object'),
 
-        'dp_ppth': pd.Series([], dtype='object'),
-        'dp_cpth': pd.Series([], dtype='object'),
+        # 'dp_ppth': pd.Series([], dtype='object'),
+        # 'dp_cpth': pd.Series([], dtype='object'),
         'dp_pp': pd.Series([], dtype='str'),
         'dp_cp': pd.Series([], dtype='str'),
         'dp_pt': pd.Series([], dtype='datetime64[ns]'),
@@ -119,10 +119,10 @@ class RtdRay(Rtd):
         'dp_cde': pd.Series([], dtype='str'),
         'dp_dc': pd.Series([], dtype='Int64'),
         'dp_l': pd.Series([], dtype='str'),
-        'dp_m_id': pd.Series([], dtype='object'),
-        'dp_m_t': pd.Series([], dtype='object'),
-        'dp_m_ts': pd.Series([], dtype='object'),
-        'dp_m_c': pd.Series([], dtype='object'),
+        # 'dp_m_id': pd.Series([], dtype='object'),
+        # 'dp_m_t': pd.Series([], dtype='object'),
+        # 'dp_m_ts': pd.Series([], dtype='object'),
+        # 'dp_m_c': pd.Series([], dtype='object'),
 
         'f': pd.Series([], dtype='str'),
         't': pd.Series([], dtype='str'),
@@ -130,14 +130,14 @@ class RtdRay(Rtd):
         'c': pd.Series([], dtype='str'),
         'n': pd.Series([], dtype='str'),
 
-        'm_id': pd.Series([], dtype='object'),
-        'm_t': pd.Series([], dtype='object'),
-        'm_ts': pd.Series([], dtype='object'),
-        'm_c': pd.Series([], dtype='object'),
-        'hd': pd.Series([], dtype='object'),
-        'hdc': pd.Series([], dtype='object'),
-        'conn': pd.Series([], dtype='object'),
-        'rtr': pd.Series([], dtype='object'),
+        # 'm_id': pd.Series([], dtype='object'),
+        # 'm_t': pd.Series([], dtype='object'),
+        # 'm_ts': pd.Series([], dtype='object'),
+        # 'm_c': pd.Series([], dtype='object'),
+        # 'hd': pd.Series([], dtype='object'),
+        # 'hdc': pd.Series([], dtype='object'),
+        # 'conn': pd.Series([], dtype='object'),
+        # 'rtr': pd.Series([], dtype='object'),
 
         'distance_to_start': pd.Series([], dtype='float'),
         'distance_to_end': pd.Series([], dtype='float'),
@@ -147,7 +147,7 @@ class RtdRay(Rtd):
         'station': pd.Series([], dtype='str'),
         'id': pd.Series([], dtype='str'),
         'dayly_id': pd.Series([], dtype='Int64'),
-        'date_id': pd.Series([], dtype='Int64'),
+        'date_id': pd.Series([], dtype='datetime64[ns]'),
         'stop_id': pd.Series([], dtype='Int64')
     }
 
@@ -159,9 +159,25 @@ class RtdRay(Rtd):
         self.meta = dd.from_pandas(pd.DataFrame(self.df_dict), npartitions=1).persist()
         self.no_array_meta = dd.from_pandas(pd.DataFrame({key: self.df_dict[key] for key in self.df_dict if key not in self.arr_cols}), npartitions=1).persist()
         if notebook:
-            self.LOCAL_BUFFER_PATH = '../data_buffer/' + self.__tablename__ + '_local_buffer'
+            self.LOCAL_BUFFER_PATH = '../data_buffer/' + self.__tablename__ + '_local_buffer2'
         else:
-            self.LOCAL_BUFFER_PATH = 'data_buffer/' + self.__tablename__ + '_local_buffer'
+            self.LOCAL_BUFFER_PATH = 'data_buffer/' + self.__tablename__ + '_local_buffer2'
+
+    @staticmethod
+    def get_delays(rtd_df):
+        rtd_df['ar_cancellations'] = rtd_df['ar_cs'] != 'c'
+        rtd_df['ar_cancellation_time_delta'] = (rtd_df['ar_clt'] - rtd_df['ar_pt']) / pd.Timedelta(minutes=1)
+        rtd_df['ar_delay'] = (rtd_df['ar_ct'] - rtd_df['ar_pt']) / pd.Timedelta(minutes=1)
+        ar_mask = (rtd_df['ar_cs'] != 'c') & (rtd_df['ar_delay'].notnull())
+        rtd_df['ar_on_time_5'] = rtd_df.loc[ar_mask, 'ar_delay'] < 6
+
+        rtd_df['dp_cancellations'] = rtd_df['dp_cs'] != 'c'
+        rtd_df['dp_cancellation_time_delta'] = (rtd_df['dp_clt'] - rtd_df['dp_pt']) / pd.Timedelta(minutes=1)
+        rtd_df['dp_delay'] = (rtd_df['dp_ct'] - rtd_df['dp_pt']) / pd.Timedelta(minutes=1)
+        dp_mask = (rtd_df['dp_cs'] != 'c') & (rtd_df['dp_delay'].notnull())
+        rtd_df['dp_on_time_5'] = rtd_df.loc[dp_mask, 'dp_delay'] < 6
+
+        return rtd_df
 
     def update_local_buffer(self):
         rtd = self.load_data()
@@ -194,18 +210,19 @@ class RtdRay(Rtd):
         with ProgressBar():
             from sqlalchemy import Column
             from sqlalchemy.exc import ProgrammingError
-            with engine.connect() as connection:
-                try:
-                    query = sql.select([Column(c) for c in self.df_dict if c not in self.arr_cols] + [Column('hash_id')])\
-                        .select_from(sql.table(Rtd.__tablename__))\
-                        .alias('no_array_rtd')
-                    view_query = 'CREATE MATERIALIZED VIEW no_array_rtd AS {}'.format(str(query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})))
-                    connection.execute(view_query)
-                except ProgrammingError:
-                    connection.execute('REFRESH MATERIALIZED VIEW no_array_rtd')
+            # with engine.connect() as connection:
+                # try:
+                #     query = sql.select([Column(c) for c in self.df_dict if c not in self.arr_cols] + [Column('hash_id')])\
+                #         .select_from(sql.table(Rtd.__tablename__))\
+                #         .alias('no_array_rtd')
+                #     view_query = 'CREATE MATERIALIZED VIEW no_array_rtd AS {}'.format(str(query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})))
+                #     connection.execute(view_query)
+                # except ProgrammingError:
+                #     connection.execute('REFRESH MATERIALIZED VIEW no_array_rtd')
 
-            rtd = dd.read_sql_table('no_array_rtd_mater', DB_CONNECT_STRING,
+            rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
                                     index_col='hash_id', meta=self.no_array_meta, npartitions=200)
+            rtd = self.get_delays(rtd)
             rtd = self.catagorize(rtd)
             # rtd = rtd.map_partitions(RtdRay.catagorize) # , meta=rtd
             # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
@@ -221,6 +238,8 @@ class RtdRay(Rtd):
 
         Returns
         -------
+        dask.dataframe
+            Dataframe with categorical columns as dtype category
 
         """
         rtd = rtd.astype({'f': 'category', 't': 'category', 'o': 'category',
@@ -244,7 +263,6 @@ class RtdRay(Rtd):
         -------
         dask.DataFrame
             dask.DataFrame containing the loaded data
-
         """
         try:
             data = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow', **kwargs)
