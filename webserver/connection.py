@@ -4,14 +4,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from functools import lru_cache
 import requests
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pytz import timezone
-import logging
-from helpers.StationPhillip import StationPhillip
-
-logger = logging.getLogger(__name__)
-
-stations = StationPhillip()
+from webserver import streckennetz, logger
 
 
 def to_local(dt):
@@ -41,8 +36,8 @@ def get_connection(start, destination, time):
     # marudor will unix zeit in UTC zeit aber .timestamp macht des
     # automatich wenn die Zeitzone gesetzt ist
     json = {
-        "start": str(stations.get_eva(name=start)),
-        "destination": str(stations.get_eva(name=destination)),
+        "start": str(streckennetz.get_eva(name=start)),
+        "destination": str(streckennetz.get_eva(name=destination)),
         "time": set_to_utc(time, 1).timestamp() * 1000,
         "maxChanges": "-1",
         "transferTime": "0",

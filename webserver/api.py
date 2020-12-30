@@ -1,27 +1,18 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from flask import Flask, render_template, request, jsonify, Response, current_app
+from flask import request, jsonify, current_app
 from flask import Blueprint
-from datetime import datetime, timedelta
+from datetime import datetime
 from pytz import timezone
 import json
-import pandas as pd
-import logging
 import os
 import subprocess
 
-from helpers.StationPhillip import StationPhillip
 from webserver.connection import get_connection, clean_data, get_trips_of_trains
-from webserver.predictor import Predictor
+from webserver import pred, streckennetz, logger, basepath
 
 bp = Blueprint("api", __name__, url_prefix="/api")
-
-logger = logging.getLogger(__name__)
-basepath = os.path.dirname(os.path.realpath(__file__))
-
-stations = StationPhillip()
-pred = Predictor()
 
 
 def fromUnix(unix):
@@ -82,7 +73,7 @@ def analysis(connection):
                     - fromUnix(connection[i]["arrival"][time])
                 ).seconds
                 // 60
-            ) % 60  # we just want minutes
+            )
             (
                 connection[i]["con_score"],
                 connection[i]["adelay5"],
@@ -97,7 +88,7 @@ def analysis(connection):
                     - fromUnix(connection[i]["arrival"][time])
                 ).seconds
                 // 60
-            ) % 60  # we just want minutes
+            )
             (
                 connection[i]["con_score"],
                 connection[i]["adelay5"],
@@ -191,7 +182,7 @@ def connect():
     except:
         # the user doesn't have to send us data
         pass
-    data = {"bhf": stations.sta_list}
+    data = {"bhf": streckennetz.sta_list}
     resp = jsonify(data)
     resp.headers.add("Access-Control-Allow-Origin", "*")
     return resp
