@@ -188,7 +188,10 @@ config.py
 #don't leak our data
 streckendaten/
 data/
-data_buffer/
+# data_buffer/
 
 #ignore logs
 website.log*
+cache/
+.idea
+dask-worker-space
