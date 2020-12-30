@@ -118,7 +118,7 @@ def test_model(model, x_test, y_test, model_number):
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     # train_models()
 
     rtd_df = pd.read_pickle('data_buffer/training_rtd.pkl')# .sample(frac=0.01)

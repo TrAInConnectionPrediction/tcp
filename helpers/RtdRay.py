@@ -275,7 +275,7 @@ class RtdRay(Rtd):
 
 
 if __name__ == "__main__":
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     from dask.distributed import Client
     client = Client()
     rtd_d = RtdRay()

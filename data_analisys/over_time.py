@@ -305,7 +305,7 @@ class OverYear:
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     rtd_df = load_with_delay(columns=['station', 'c', 'f'])
     time_analysis = OverHour(rtd_df, use_cache=False)
     time_analysis.plot_over_hour()

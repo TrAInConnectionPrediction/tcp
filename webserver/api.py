@@ -20,9 +20,12 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 logger = logging.getLogger(__name__)
 basepath = os.path.dirname(os.path.realpath(__file__))
 
+logger.info("Importing StationPhillip...")
 stations = StationPhillip()
+logger.info("Done")
+logger.info("Importing Predictior...")
 pred = Predictor()
-
+logger.info("Done")
 
 def fromUnix(unix):
     """

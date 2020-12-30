@@ -249,7 +249,7 @@ def parse_station(station, start_date, end_date):
 
 
 if __name__ == "__main__":
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
 
     if input('Do you wish to only parse new data? ([y]/n)') == 'n':
         start_date = datetime.datetime(2020, 10, 1, 0, 0)

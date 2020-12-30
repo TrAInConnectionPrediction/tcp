@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./webserver/Dockerfile
-    command: gunicorn -b 0.0.0.0:5000 "webserver:create_app()" -t 40 -w 4
+    command: gunicorn -b 0.0.0.0:5000 "webserver:create_app()" -t 40
     volumes:
       - ./:/usr/src/webserver/
     ports:

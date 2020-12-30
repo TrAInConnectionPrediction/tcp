@@ -110,6 +110,6 @@ class StreckennetzSteffi(StationPhillip):
 
 
 if __name__ == "__main__":
-    import fancy_print_tcp
+    import helpers._print_tcp
     streckennetz_steffi = StreckennetzSteffi()
     print(streckennetz_steffi.route_length(['Tübingen Hbf', 'Stuttgart Hbf', 'Paris Est']))

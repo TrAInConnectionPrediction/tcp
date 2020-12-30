@@ -120,7 +120,7 @@ def get_hourly_batch(_lol):
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     hour = datetime.datetime.now().time().hour - 1
 
     with Pool(processes=1, maxtasksperchild=1) as pool:

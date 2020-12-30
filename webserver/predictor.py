@@ -1,4 +1,3 @@
-import xgboost as xgb
 import pickle
 import pandas as pd
 import datetime
