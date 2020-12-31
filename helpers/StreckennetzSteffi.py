@@ -34,7 +34,7 @@ class StreckennetzSteffi(StationPhillip):
             except:
                 try:
                     streckennetz_df = pd.read_pickle(self._CACHE_PATH)
-                    warning.info('Using streckennetz cache')
+                    logger.waring('Using streckennetz cache')
                 except FileNotFoundError:
                     raise FileNotFoundError('There is no connection to the database and no cache of it')
 
@@ -110,6 +110,6 @@ class StreckennetzSteffi(StationPhillip):
 
 
 if __name__ == "__main__":
-    import helpers._print_tcp
+    import helpers.fancy_print_tcp
     streckennetz_steffi = StreckennetzSteffi()
     print(streckennetz_steffi.route_length(['Tübingen Hbf', 'Stuttgart Hbf', 'Paris Est']))
