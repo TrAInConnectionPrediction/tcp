@@ -1,4 +1,5 @@
 import os, sys
+import pickle
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
@@ -10,73 +11,72 @@ import datetime
 from sqlalchemy import sql
 
 """
-Output of \d+ recent_change_rtd
-                                                                   Table "public.recent_change_rtd"
-      Column       |             Type              | Collation | Nullable |                      Default                       | Storage  | Stats target | Description 
--------------------+-------------------------------+-----------+----------+----------------------------------------------------+----------+--------------+-------------
- ar_ppth           | text[]                        |           |          |                                                    | extended |              | 
- ar_cpth           | text[]                        |           |          |                                                    | extended |              | 
- ar_pp             | text                          |           |          |                                                    | extended |              | 
- ar_cp             | text                          |           |          |                                                    | extended |              | 
- ar_pt             | timestamp without time zone   |           |          |                                                    | plain    |              | 
- ar_ct             | timestamp without time zone   |           |          |                                                    | plain    |              | 
- ar_ps             | character varying(1)          |           |          |                                                    | extended |              | 
- ar_cs             | character varying(1)          |           |          |                                                    | extended |              | 
- ar_hi             | integer                       |           |          |                                                    | plain    |              | 
- ar_clt            | timestamp without time zone   |           |          |                                                    | plain    |              | 
- ar_wings          | text                          |           |          |                                                    | extended |              | 
- ar_tra            | text                          |           |          |                                                    | extended |              | 
- ar_pde            | text                          |           |          |                                                    | extended |              | 
- ar_cde            | text                          |           |          |                                                    | extended |              | 
- ar_dc             | integer                       |           |          |                                                    | plain    |              | 
- ar_l              | text                          |           |          |                                                    | extended |              | 
- ar_m_id           | text[]                        |           |          |                                                    | extended |              | 
- ar_m_t            | character varying(1)[]        |           |          |                                                    | extended |              | 
- ar_m_ts           | timestamp without time zone[] |           |          |                                                    | extended |              | 
- ar_m_c            | integer[]                     |           |          |                                                    | extended |              | 
- dp_ppth           | text[]                        |           |          |                                                    | extended |              | 
- dp_cpth           | text[]                        |           |          |                                                    | extended |              | 
- dp_pp             | text                          |           |          |                                                    | extended |              | 
- dp_cp             | text                          |           |          |                                                    | extended |              | 
- dp_pt             | timestamp without time zone   |           |          |                                                    | plain    |              | 
- dp_ct             | timestamp without time zone   |           |          |                                                    | plain    |              | 
- dp_ps             | character varying(1)          |           |          |                                                    | extended |              | 
- dp_cs             | character varying(1)          |           |          |                                                    | extended |              | 
- dp_hi             | integer                       |           |          |                                                    | plain    |              | 
- dp_clt            | timestamp without time zone   |           |          |                                                    | plain    |              | 
- dp_wings          | text                          |           |          |                                                    | extended |              | 
- dp_tra            | text                          |           |          |                                                    | extended |              | 
- dp_pde            | text                          |           |          |                                                    | extended |              | 
- dp_cde            | text                          |           |          |                                                    | extended |              | 
- dp_dc             | integer                       |           |          |                                                    | plain    |              | 
- dp_l              | text                          |           |          |                                                    | extended |              | 
- dp_m_id           | text[]                        |           |          |                                                    | extended |              | 
- dp_m_t            | character varying(1)[]        |           |          |                                                    | extended |              | 
- dp_m_ts           | timestamp without time zone[] |           |          |                                                    | extended |              | 
- dp_m_c            | integer[]                     |           |          |                                                    | extended |              | 
- f                 | character varying(1)          |           |          |                                                    | extended |              | 
- t                 | text                          |           |          |                                                    | extended |              | 
- o                 | text                          |           |          |                                                    | extended |              | 
- c                 | text                          |           |          |                                                    | extended |              | 
- n                 | text                          |           |          |                                                    | extended |              | 
- m_id              | text[]                        |           |          |                                                    | extended |              | 
- m_t               | character varying(1)[]        |           |          |                                                    | extended |              | 
- m_ts              | timestamp without time zone[] |           |          |                                                    | extended |              | 
- m_c               | integer[]                     |           |          |                                                    | extended |              | 
- hd                | json                          |           |          |                                                    | extended |              | 
- hdc               | json                          |           |          |                                                    | extended |              | 
- conn              | json                          |           |          |                                                    | extended |              | 
- rtr               | json                          |           |          |                                                    | extended |              | 
- distance_to_start | double precision              |           |          |                                                    | plain    |              | 
- distance_to_end   | double precision              |           |          |                                                    | plain    |              | 
- distance_to_last  | double precision              |           |          |                                                    | plain    |              | 
- distance_to_next  | double precision              |           |          |                                                    | plain    |              | 
- station           | text                          |           |          |                                                    | extended |              | 
- id                | text                          |           |          |                                                    | extended |              | 
- dayly_id          | bigint                        |           |          |                                                    | plain    |              | 
- date_id           | timestamp without time zone   |           |          |                                                    | plain    |              | 
- stop_id           | integer                       |           |          |                                                    | plain    |              | 
- hash_id           | bigint                        |           | not null | nextval('recent_change_rtd_hash_id_seq'::regclass) | plain    |              | 
+Table "public.recent_change_rtd"
+      Column       |             Type              | Storage  | Stats target | Description 
+-------------------+-------------------------------+----------+--------------+-------------
+ ar_ppth           | text[]                        | extended |              | planned path
+ ar_cpth           | text[]                        | extended |              | changed path
+ ar_pp             | text                          | extended |              | planned platform
+ ar_cp             | text                          | extended |              | changed platform
+ ar_pt             | timestamp without time zone   | plain    |              | planned arrival time
+ ar_ct             | timestamp without time zone   | plain    |              | changed arrival time
+ ar_ps             | character varying(1)          | extended |              | planned status
+ ar_cs             | character varying(1)          | extended |              | changed status
+ ar_hi             | integer                       | plain    |              | hidden
+ ar_clt            | timestamp without time zone   | plain    |              | time the arrival was canceled
+ ar_wings          | text                          | extended |              | wings
+ ar_tra            | text                          | extended |              | transition
+ ar_pde            | text                          | extended |              | planned distant endpoint
+ ar_cde            | text                          | extended |              | changed distant endpoint
+ ar_dc             | integer                       | plain    |              | 
+ ar_l              | text                          | extended |              | line
+ ar_m_id           | text[]                        | extended |              | message id
+ ar_m_t            | character varying(1)[]        | extended |              | message type
+ ar_m_ts           | timestamp without time zone[] | extended |              | message timestamp
+ ar_m_c            | integer[]                     | extended |              | message code
+ dp_ppth           | text[]                        | extended |              | 
+ dp_cpth           | text[]                        | extended |              | 
+ dp_pp             | text                          | extended |              | 
+ dp_cp             | text                          | extended |              | 
+ dp_pt             | timestamp without time zone   | plain    |              | 
+ dp_ct             | timestamp without time zone   | plain    |              | 
+ dp_ps             | character varying(1)          | extended |              | 
+ dp_cs             | character varying(1)          | extended |              | 
+ dp_hi             | integer                       | plain    |              | 
+ dp_clt            | timestamp without time zone   | plain    |              | 
+ dp_wings          | text                          | extended |              | 
+ dp_tra            | text                          | extended |              | 
+ dp_pde            | text                          | extended |              | 
+ dp_cde            | text                          | extended |              | 
+ dp_dc             | integer                       | plain    |              | 
+ dp_l              | text                          | extended |              | 
+ dp_m_id           | text[]                        | extended |              | 
+ dp_m_t            | character varying(1)[]        | extended |              | 
+ dp_m_ts           | timestamp without time zone[] | extended |              | 
+ dp_m_c            | integer[]                     | extended |              | 
+ f                 | character varying(1)          | extended |              | 
+ t                 | text                          | extended |              | 
+ o                 | text                          | extended |              | 
+ c                 | text                          | extended |              | 
+ n                 | text                          | extended |              | 
+ m_id              | text[]                        | extended |              | 
+ m_t               | character varying(1)[]        | extended |              | 
+ m_ts              | timestamp without time zone[] | extended |              | 
+ m_c               | integer[]                     | extended |              | 
+ hd                | json                          | extended |              | 
+ hdc               | json                          | extended |              | 
+ conn              | json                          | extended |              | 
+ rtr               | json                          | extended |              | 
+ distance_to_start | double precision              | plain    |              | 
+ distance_to_end   | double precision              | plain    |              | 
+ distance_to_last  | double precision              | plain    |              | 
+ distance_to_next  | double precision              | plain    |              | 
+ station           | text                          | extended |              | 
+ id                | text                          | extended |              | 
+ dayly_id          | bigint                        | plain    |              | 
+ date_id           | timestamp without time zone   | plain    |              | 
+ stop_id           | integer                       | plain    |              | 
+ hash_id           | bigint                        | plain    |              | 
 """
 
 
@@ -159,9 +159,11 @@ class RtdRay(Rtd):
         self.meta = dd.from_pandas(pd.DataFrame(self.df_dict), npartitions=1).persist()
         self.no_array_meta = dd.from_pandas(pd.DataFrame({key: self.df_dict[key] for key in self.df_dict if key not in self.arr_cols}), npartitions=1).persist()
         if notebook:
-            self.LOCAL_BUFFER_PATH = '../data_buffer/' + self.__tablename__ + '_local_buffer2'
+            self.DATA_CACHE_PATH = '../cache/' + self.__tablename__ + '_local_buffer2'
+            self.ENCODER_PATH = '../cache/' + self.__tablename__ + '_encoder'
         else:
-            self.LOCAL_BUFFER_PATH = 'data_buffer/' + self.__tablename__ + '_local_buffer2'
+            self.DATA_CACHE_PATH = 'cache/' + self.__tablename__ + '_local_buffer2'
+            self.ENCODER_PATH = 'cache/' + self.__tablename__ + '_encoder'
 
     @staticmethod
     def get_delays(rtd_df):
@@ -196,40 +198,27 @@ class RtdRay(Rtd):
                                         index_col='hash_id', meta=self.meta, npartitions=200)
             # new_rtd.to_parquet(self.LOCAL_BUFFER_PATH + '_new', engine='pyarrow')
             # new_rtd = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow')
-            new_rtd = self.catagorize(new_rtd)
+            new_rtd = self.categorize(new_rtd)
             # Remove changes from rtd that are also present in new_rtd
             # rtd = rtd.loc[~rtd.index.isin(new_rtd.index), :]
             rtd = dd.concat([rtd, new_rtd], axis=0, sort=False, ignore_index=False)
             # rtd.drop_duplicates(keep='last', subset=['index'])
-            rtd.to_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow')
+            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow')
 
     def refresh_local_buffer(self):
         """
         Pull the hole rtd table from db and save it on disk. This takes a while.
         """
         with ProgressBar():
-            from sqlalchemy import Column
-            from sqlalchemy.exc import ProgrammingError
-            # with engine.connect() as connection:
-                # try:
-                #     query = sql.select([Column(c) for c in self.df_dict if c not in self.arr_cols] + [Column('hash_id')])\
-                #         .select_from(sql.table(Rtd.__tablename__))\
-                #         .alias('no_array_rtd')
-                #     view_query = 'CREATE MATERIALIZED VIEW no_array_rtd AS {}'.format(str(query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})))
-                #     connection.execute(view_query)
-                # except ProgrammingError:
-                #     connection.execute('REFRESH MATERIALIZED VIEW no_array_rtd')
-
             rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
                                     index_col='hash_id', meta=self.no_array_meta, npartitions=200)
             rtd = self.get_delays(rtd)
-            rtd = self.catagorize(rtd)
+            rtd = self.categorize(rtd)
             # rtd = rtd.map_partitions(RtdRay.catagorize) # , meta=rtd
             # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
-            rtd.to_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow', write_metadata_file=False)
+            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
 
-    @staticmethod
-    def catagorize(rtd):
+    def categorize(self, rtd):
         """
         Change dtype of categorical like columns to 'category'
         Parameters
@@ -246,6 +235,14 @@ class RtdRay(Rtd):
                           'c': 'category', 'n': 'category', 'ar_ps': 'category',
                           'ar_pp': 'category', 'dp_ps': 'category', 'dp_pp': 'category',
                           'station': 'category'})
+        from dask_ml import preprocessing
+        for key in ['o', 'c', 'n', 'station']:
+            le = preprocessing.LabelEncoder()
+            le.fit(rtd[key])
+            tranformed = le.transform(le.classes_)
+            pickle.dump(pd.DataFrame(index=le.classes_, data=tranformed).to_dict()[0], open(self.ENCODER_PATH + key + '_dict.pkl', "wb"))
+            pickle.dump(le, open(self.ENCODER_PATH + key + '_orig.pkl', "wb"))
+
         return rtd
 
     def load_data(self, **kwargs):
@@ -265,13 +262,49 @@ class RtdRay(Rtd):
             dask.DataFrame containing the loaded data
         """
         try:
-            data = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow', **kwargs)
+            data = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', **kwargs)
         except FileNotFoundError:
             print('There was no buffer found. A new buffer will be downloaded from the db. This will take a while.')
             self.refresh_local_buffer()
-            data = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow', **kwargs)
+            data = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', **kwargs)
 
         return data
+
+    def load_for_ml_model(self, max_date=None, min_date=None, return_date_id=False):
+        rtd = self.load_data(columns=['station',
+                                      'o',
+                                      'c',
+                                      'n',
+                                      'distance_to_start',
+                                      'distance_to_end',
+                                      'ar_delay',
+                                      'dp_delay',
+                                      'date_id',
+                                      'ar_ct',
+                                      'ar_pt',
+                                      'dp_ct',
+                                      'dp_pt'])
+        if min_date and max_date:
+            rtd = rtd.loc[(rtd['date_id'] > min_date) & (rtd['date_id'] < max_date)]
+
+        rtd['hour'] = rtd['ar_pt'].dt.hour
+        rtd['hour'] = rtd['hour'].fillna(value=rtd.loc[:, 'dp_pt'].dt.hour)
+        rtd['day'] = rtd['ar_pt'].dt.dayofweek
+        rtd['day'] = rtd['day'].fillna(value=rtd.loc[:, 'dp_pt'].dt.dayofweek)
+        for key in ['o', 'c', 'n', 'station']:
+            le = pickle.load(open(self.ENCODER_PATH + key + '_orig.pkl', "rb"))
+            rtd[key] = le.transform(rtd[key])
+        if return_date_id:
+            return rtd.drop(columns=['ar_ct',
+                                     'ar_pt',
+                                     'dp_ct',
+                                     'dp_pt'], axis=0)
+        else:
+            return rtd.drop(columns=['date_id',
+                                     'ar_ct',
+                                     'ar_pt',
+                                     'dp_ct',
+                                     'dp_pt'], axis=0)
 
 
 if __name__ == "__main__":
@@ -279,7 +312,10 @@ if __name__ == "__main__":
     from dask.distributed import Client
     client = Client()
     rtd_d = RtdRay()
-    rtd_d.refresh_local_buffer()
+    # rtd_d.refresh_local_buffer()
     # rtd_d.update_local_buffer()
     #
     # rtd = rtd_d.load_data()
+    # rtd = rtd_d.categorize(rtd)
+
+    rtd = rtd_d.load_for_ml_model()
