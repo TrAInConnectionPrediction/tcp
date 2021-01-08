@@ -1,14 +1,99 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sqlalchemy
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib
+import matplotlib.ticker
 import datetime
-import dask.dataframe as dd
-from data_analisys.delay import load_with_delay
+from helpers.RtdRay import RtdRay
+
+
+def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:
+    """
+    Add rolling mean to periotic data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame in which the mean should be added.
+    columns : list
+        The columns on which the rolling mean should be computed.
+    window : int, optional
+        The window use for rolling; must be odd, by default 3
+
+    Returns
+    -------
+    pd.DataFrame
+        df with added rolling columns.
+
+    Raises
+    ------
+    Exception
+        Raises if window is not odd.
+    """
+    if window % 2 == 0:
+        raise Exception('window must be odd')
+
+    # Add last columns in the front and first columns in the end
+    max_index = len(df) - 1
+    dist_from_center = window // 2
+    for i in range(dist_from_center):
+        df.loc[df.index[0] - df.index[i+1] + df.index[0], :] = df.iloc[max_index - i, :]
+        df.loc[df.index[max_index] + (df.index[i+1] - df.index[0]), :] = df.iloc[i, :]
+    df = df.sort_index()
+
+    # Calculate rolling mean on columns
+    for col in columns:
+        if isinstance(col, tuple):
+            new_col_name = (col[0], col[1] + '_rolling_mean')
+        else:
+            new_col_name = col + '_rolling_mean'
+        df[new_col_name] = df[col].rolling(window, center=True).mean()
+    return df.iloc[dist_from_center:-dist_from_center]
+
+
+def plot(data, title, x_label, y1_label, y2_label, formatter, locator, ax1_ylim_bottom=None, ax2_ylim_bottom=None, nticks=5):
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    ax1.tick_params(axis="both", labelsize=20) 
+    ax2.tick_params(axis="both", labelsize=20) 
+    ax1.xaxis.set_major_formatter(formatter)
+    ax1.xaxis.set_major_locator(locator)
+    ax2.xaxis.set_major_formatter(formatter)
+    ax2.xaxis.set_major_locator(locator)
+    dt_index = data.index.to_numpy()
+    ax1.set_xlim(dt_index.min(), dt_index.max())
+
+    ax1.grid(True)
+    ax2.grid(True)
+
+    # Align grids of ax1 and ax2 
+    ax1.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+    ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+
+    ax1.set_title(title, fontsize=50)
+    ax1.set_xlabel(x_label, fontsize=30)
+    ax1.set_ylabel(y1_label, color="blue", fontsize=30)
+    ax2.set_ylabel(y2_label, color="orange", fontsize=30)
+
+    ax1.plot(data[('ar_delay', 'count_rolling_mean')] + data[('dp_delay', 'count_rolling_mean')],
+                color="blue",
+                linewidth=3,
+                label='Stops')        
+    ax2.plot(data[('ar_delay', 'mean_rolling_mean')],
+                color="red",
+                linewidth=3,
+                label='Arrival delay')
+    ax2.plot(data[('dp_delay', 'mean_rolling_mean')],
+                color="orange",
+                linewidth=3,
+                label='Departure delay')
+    
+    fig.legend(fontsize=20)
+    ax1.set_ylim(bottom=ax1_ylim_bottom)
+    ax2.set_ylim(bottom=ax2_ylim_bottom)
+    fig.autofmt_xdate()
+    plt.show()
 
 
 class OverHour:
@@ -29,18 +114,28 @@ class OverHour:
             rtd_df['minute'] = rtd_df.map_partitions(self.minutetime, meta=rtd_df['ar_pt'])
             rtd_df = rtd_df.loc[~rtd_df['minute'].isna(), :]
             self.data = rtd_df.groupby('minute').agg({
-                        'ar_pt': ['count'],
                         'ar_delay': ['count', 'mean'],
-                        'ar_on_time_5': ['mean'],
                         'ar_cancellations': ['mean'],
-                        'dp_pt': ['count'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_on_time_5': ['mean'],
                         'dp_cancellations': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
+            self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                 ('ar_delay', 'count'),
+                                                 ('ar_cancellations', 'mean'),
+                                                 ('dp_delay', 'mean'),
+                                                 ('dp_delay', 'count'),
+                                                 ('dp_cancellations', 'mean')], window=5)
             self.data.to_csv(self.CACHE_PATH)
+
+        self.plot = lambda: plot(self.data,
+                                 title='Delay within one hour',
+                                 x_label='Minute',
+                                 y1_label='Stops',
+                                 y2_label='Delay in minutes',
+                                 formatter=mdates.DateFormatter("%M"),
+                                 locator=mdates.MinuteLocator(byminute=range(0, 60, 10)))
 
     @staticmethod
     def minutetime(df):
@@ -60,36 +155,7 @@ class OverHour:
         return pd.Series([datetime.datetime(year=2000, month=1, day=3, minute=minute) for minute in df['minute']], index=df['minute'].index)
 
 
-    def plot_over_hour(self):
-        self.data = self.data
-        dt_index = self.data.index.to_numpy()
-        minutes_10 = mdates.MinuteLocator(byminute=range(0, 60, 10))
-
-        fig, ax = plt.subplots()
-        date_form = mdates.DateFormatter("%M")
-        ax.xaxis.set_major_formatter(date_form)
-        ax.xaxis.set_major_locator(minutes_10)
-        ax.set_xlim(dt_index.min(), dt_index.max())
-
-        ax.set_title('Delay within one hour', fontsize=40)
-        ax.set_xlabel("Minute", fontsize=30)
-        # ax.plot(dt_index, self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')], color="blue")
-        # ax.set_ylabel("Stops", color="blue", fontsize=30)
-        # ax.grid(True)
-
-        ax2 = ax.twinx()
-        ax2.xaxis.set_major_formatter(date_form)
-        ax2.xaxis.set_major_locator(minutes_10)
-        ax2.plot(dt_index, self.data[('ar_delay', 'mean')], color="red")
-        ax2.plot(dt_index, self.data[('dp_delay', 'mean')], color="orange")
-        ax2.set_ylabel("Delay", color="orange", fontsize=30)
-        ax2.grid(True)
-
-        fig.autofmt_xdate()
-        plt.show()
-
-
-class TimeAnalysis:
+class OverDay:
     CACHE_PATH = 'data/time_analysis_data.csv'
 
     def __init__(self, rtd_df, use_cache=True):
@@ -102,50 +168,51 @@ class TimeAnalysis:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
             client = Client()
-            rtd_df['day'] = rtd_df['ar_pt'].dt.date
             rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
+            rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'].dt.time)
+            rtd_df['daytime'] = rtd_df.map_partitions(self.daytime, meta=rtd_df['date_id'])
             rtd_df = rtd_df.loc[~rtd_df['daytime'].isna(), :]
             self.data = rtd_df.groupby('daytime').agg({
-                        'ar_pt': ['count'],
                         'ar_delay': ['count', 'mean'],
-                        'ar_on_time_5': ['mean'],
                         'ar_cancellations': ['mean'],
-                        'dp_pt': ['count'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_on_time_5': ['mean'],
                         'dp_cancellations': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
+            self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                 ('ar_delay', 'count'),
+                                                 ('ar_cancellations', 'mean'),
+                                                 ('dp_delay', 'mean'),
+                                                 ('dp_delay', 'count'),
+                                                 ('dp_cancellations', 'mean')], window=21)
             self.data.to_csv(self.CACHE_PATH)
 
-    def plot_over_day(self):
-        self.data = self.data
-        dt_index = self.data.index.to_numpy()
-        hours = mdates.HourLocator()
+        self.plot = lambda: plot(self.data,
+                                 title='Delay within one day',
+                                 x_label='Time',
+                                 y1_label='Stops',
+                                 y2_label='Delay in minutes',
+                                 formatter=mdates.DateFormatter("%H:%M"),
+                                 locator=mdates.HourLocator(),
+                                 ax1_ylim_bottom=0)
 
-        fig, ax = plt.subplots()
-        date_form = mdates.DateFormatter("%H:%M")
-        ax.xaxis.set_major_formatter(date_form)
-        ax.xaxis.set_major_locator(hours)
-        ax.set_xlim(dt_index.min(), dt_index.max())
+    @staticmethod
+    def daytime(df):
+        """
+        Create datetime from time.
 
-        ax.plot(dt_index, self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')], color="blue")
-        ax.set_xlabel("Daytime", fontsize=14)
-        ax.set_ylabel("Stops", color="blue", fontsize=14)
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with the columns daytime (datetime.time).
 
-        ax.grid(True)
-
-        ax2 = ax.twinx()
-        ax2.xaxis.set_major_formatter(date_form)
-        ax2.xaxis.set_major_locator(hours)
-        ax2.plot(dt_index, self.data[('ar_delay', 'mean')], color="red")
-        ax2.plot(dt_index, self.data[('dp_delay', 'mean')], color="orange")
-        ax2.set_ylabel("Delay", color="orange", fontsize=14)
-        ax2.grid(True)
-
-        fig.autofmt_xdate()
-        plt.show()
+        Returns
+        -------
+        pd.Series
+            daytime combined with basedate (03-01-2000).
+        """
+        return pd.Series([datetime.datetime(year=2000, month=1, day=3, hour=time.hour, minute=time.minute) for time in df['daytime']], index=df['daytime'].index)
 
 
 class OverWeek:
@@ -161,24 +228,34 @@ class OverWeek:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
             client = Client()
-            rtd_df['day'] = rtd_df['ar_pt'].dt.date
             rtd_df['weekday'] = rtd_df['ar_pt'].dt.dayofweek
-            rtd_df = rtd_df.loc[~rtd_df['weekday'].isna(), :]
+            rtd_df['weekday'] = rtd_df['weekday'].fillna(value=rtd_df['dp_pt'].dt.dayofweek)
             rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
+            rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'].dt.time)
             rtd_df['weektime'] = rtd_df.map_partitions(self.weektime, meta=rtd_df['daytime'])
             self.data = rtd_df.groupby(['weektime']).agg({
-                        'ar_pt': ['count', 'max'],
                         'ar_delay': ['count', 'mean'],
-                        'ar_on_time_5': ['mean'],
                         'ar_cancellations': ['mean'],
-                        'dp_pt': ['count'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_on_time_5': ['mean'],
                         'dp_cancellations': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
+            self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                 ('ar_delay', 'count'),
+                                                 ('ar_cancellations', 'mean'),
+                                                 ('dp_delay', 'mean'),
+                                                 ('dp_delay', 'count'),
+                                                 ('dp_cancellations', 'mean')], window=21)
             self.data.to_csv(self.CACHE_PATH)
+        self.plot = lambda: plot(self.data,
+                                 title='Delay within one week',
+                                 x_label='Time',
+                                 y1_label='Stops',
+                                 y2_label='Delay in minutes',
+                                 formatter=mdates.DateFormatter("%A %H:%M"), # E.g.: Monday 08:00
+                                 locator=mdates.HourLocator(interval=8),
+                                 ax1_ylim_bottom=0)
 
     @staticmethod
     def weektime(df):
@@ -198,34 +275,6 @@ class OverWeek:
         return pd.Series([datetime.datetime.combine(datetime.date(year=2000, month=1, day=3), time) for time in df['daytime']], index=df['daytime'].index) \
                + pd.Series(data=[pd.Timedelta(days=day) for day in df['weekday']], index=df['daytime'].index)
 
-    def plot_over_week(self):
-        dt_index = self.data.index.to_numpy()
-        hours = mdates.HourLocator(interval=8)
-
-        fig, ax = plt.subplots()
-        date_form = mdates.DateFormatter("%A %H:%M") # E.g.: Monday 08:00
-        ax.xaxis.set_major_formatter(date_form)
-        ax.xaxis.set_major_locator(hours)
-        ax.set_xlim(dt_index.min(), dt_index.max())
-
-        # Plot count of Stops
-        ax.plot(dt_index, self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')], color="blue")
-        ax.set_xlabel("Daytime", fontsize=14)
-        ax.set_ylabel("Stops", color="blue", fontsize=14)
-        ax.grid(True)
-
-        # Plot avg delay
-        ax2 = ax.twinx()
-        ax2.xaxis.set_major_formatter(date_form)
-        ax2.xaxis.set_major_locator(hours)
-        ax2.plot(dt_index, self.data[('ar_delay', 'mean')], color="red")
-        ax2.plot(dt_index, self.data[('dp_delay', 'mean')], color="orange")
-        ax2.set_ylabel("Delay", color="orange", fontsize=14)
-        ax2.grid(True)
-
-        fig.autofmt_xdate()
-        plt.show()
-
 
 class OverYear:
     CACHE_PATH = 'data/over_year.csv'
@@ -241,22 +290,44 @@ class OverYear:
             from dask.distributed import Client
             client = Client()
             rtd_df['floating_hour'] = rtd_df['ar_pt'].dt.hour // 24 * 24
-            rtd_df = rtd_df.loc[~rtd_df['floating_hour'].isna(), :]
+            rtd_df['floating_hour'] = rtd_df['floating_hour'].fillna(value=rtd_df['dp_pt'].dt.hour // 24 * 24)
             rtd_df['date'] = rtd_df['ar_pt'].dt.date
+            rtd_df['date'] = rtd_df['date'].fillna(value=rtd_df['dp_pt'].dt.date)
             rtd_df['floating_yeartime'] = rtd_df.map_partitions(self.floating_yeartime, meta=rtd_df['ar_pt'])
             self.data = rtd_df.groupby(['floating_yeartime']).agg({
-                        'ar_pt': ['count'],
                         'ar_delay': ['count', 'mean'],
-                        'ar_on_time_5': ['mean'],
                         'ar_cancellations': ['mean'],
-                        'dp_pt': ['count'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_on_time_5': ['mean'],
                         'dp_cancellations': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
-            self.data.to_csv(self.CACHE_PATH)
+            full_index = pd.date_range(start=self.data.index.min(), end=self.data.index.max())
+            full_data = pd.DataFrame(index=full_index, columns=self.data.columns)
+            full_data.loc[self.data.index, :] = self.data.loc[:, :]
+            self.data = full_data.fillna(0)
+
+            # Calculate rolling mean
+            for col in [('ar_delay', 'mean'),
+                        ('ar_delay', 'count'),
+                        ('ar_cancellations', 'mean'),
+                        ('dp_delay', 'mean'),
+                        ('dp_delay', 'count'),
+                        ('dp_cancellations', 'mean')]:
+                new_col_name = (col[0], col[1] + '_rolling_mean')
+                self.data[new_col_name] = self.data[col].rolling(3, center=True).mean()
+            self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
+        
+        self.plot = lambda: plot(self.data,
+                                 title='Delay over the years',
+                                 x_label='Time',
+                                 y1_label='Stops',
+                                 y2_label='Delay in minutes',
+                                 formatter=mdates.DateFormatter("%D"),
+                                 locator=mdates.HourLocator(interval=24*7),
+                                 ax1_ylim_bottom=0,
+                                 ax2_ylim_bottom=0)
+        
 
     @staticmethod
     def floating_yeartime(df):
@@ -275,46 +346,29 @@ class OverYear:
         """
         return pd.Series([datetime.datetime.combine(row['date'], datetime.time(hour=int(row['floating_hour']))) for i, row in df.iterrows()], index=df['date'].index)
 
-    def plot_over_year(self):
-        dt_index = self.data.index.to_numpy()
-        hours = mdates.HourLocator(interval=24*2)
-
-        fig, ax = plt.subplots()
-        date_form = mdates.DateFormatter("%D")
-        ax.xaxis.set_major_formatter(date_form)
-        ax.xaxis.set_major_locator(hours)
-        ax.set_xlim(dt_index.min(), dt_index.max())
-
-        # Plot count of Stops
-        ax.plot(dt_index, self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')], color="blue")
-        ax.set_xlabel("Daytime", fontsize=14)
-        ax.set_ylabel("Stops", color="blue", fontsize=14)
-        ax.grid(True)
-
-        # Plot avg delay
-        ax2 = ax.twinx()
-        ax2.xaxis.set_major_formatter(date_form)
-        ax2.xaxis.set_major_locator(hours)
-        ax2.plot(dt_index, self.data[('ar_delay', 'mean')], color="red")
-        ax2.plot(dt_index, self.data[('dp_delay', 'mean')], color="orange")
-        ax2.set_ylabel("Delay", color="orange", fontsize=14)
-        ax2.grid(True)
-
-        fig.autofmt_xdate()
-        plt.show()
-
 
 if __name__ == '__main__':
     import fancy_print_tcp
-    rtd_df = load_with_delay(columns=['station', 'c', 'f'])
-    time_analysis = OverHour(rtd_df, use_cache=False)
-    time_analysis.plot_over_hour()
+    rtd_ray = RtdRay()
+    rtd_df = rtd_ray.load_data(columns=['ar_pt',
+                                        'dp_pt',
+                                        'ar_delay',
+                                        'ar_cancellations',
+                                        'dp_delay',
+                                        'dp_cancellations'])
 
-    # time = TimeAnalysis(rtd_df, use_cache=True)
-    # time.plot_over_day()
+    # lagecy code to plot older data
+    # from data_analisys.delay import load_with_delay
+    # rtd_df = load_with_delay(columns=['station', 'c', 'f'])
 
-    # time = OverWeek(rtd_df, use_cache=False)
-    # time.plot_over_week()
+    # time = OverHour(rtd_df, use_cache=False)
+    # time.plot()
 
-    # time = OverYear(rtd_df, use_cache=True)
-    # time.plot_over_year()
+    # time = OverDay(rtd_df, use_cache=True)
+    # time.plot()
+
+    # time = OverWeek(rtd_df, use_cache=True)
+    # time.plot()
+
+    # time = OverYear(rtd_df, use_cache=False)
+    # time.plot()
