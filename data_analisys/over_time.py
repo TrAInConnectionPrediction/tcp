@@ -97,7 +97,7 @@ def plot(data, title, x_label, y1_label, y2_label, formatter, locator, ax1_ylim_
 
 
 class OverHour:
-    CACHE_PATH = 'data_buffer/hour_analysis_data.csv'
+    CACHE_PATH = 'cache/over_hour.csv'
 
     def __init__(self, rtd_df, use_cache=True):
         try:

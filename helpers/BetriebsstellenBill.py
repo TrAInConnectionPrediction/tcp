@@ -12,25 +12,25 @@ class NoLocationError(Exception):
 
 
 class BetriebsstellenBill:
-    def __init__(self, notebook=False):
+    def __init__(self):
+        cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
+        if not os.path.isdir(cache_dir):
+            os.mkdir(cache_dir)
+
+        self.CACHE_PATH = cache_dir + 'betriebsstellen.pkl'
+
         try:
             self.engine = sqlalchemy.create_engine(
                 'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
             self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
-            if notebook:
-                self.betriebsstellen.to_pickle('../data_buffer/betriebsstellen_offline_buffer')
-            else:
-                self.betriebsstellen.to_pickle('data_buffer/betriebsstellen_offline_buffer')
+            self.betriebsstellen.to_pickle(self.CACHE_PATH)
             self.engine.dispose()
         except:
             try:
-                if notebook:
-                    self.betriebsstellen = pd.read_pickle('../data_buffer/betriebsstellen_offline_buffer')
-                else:
-                    self.betriebsstellen = pd.read_pickle('data_buffer/betriebsstellen_offline_buffer')
-                print('Using offline Betriebstellen buffer')
+                self.betriebsstellen = pd.read_pickle(self.CACHE_PATH)
+                print('Using Betriebstellen cache')
             except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local buffer')
+                raise FileNotFoundError('There is no connection to the database and no local cache')
 
         self.name_index_betriebsstellen = self.betriebsstellen.set_index('name')
         self.ds100_index_betriebsstellen = self.betriebsstellen.set_index('ds100')

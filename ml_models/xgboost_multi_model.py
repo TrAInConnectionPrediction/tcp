@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+CACHE_PATH = 'cache/ar_models/model_{}.pkl'
+
 
 def train_models():
     from dask.distributed import Client
@@ -20,9 +22,6 @@ def train_models():
     print('loaded data')
 
     CLASSES_TO_COMPUTE = range(40)
-
-    # Buffer data loading
-    # rtd_df.compute().to_pickle('data_buffer/training_rtd.pkl')
 
     train = rtd_df
     del rtd_df
@@ -47,13 +46,13 @@ def train_models():
         est = XGBClassifier(n_estimators=50, max_depth=6, n_jobs=-1, objective='binary:logistic',
                             random_state=0, tree_method='gpu_hist', gpu_id=0)
         est.fit(ar_train, ar_labels[label])
-        pickle.dump(est, open("data_buffer/ar_models/model_{}.pkl".format(label), "wb"))
+        pickle.dump(est, open(CACHE_PATH.format(label), "wb"))
         print('trained', label)
 
         est = XGBClassifier(n_estimators=50, max_depth=6, n_jobs=-1, objective='binary:logistic',
                             random_state=0, tree_method='gpu_hist', gpu_id=0)
         est.fit(dp_train, dp_labels[label])
-        pickle.dump(est, open("data_buffer/dp_models/model_{}.pkl".format(label), "wb"))
+        pickle.dump(est, open(CACHE_PATH.format(label), "wb"))
         print('trained', label)
 
 
@@ -121,7 +120,8 @@ if __name__ == '__main__':
     import fancy_print_tcp
     # train_models()
 
-    rtd_df = pd.read_pickle('data_buffer/training_rtd.pkl')# .sample(frac=0.01)
+    # TODO: Load with RtdRay
+    rtd_df = pd.read_pickle('cache/training_rtd.pkl')# .sample(frac=0.01)
     rtd_df = rtd_df.dropna(subset=['ar_delay'])
     test_x = rtd_df.copy()
     del test_x['ar_delay']
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     for model_number in range(40):
         print('test_results for model {}'.format(model_number))
         test_y = rtd_df['ar_delay'] <= model_number
-        model = pickle.load(open("data_buffer/ar_models/model_{}.pkl".format(model_number), "rb"))
+        model = pickle.load(open(CACHE_PATH.format(model_number), "rb"))
         test_model(model, test_x, test_y, model_number)
         print('')
     plt.show()
