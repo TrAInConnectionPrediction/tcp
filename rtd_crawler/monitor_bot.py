@@ -94,6 +94,6 @@ class Monitor(commands.Cog):
 
 
 if __name__ == "__main__":
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     m = Monitor()
     client.run(discord_bot_token)

@@ -66,7 +66,7 @@ def upload_local_db():
 
 dd = SimplestDownloader()
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     # Create local database and table if not existing.
     conn, c = get_db_con()
     try:

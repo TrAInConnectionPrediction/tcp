@@ -117,7 +117,7 @@ def test_model(model, x_test, y_test, model_number):
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     # train_models()
 
     # TODO: Load with RtdRay
