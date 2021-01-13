@@ -1,3 +1,6 @@
+import os, sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
 import pandas as pd
 import numpy as np
@@ -33,14 +36,31 @@ class DelayAnalysis:
             self.data = self.data.sort_index()
             self.data.to_csv(self._CACHE_PATH)
 
-    def plot_count(self):
-        self.data.loc[:, ('ar_pt', 'count')].plot(logy=True)
+    def plot_count(self, logy=False):
+        fig, ax1 = plt.subplots()
+        ax1.tick_params(axis="both", labelsize=20) 
+        index = self.data.index.to_numpy()
+        ax1.set_xlim(index.min(), index.max())
+        ax1.set_yscale('log')
+
+        ax1.grid(True)
+
+        ax1.set_title('Delay distribution', fontsize=50)
+        ax1.set_xlabel('Delay in minutes', fontsize=30)
+        ax1.set_ylabel('Count', color="blue", fontsize=30)
+
+        ax1.plot(self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')],
+                    color="blue",
+                    linewidth=3,
+                    label='Stops')        
+        
+        fig.legend(fontsize=20)
+        ax1.set_ylim(bottom=0)
         plt.show()
 
 
 if __name__ == '__main__':
     rtd_df = load_with_delay(columns=['station', 'c', 'f'])
-    # rtd_df = load_long_distance_with_delay(columns=['station', 'c', 'f'])
-    delay = DelayAnalysis(rtd_df, use_cache=False)
+    delay = DelayAnalysis(rtd_df, use_cache=True)
     delay.plot_count()
 

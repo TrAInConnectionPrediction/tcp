@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from data_analisys.packed_bubbles import BubbleChart
 from data_analisys.delay import load_with_delay
+from helpers.RtdRay import RtdRay
 
 
 class TrainTypeAnalysis:
@@ -14,22 +15,14 @@ class TrainTypeAnalysis:
         try:
             if not use_cache:
                 raise FileNotFoundError
-            self.data = pd.read_csv('data/train_type_data.csv', header=[0, 1], index_col=0)
+            self.data = pd.read_csv('cache/per_train_type.csv', header=[0, 1], index_col=0)
             print('using cached data')
         except FileNotFoundError:
             self.data = rtd_df.groupby('c', sort=False).agg({
                         'ar_delay': ['count', 'mean'],
-                        'ar_on_time_3': ['mean'],
-                        'ar_on_time_5': ['mean'],
                         'ar_cancellations': ['mean'],
-                        'ar_cancellation_time_delta': ['count', 'mean'],
-                        'ar_fern_on_time_5': ['count', 'mean'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_on_time_3': ['mean'],
-                        'dp_on_time_5': ['mean'],
                         'dp_cancellations': ['mean'],
-                        'dp_cancellation_time_delta': ['count', 'mean'],
-                        'dp_fern_on_time_5': ['count', 'mean'],
                     }).compute()
             # group train types that are uncommon
             count = self.data[('ar_delay', 'count')] + self.data[('dp_delay', 'count')]
@@ -47,7 +40,7 @@ class TrainTypeAnalysis:
             self.data = self.data.loc[~combine_mask, :]
             self.data.loc['other', :] = other
 
-            self.data.to_csv('data/train_type_data.csv')
+            self.data.to_csv('cache/per_train_type.csv')
 
     def plot_type_count(self):
         fig, ax = plt.subplots(subplot_kw=dict(aspect="equal"))
@@ -78,6 +71,17 @@ class TrainTypeAnalysis:
 
 
 if __name__ == '__main__':
-    rtd_df = load_with_delay(columns=['station', 'c', 'f'])
+    import fancy_print_tcp
+    rtd_ray = RtdRay()
+    rtd_df = rtd_ray.load_data(columns=['ar_pt',
+                                        'dp_pt',
+                                        'c',
+                                        'ar_delay',
+                                        'ar_cancellations',
+                                        'dp_delay',
+                                        'dp_cancellations'])
+    rtd_df = rtd_df.astype({'c': 'str'})
+    
     tta = TrainTypeAnalysis(rtd_df=rtd_df, use_cache=True)
-    tta.plot_type_delay(color_by='on_time_5')
+    # tta.plot_type_delay(color_by='delay')
+    tta.plot_type_delay(color_by='cancellations')

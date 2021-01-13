@@ -20,15 +20,15 @@ class StationPhillip:
 
         logger.info("Getting stations...")
 
-        self._BUFFER_PATH = cache_dir + 'station_cache'
+        self.CACHE_PATH = cache_dir + 'station_cache'
         try:
             from database.engine import engine
             self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
             engine.dispose()
-            self.station_df.to_pickle(self._BUFFER_PATH)
+            self.station_df.to_pickle(self.CACHE_PATH)
         except:
             try:
-                self.station_df = pd.read_pickle(self._BUFFER_PATH)
+                self.station_df = pd.read_pickle(self.CACHE_PATH)
                 logger.warning('Using offline station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')

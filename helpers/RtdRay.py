@@ -4,11 +4,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
-from database.rtd import Rtd, sql_types
-from database.engine import engine, DB_CONNECT_STRING
-from sqlalchemy.dialects import postgresql
-import datetime
-from sqlalchemy import sql
+from database.rtd import Rtd
+from helpers.StationPhillip import StationPhillip
+from database.engine import DB_CONNECT_STRING
+
 
 """
 Table "public.recent_change_rtd"
@@ -28,7 +27,7 @@ Table "public.recent_change_rtd"
  ar_tra            | text                          | extended |              | transition
  ar_pde            | text                          | extended |              | planned distant endpoint
  ar_cde            | text                          | extended |              | changed distant endpoint
- ar_dc             | integer                       | plain    |              | 
+ ar_dc             | integer                       | plain    |              | distant change
  ar_l              | text                          | extended |              | line
  ar_m_id           | text[]                        | extended |              | message id
  ar_m_t            | character varying(1)[]        | extended |              | message type
@@ -82,8 +81,6 @@ Table "public.recent_change_rtd"
 
 class RtdRay(Rtd):
     df_dict = {
-        # 'ar_ppth': pd.Series([], dtype='object'),
-        # 'ar_cpth': pd.Series([], dtype='object'),
         'ar_pp': pd.Series([], dtype='str'),
         'ar_cp': pd.Series([], dtype='str'),
         'ar_pt': pd.Series([], dtype='datetime64[ns]'),
@@ -98,13 +95,7 @@ class RtdRay(Rtd):
         'ar_cde': pd.Series([], dtype='str'),
         'ar_dc': pd.Series([], dtype='Int64'),
         'ar_l': pd.Series([], dtype='str'),
-        # 'ar_m_id': pd.Series([], dtype='object'),
-        # 'ar_m_t': pd.Series([], dtype='object'),
-        # 'ar_m_ts': pd.Series([], dtype='object'),
-        # 'ar_m_c': pd.Series([], dtype='object'),
 
-        # 'dp_ppth': pd.Series([], dtype='object'),
-        # 'dp_cpth': pd.Series([], dtype='object'),
         'dp_pp': pd.Series([], dtype='str'),
         'dp_cp': pd.Series([], dtype='str'),
         'dp_pt': pd.Series([], dtype='datetime64[ns]'),
@@ -119,25 +110,12 @@ class RtdRay(Rtd):
         'dp_cde': pd.Series([], dtype='str'),
         'dp_dc': pd.Series([], dtype='Int64'),
         'dp_l': pd.Series([], dtype='str'),
-        # 'dp_m_id': pd.Series([], dtype='object'),
-        # 'dp_m_t': pd.Series([], dtype='object'),
-        # 'dp_m_ts': pd.Series([], dtype='object'),
-        # 'dp_m_c': pd.Series([], dtype='object'),
 
         'f': pd.Series([], dtype='str'),
         't': pd.Series([], dtype='str'),
         'o': pd.Series([], dtype='str'),
         'c': pd.Series([], dtype='str'),
         'n': pd.Series([], dtype='str'),
-
-        # 'm_id': pd.Series([], dtype='object'),
-        # 'm_t': pd.Series([], dtype='object'),
-        # 'm_ts': pd.Series([], dtype='object'),
-        # 'm_c': pd.Series([], dtype='object'),
-        # 'hd': pd.Series([], dtype='object'),
-        # 'hdc': pd.Series([], dtype='object'),
-        # 'conn': pd.Series([], dtype='object'),
-        # 'rtr': pd.Series([], dtype='object'),
 
         'distance_to_start': pd.Series([], dtype='float'),
         'distance_to_end': pd.Series([], dtype='float'),
@@ -146,81 +124,78 @@ class RtdRay(Rtd):
 
         'station': pd.Series([], dtype='str'),
         'id': pd.Series([], dtype='str'),
-        'dayly_id': pd.Series([], dtype='Int64'),
+        'dayly_id': pd.Series([], dtype='int'),
         'date_id': pd.Series([], dtype='datetime64[ns]'),
-        'stop_id': pd.Series([], dtype='Int64')
+        'stop_id': pd.Series([], dtype='int')
     }
-
-    arr_cols = ['ar_ppth', 'ar_cpth', 'ar_m_id', 'ar_m_t', 'ar_m_ts', 'ar_m_c',
-                'dp_ppth', 'dp_cpth', 'dp_m_id', 'dp_m_t', 'dp_m_ts', 'dp_m_c',
-                'm_id', 'm_t', 'm_ts', 'm_c']
 
     def __init__(self, notebook=False):
         self.meta = dd.from_pandas(pd.DataFrame(self.df_dict), npartitions=1).persist()
-        self.no_array_meta = dd.from_pandas(pd.DataFrame({key: self.df_dict[key] for key in self.df_dict if key not in self.arr_cols}), npartitions=1).persist()
         if notebook:
-            self.DATA_CACHE_PATH = '../cache/' + self.__tablename__ + '_local_buffer2'
+            self.DATA_CACHE_PATH = '../cache/' + self.__tablename__
             self.ENCODER_PATH = '../cache/' + self.__tablename__ + '_encoder'
         else:
-            self.DATA_CACHE_PATH = 'cache/' + self.__tablename__ + '_local_buffer2'
+            self.DATA_CACHE_PATH = 'cache/' + self.__tablename__
             self.ENCODER_PATH = 'cache/' + self.__tablename__ + '_encoder'
 
     @staticmethod
-    def get_delays(rtd_df):
-        rtd_df['ar_cancellations'] = rtd_df['ar_cs'] != 'c'
-        rtd_df['ar_cancellation_time_delta'] = (rtd_df['ar_clt'] - rtd_df['ar_pt']) / pd.Timedelta(minutes=1)
-        rtd_df['ar_delay'] = (rtd_df['ar_ct'] - rtd_df['ar_pt']) / pd.Timedelta(minutes=1)
-        ar_mask = (rtd_df['ar_cs'] != 'c') & (rtd_df['ar_delay'].notnull())
-        rtd_df['ar_on_time_5'] = rtd_df.loc[ar_mask, 'ar_delay'] < 6
-
-        rtd_df['dp_cancellations'] = rtd_df['dp_cs'] != 'c'
-        rtd_df['dp_cancellation_time_delta'] = (rtd_df['dp_clt'] - rtd_df['dp_pt']) / pd.Timedelta(minutes=1)
-        rtd_df['dp_delay'] = (rtd_df['dp_ct'] - rtd_df['dp_pt']) / pd.Timedelta(minutes=1)
-        dp_mask = (rtd_df['dp_cs'] != 'c') & (rtd_df['dp_delay'].notnull())
-        rtd_df['dp_on_time_5'] = rtd_df.loc[dp_mask, 'dp_delay'] < 6
-
-        return rtd_df
-
-    def update_local_buffer(self):
-        rtd = self.load_data()
-        max_date = rtd['ar_pt'].max().compute() - datetime.timedelta(days=2)
-        max_date = max_date.to_pydatetime()
-
-        from sqlalchemy import Column, DateTime
-        with engine.connect() as connection:
-            query = sql.select([Column(c) for c in self.df_dict if c not in self.arr_cols] + [Column('hash_id')])\
-                .where((Column('ar_pt', DateTime) > str(max_date)) | (Column('dp_pt', DateTime) > str(max_date)))\
-                .select_from(sql.table(Rtd.__tablename__))\
-                .alias('new_rtd_mat')
-            view_query = 'CREATE MATERIALIZED VIEW new_rtd_mat AS {}'.format(str(query.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})))
-            connection.execute(view_query)
-            new_rtd = dd.read_sql_table('new_rtd_mat', DB_CONNECT_STRING,
-                                        index_col='hash_id', meta=self.meta, npartitions=200)
-            # new_rtd.to_parquet(self.LOCAL_BUFFER_PATH + '_new', engine='pyarrow')
-            # new_rtd = dd.read_parquet(self.LOCAL_BUFFER_PATH, engine='pyarrow')
-            new_rtd = self.categorize(new_rtd)
-            # Remove changes from rtd that are also present in new_rtd
-            # rtd = rtd.loc[~rtd.index.isin(new_rtd.index), :]
-            rtd = dd.concat([rtd, new_rtd], axis=0, sort=False, ignore_index=False)
-            # rtd.drop_duplicates(keep='last', subset=['index'])
-            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow')
-
-    def refresh_local_buffer(self):
+    def _get_delays(rtd):
         """
-        Pull the hole rtd table from db and save it on disk. This takes a while.
-        """
-        with ProgressBar():
-            rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
-                                    index_col='hash_id', meta=self.no_array_meta, npartitions=200)
-            rtd = self.get_delays(rtd)
-            rtd = self.categorize(rtd)
-            # rtd = rtd.map_partitions(RtdRay.catagorize) # , meta=rtd
-            # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
-            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
+        Add cancellations, cancellation_time_delta, delay and on time to
+        arrival and departure
 
-    def categorize(self, rtd):
+        Parameters
+        ----------
+        rtd : dd.DataFrame
+            result of self.load_data()
+
+        Returns
+        -------
+        dd.DataFrame
+            rtd with additional columns
         """
-        Change dtype of categorical like columns to 'category'
+        rtd['ar_cancellations'] = rtd['ar_cs'] != 'c'
+        rtd['ar_cancellation_time_delta'] = (rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)
+        rtd['ar_delay'] = ((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1))
+        ar_mask = (rtd['ar_cs'] != 'c') & (rtd['ar_delay'].notnull())
+        rtd['ar_on_time_5'] = rtd.loc[ar_mask, 'ar_delay'] < 6
+
+        rtd['dp_cancellations'] = rtd['dp_cs'] != 'c'
+        rtd['dp_cancellation_time_delta'] = (rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)
+        rtd['dp_delay'] = ((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1))
+        dp_mask = (rtd['dp_cs'] != 'c') & (rtd['dp_delay'].notnull())
+        rtd['dp_on_time_5'] = rtd.loc[dp_mask, 'dp_delay'] < 6
+
+        return rtd
+
+    @staticmethod
+    def _add_station_coordinates(rtd):
+        """Add latitude and logitude to rtd
+
+        Parameters
+        ----------
+        rtd : pd.DataFrame
+            Data to add the coordinates to            
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns lat and lon
+        """
+        stations = StationPhillip()
+        for station in rtd['station'].unique():
+            mask = rtd['station'] == station
+            lon = stations.get_location(name=station)[0]
+            rtd.loc[mask, 'lon'] = lon
+            lat = stations.get_location(name=station)[1]
+            rtd.loc[mask, 'lat'] = lat
+        return rtd[['lat', 'lon']]
+
+    def _categorize(self, rtd):
+        """
+        Change dtype of categorical like columns to 'category', compute categories
+        and save the categories of each column to disk
+
         Parameters
         ----------
         rtd: dask.dataframe
@@ -231,19 +206,45 @@ class RtdRay(Rtd):
             Dataframe with categorical columns as dtype category
 
         """
-        rtd = rtd.astype({'f': 'category', 't': 'category', 'o': 'category',
-                          'c': 'category', 'n': 'category', 'ar_ps': 'category',
-                          'ar_pp': 'category', 'dp_ps': 'category', 'dp_pp': 'category',
-                          'station': 'category'})
-        from dask_ml import preprocessing
-        for key in ['o', 'c', 'n', 'station']:
-            le = preprocessing.LabelEncoder()
-            le.fit(rtd[key])
-            tranformed = le.transform(le.classes_)
-            pickle.dump(pd.DataFrame(index=le.classes_, data=tranformed).to_dict()[0], open(self.ENCODER_PATH + key + '_dict.pkl', "wb"))
-            pickle.dump(le, open(self.ENCODER_PATH + key + '_orig.pkl', "wb"))
+        with ProgressBar():
+            categoricals = {'f': 'category', 't': 'category', 'o': 'category',
+                            'c': 'category', 'n': 'category', 'ar_ps': 'category',
+                            'ar_pp': 'category', 'dp_ps': 'category', 'dp_pp': 'category',
+                            'station': 'category'}
+            rtd = rtd.astype(categoricals)
+            for col in categoricals.keys():
+                print('categorizing', col)
+                rtd[col] = rtd[col].cat.as_known()
+
+        # Save categorical encoding as dicts to be used in production
+        for key in ['o', 'c', 'n', 'station', 'ar_pp', 'dp_pp']:
+            dict_keys = rtd[key].head(1).cat.categories.to_list()
+            pickle.dump(dict(zip(dict_keys, range(len(dict_keys)))), open(self.ENCODER_PATH + key + '_dict.pkl', "wb"))
 
         return rtd
+
+    def refresh_local_buffer(self):
+        """
+        Pull the Rtd.__tablename__ table from db, add delays save it on disk.
+        """
+        with ProgressBar():
+            rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
+                                    index_col='hash_id', meta=self.no_array_meta, npartitions=200)
+            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
+            rtd = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow')
+            rtd = self._get_delays(rtd)
+            rtd = self._categorize(rtd)
+
+            print('adding latitude and logitude')
+            rtd['lat'] = 0.0
+            rtd['lon'] = 0.0
+            lat_lon = rtd.map_partitions(self._add_station_coordinates,
+                                         meta=rtd[['lat', 'lon']])
+            rtd['lat'] = lat_lon['lat']
+            rtd['lon'] = lat_lon['lon']
+
+            # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
+            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
 
     def load_data(self, **kwargs):
         """
@@ -264,7 +265,7 @@ class RtdRay(Rtd):
         try:
             data = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', **kwargs)
         except FileNotFoundError:
-            print('There was no buffer found. A new buffer will be downloaded from the db. This will take a while.')
+            print('There was no cache found. New data will be downloaded from the db. This will take a while.')
             self.refresh_local_buffer()
             data = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', **kwargs)
 
@@ -272,6 +273,8 @@ class RtdRay(Rtd):
 
     def load_for_ml_model(self, max_date=None, min_date=None, return_date_id=False):
         rtd = self.load_data(columns=['station',
+                                      'lat',
+                                      'lon',
                                       'o',
                                       'c',
                                       'n',
@@ -282,8 +285,11 @@ class RtdRay(Rtd):
                                       'date_id',
                                       'ar_ct',
                                       'ar_pt',
+                                      'ar_pp',
                                       'dp_ct',
-                                      'dp_pt'])
+                                      'dp_pt',
+                                      'dp_pp',
+                                      'stop_id'])
         if min_date and max_date:
             rtd = rtd.loc[(rtd['date_id'] > min_date) & (rtd['date_id'] < max_date)]
 
@@ -291,9 +297,17 @@ class RtdRay(Rtd):
         rtd['hour'] = rtd['hour'].fillna(value=rtd.loc[:, 'dp_pt'].dt.hour)
         rtd['day'] = rtd['ar_pt'].dt.dayofweek
         rtd['day'] = rtd['day'].fillna(value=rtd.loc[:, 'dp_pt'].dt.dayofweek)
-        for key in ['o', 'c', 'n', 'station']:
-            le = pickle.load(open(self.ENCODER_PATH + key + '_orig.pkl', "rb"))
-            rtd[key] = le.transform(rtd[key])
+        rtd['stay_time'] = ((rtd['dp_pt'] - rtd['ar_pt']).dt.seconds // 60)
+
+        # Label encode categorical columns
+        for key in ['o', 'c', 'n', 'station', 'ar_pp', 'dp_pp']:
+            # dd.read_parquet reads categoricals as unknown categories. All the categories howerver get
+            # saved in each partition. So we read those and set them as categories for the whole column.
+            # https://github.com/dask/dask/issues/2944 
+            rtd[key] = rtd[key].cat.set_categories(rtd[key].head(1).cat.categories)
+
+            rtd[key] = rtd[key].cat.codes.astype('int')
+        rtd['stop_id'] = rtd['stop_id'].astype('int')
         if return_date_id:
             return rtd.drop(columns=['ar_ct',
                                      'ar_pt',
@@ -308,14 +322,11 @@ class RtdRay(Rtd):
 
 
 if __name__ == "__main__":
-    import helpers.fancy_print_tcp
-    from dask.distributed import Client
-    client = Client()
-    rtd_d = RtdRay()
-    # rtd_d.refresh_local_buffer()
-    # rtd_d.update_local_buffer()
-    #
-    # rtd = rtd_d.load_data()
-    # rtd = rtd_d.categorize(rtd)
+    import fancy_print_tcp
+    # from dask.distributed import Client
+    # client = Client()
 
-    rtd = rtd_d.load_for_ml_model()
+    rtd_ray = RtdRay()
+    print('length of data: {} rows'.format(len(rtd_ray.load_data(columns='dayly_id'))))
+    # rtd_ray.refresh_local_buffer()
+    # rtd = rtd_ray.load_for_ml_model()
