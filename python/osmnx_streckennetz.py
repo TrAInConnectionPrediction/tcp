@@ -232,7 +232,7 @@ def upload_minimal(streckennetz):
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     stations = StationPhillip()
 
     ox.config(log_console=True, use_cache=True)

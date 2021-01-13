@@ -1,6 +1,6 @@
 # This module is used to print this fancy thing. Just do import fancy_print_tcp for that
 
-TCP_SING = """
+TCP_SIGN = """
                             ╔═══╗                           
    ╔════════════════════════╩═══╩════════════════════════╗  
    ║            ████████    ██████   ██████              ║  
@@ -18,4 +18,4 @@ TrAIn_Connection_Prediction ║   ║
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^╜   ╙^^^^^^^^^^^^^^^^^^^^^^^^^^^
 """
 
-print("\x1b[3;34m{}\x1b[0m".format(TCP_SING))
+print("\x1b[3;34m{}\x1b[0m".format(TCP_SIGN))

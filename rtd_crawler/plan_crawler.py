@@ -25,7 +25,7 @@ def get_plan(eva, str_date, hour):
     return dd.get_plan(station_id=eva, date=str_date, hour=hour)
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     stations = StationPhillip()
     evas = stations.eva_index_stations.index.to_list()
     dd = SimplestDownloader()
