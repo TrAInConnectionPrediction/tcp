@@ -124,9 +124,9 @@ class RtdRay(Rtd):
 
         'station': pd.Series([], dtype='str'),
         'id': pd.Series([], dtype='str'),
-        'dayly_id': pd.Series([], dtype='Int64'),
+        'dayly_id': pd.Series([], dtype='int'),
         'date_id': pd.Series([], dtype='datetime64[ns]'),
-        'stop_id': pd.Series([], dtype='Int64')
+        'stop_id': pd.Series([], dtype='int')
     }
 
     def __init__(self, notebook=False):
@@ -156,13 +156,13 @@ class RtdRay(Rtd):
         """
         rtd['ar_cancellations'] = rtd['ar_cs'] != 'c'
         rtd['ar_cancellation_time_delta'] = (rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)
-        rtd['ar_delay'] = ((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)).astype('Int64')
+        rtd['ar_delay'] = ((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1))
         ar_mask = (rtd['ar_cs'] != 'c') & (rtd['ar_delay'].notnull())
         rtd['ar_on_time_5'] = rtd.loc[ar_mask, 'ar_delay'] < 6
 
         rtd['dp_cancellations'] = rtd['dp_cs'] != 'c'
         rtd['dp_cancellation_time_delta'] = (rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)
-        rtd['dp_delay'] = ((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)).astype('Int64')
+        rtd['dp_delay'] = ((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1))
         dp_mask = (rtd['dp_cs'] != 'c') & (rtd['dp_delay'].notnull())
         rtd['dp_on_time_5'] = rtd.loc[dp_mask, 'dp_delay'] < 6
 
@@ -293,11 +293,11 @@ class RtdRay(Rtd):
         if min_date and max_date:
             rtd = rtd.loc[(rtd['date_id'] > min_date) & (rtd['date_id'] < max_date)]
 
-        rtd['hour'] = rtd['ar_pt'].dt.hour.astype('Int64')
+        rtd['hour'] = rtd['ar_pt'].dt.hour
         rtd['hour'] = rtd['hour'].fillna(value=rtd.loc[:, 'dp_pt'].dt.hour)
-        rtd['day'] = rtd['ar_pt'].dt.dayofweek.astype('Int64')
+        rtd['day'] = rtd['ar_pt'].dt.dayofweek
         rtd['day'] = rtd['day'].fillna(value=rtd.loc[:, 'dp_pt'].dt.dayofweek)
-        rtd['stay_time'] = ((rtd['dp_pt'] - rtd['ar_pt']).dt.seconds // 60).astype('Int64')
+        rtd['stay_time'] = ((rtd['dp_pt'] - rtd['ar_pt']).dt.seconds // 60)
 
         # Label encode categorical columns
         for key in ['o', 'c', 'n', 'station', 'ar_pp', 'dp_pp']:
@@ -306,8 +306,8 @@ class RtdRay(Rtd):
             # https://github.com/dask/dask/issues/2944 
             rtd[key] = rtd[key].cat.set_categories(rtd[key].head(1).cat.categories)
 
-            rtd[key] = rtd[key].cat.codes
-
+            rtd[key] = rtd[key].cat.codes.astype('int')
+        rtd['stop_id'] = rtd['stop_id'].astype('int')
         if return_date_id:
             return rtd.drop(columns=['ar_ct',
                                      'ar_pt',
