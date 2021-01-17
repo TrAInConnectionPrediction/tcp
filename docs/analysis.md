@@ -19,3 +19,8 @@ Diagramme zur Datenanalyse in unserer Projektdokumentation für Jugend Forscht 2
 ![alt](delay_per_train_type.png)
 ## Ausfälle
 ![alt](cancellations_per_train_type.png)
+## Packed-Bubbles
+Um solche Packed-Bubble Charts zu erstellen, mussten wir unseren eingenen Algorithmus schreiben, da dieser Diagramtyp nicht von Matplotlib unterstützt wird. (Es gibt zwar einen auf Stackoverflow dazu, der ist aber unglaublich langsam und daher nicht für unsere Menge an Bubbles geeignet.) Hier ein GIF dazu, wie unser Algorithmus arbeitet:
+![alt](packed_bubble_chart.gif)
+## Verspätung in Abhängigkeit der bereits gefahrenen Strecke
+![alt](delayoverstrecke.png)

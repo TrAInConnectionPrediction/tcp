@@ -12,6 +12,7 @@ from database.engine import engine
 import datetime
 from sqlalchemy import exc
 
+
 Base = declarative_base()
 
 
