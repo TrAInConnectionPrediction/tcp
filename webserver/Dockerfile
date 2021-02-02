@@ -16,12 +16,9 @@ COPY ./webserver/requirements.txt /usr/src/server/requirements.txt
 RUN pip install -r requirements.txt
 
 # copy project
+COPY ./cache/ /usr/src/server/cache/
 COPY ./webserver/ /usr/src/server/webserver/
-
 COPY ./helpers/ /usr/src/server/helpers/
-
-COPY ./data_buffer/ /usr/src/server/data_buffer/
-
 COPY ./database/ /usr/src/server/database/
-
 COPY ./config.py /usr/src/server/config.py
+COPY ./webserver_entrypoint.py /usr/src/server/webserver_entrypoint.py

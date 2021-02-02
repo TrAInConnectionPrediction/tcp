@@ -57,8 +57,14 @@ class StreckennetzSteffi(StationPhillip):
             Length of route.
 
         """
-        return sum(self.distance(waypoints[i], waypoints[i + 1]) for i in range(len(waypoints) - 1))
-
+        length = 0
+        for i in range(len(waypoints) - 1):
+            try:
+                length += self.distance(waypoints[i], waypoints[i + 1])
+            except KeyError:
+                pass
+        return length
+    
     def eva_route_length(self, waypoints) -> float:
         """
         Calculate approximate length of a route, e.g. the sum of the distances between the waypoints.
