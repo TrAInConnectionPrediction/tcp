@@ -8,12 +8,15 @@ from pytz import timezone
 import json
 import os
 import subprocess
+import numpy as np
 
-from webserver.connection import get_connection, clean_data, get_trips_of_trains
-from webserver import pred, streckennetz, logger, basepath
+from webserver.connection import datetimes_to_text, get_connections # , clean_data, get_trips_of_trains
+from webserver import pred, streckennetz, basepath
+from flask import current_app
+from webserver.predictor import from_utc
+from webserver.db_logger import log_activity
 
 bp = Blueprint("api", __name__, url_prefix="/api")
-
 
 def fromUnix(unix):
     """
@@ -41,99 +44,22 @@ def analysis(connection):
     Returns:
         dict: the connection with the evaluation/rating
     """
-    total_score = 0
-    # change between scheduled and predicted time
-    time = "scheduledTime"  # 'time'
-    connection[-1]["totaltime"] = 0
-    connection[-1]["transfers"] = len(connection) - 2
-
-    # sometimes the first segment is a Fußweg. We cannot predict delays for that
-    index1 = 1 if (connection[0]["train"]["name"] == "Fußweg") else 0
-    index2 = 3 if (connection[-2]["train"]["name"] == "Fußweg") else 2
-
-    # add adelay5 to first and last station
-    fs_data = pred.get_pred_data(connection[index1])
-    ls_data = pred.get_pred_data(connection[-index2])
-    _x, _x, _x, _x, _x, connection[index1]["ddelay5"], _x, _x = pred.predict(fs_data, 0).values()
-    _x, connection[-index2]["adelay5"], _x, _x, _x, _x, _x, _x = pred.predict(
-        ls_data, 1
-    ).values()
-
-    # there are two segments more than connections (= overall info at the end - 1 bc it is like that)
-    for i in range(index1, len(connection) - index2):
-        if connection[i]["train"]["name"] == "Fußweg":
-            connection[-1]["transfers"] -= 1
-            continue
-        if connection[i + 1]["train"]["name"] != "Fußweg":
-            data1 = pred.get_pred_data(connection[i])
-            data2 = pred.get_pred_data(connection[i + 1])
-            transtime = (
-                (
-                    fromUnix(connection[i + 1]["departure"][time])
-                    - fromUnix(connection[i]["arrival"][time])
-                ).seconds
-                // 60
-            )
-            (
-                connection[i]["con_score"],
-                connection[i]["adelay5"],
-                connection[i + 1]["ddelay5"],
-            ) = pred.predict_con(data1, data2, transtime)
-        else:
-            data1 = pred.get_pred_data(connection[i])
-            data2 = pred.get_pred_data(connection[i + 2])
-            transtime = (
-                (
-                    fromUnix(connection[i + 2]["departure"][time])
-                    - fromUnix(connection[i]["arrival"][time])
-                ).seconds
-                // 60
-            )
-            (
-                connection[i]["con_score"],
-                connection[i]["adelay5"],
-                connection[i + 2]["ddelay5"],
-            ) = pred.predict_con(data1, data2, transtime)
-        if total_score == 0:
-            total_score = connection[i]["con_score"]
-        else:
-            total_score *= connection[i]["con_score"]
-
-    # Calculate total time from start to end
-    totaltime = fromUnix(connection[-2]["arrival"][time]) - fromUnix(
-        connection[0]["departure"][time]
-    )
-    # we strip the seconds off the back
-    connection[-1]["totaltime"] = str(totaltime)[:-3]
-
-    # When there ist no connection we always give 100% score
-    if len(connection) == 2:
-        connection[-1]["total_score"] = 100
-    else:
-        connection[-1]["total_score"] = int(total_score * 100)
-
-    # logger.debug("Verbindungsscore:" + str(total_score))
-
-    for i in range(len(connection) - 1):
-        if "ICE" in connection[i]["train"]["name"]:
-            connection[i]["train"]["d_type"] = "ice"
-        elif (
-            "IC" in connection[i]["train"]["name"]
-            or "EC" in connection[i]["train"]["name"]
-        ):
-            connection[i]["train"]["d_type"] = "ic"
-        elif (
-            "RE" in connection[i]["train"]["name"]
-            or "RB" in connection[i]["train"]["name"]
-        ):
-            connection[i]["train"]["d_type"] = "re"
-        elif "S" in connection[i]["train"]["name"]:
-            connection[i]["train"]["d_type"] = "s"
-        else:
-            connection[i]["train"]["d_type"] = "unknown"
+    ar_data, dp_data = pred.get_pred_data(connection['segments'])
+    ar_prediction = pred.predict_ar(ar_data)
+    dp_prediction = pred.predict_dp(dp_data)
+    transfer_time = np.array([segment['transfer_time']
+                             for segment
+                             in connection['segments'][:-1]])
+    con_scores = pred.predict_con(ar_prediction[:-1], dp_prediction[1:], transfer_time)
+    connection['summary']['score'] = int(round(con_scores.prod() * 100))
+    for i in range(len(connection['segments']) - 1):
+        connection['segments'][i]['score'] = int(round(con_scores[i] * 100))
+    for i in range(len(connection['segments'])):
+        connection['segments'][i]['ar_delay'] = ar_prediction[i, 0]
+        connection['segments'][i]['dp_delay'] = 1 - dp_prediction[i, 1]
     return connection
 
-
+@log_activity
 def calc_con(startbhf, zielbhf, date):
     """
     Gets a connection from ```startbhf``` to ```zielbhf``` at a given date ```date```
@@ -147,45 +73,29 @@ def calc_con(startbhf, zielbhf, date):
     Returns:
         dict: a dict with different connections
     """
-    logger.info("Getting connections from " + startbhf + " to " + zielbhf + ", " + date)
-    connections = get_connection(
+    current_app.logger.info("Getting connections from " + startbhf + " to " + zielbhf + ", " + date)
+    connections = get_connections(
         startbhf, zielbhf, datetime.strptime(date, "%d.%m.%Y %H:%M")
     )
-    connections = json.loads(connections)["routes"]
-    connections = get_trips_of_trains(connections)
-    connections = clean_data(connections)
 
     for i in range(len(connections)):
         connections[i] = analysis(connections[i])
+        connections[i] = datetimes_to_text(connections[i])
     return connections
 
 
 @bp.route("/connect", methods=["POST"])
+@log_activity
 def connect():
     """
     Gets called when the website is loaded
     And gets some data from and about the user
     It returns the trainstations for the autofill forms
 
-    Args:
-        screen (from request): the users screensize
-        ip (from request): the users public ip
-        User-Agent (from request headers): the useragent, which the user uses
-
     Returns:
         list: a list of strings with all the known train stations
     """
-    try:
-        logger.info("Screensize: " + request.form["screen"])
-        logger.info("IP: " + request.form["ip"])
-        logger.info("User-Agent: " + request.headers.get("User-Agent"))
-    except:
-        # the user doesn't have to send us data
-        pass
-    data = {"bhf": streckennetz.sta_list}
-    resp = jsonify(data)
-    resp.headers.add("Access-Control-Allow-Origin", "*")
-    return resp
+    return {"bhf": streckennetz.sta_list}
 
 
 @bp.route("/trip", methods=["POST"])
@@ -202,9 +112,6 @@ def api():
     Returns:
         json: All the possible connections
     """
-
-    # add check for right datetime here
-
     data = calc_con(
         request.form["startbhf"], request.form["zielbhf"], request.form["date"]
     )
@@ -235,18 +142,18 @@ def deploy():
         ).stdout.decode("utf-8")
 
         if git == "1":
-            logger.warning("Deploy was requested, but no need to, since I'm up to date")
+            current_app.logger.warning("Deploy was requested, but no need to, since I'm up to date")
 
             return jsonify({"resp": "no need to pull", "code": 1})
 
         elif git == "2":
-            logger.warning("Deploy was requested, and I'm behind, so pulling")
+            current_app.logger.warning("Deploy was requested, and I'm behind, so pulling")
             # I went from git pull and reset hard to first fetch and
             # then merge because i can just overwrite local stuff with the merge
             if "dev" not in request.form and not current_app.debug:
                 # ok maybe i still need a reset, when I delete a commit or smth,
                 # but without the hard flag
-                logger.warning("Reseting git repo since not using the dev flag")
+                current_app.logger.warning("Reseting git repo since not using the dev flag")
                 reset = subprocess.run(
                     ["/usr/bin/git", "-C", basepath, "reset", "--hard", "HEAD^"],
                     stdout=subprocess.PIPE,
@@ -268,13 +175,13 @@ def deploy():
                 ],
                 stdout=subprocess.PIPE,
             ).stdout.decode("utf-8")
-            logger.warning("git merge said: " + merge)
+            current_app.logger.warning("git merge said: " + merge)
             git = subprocess.run(
                 ["/bin/bash", basepath + "/checkgit.sh"], stdout=subprocess.PIPE
             ).stdout.decode("utf-8")
 
             if git == "1":
-                logger.warning("Pull was succesfull restarting webserver...")
+                current_app.logger.warning("Pull was succesfull restarting webserver...")
 
                 response = jsonify(
                     {"resp": "pull was succesfull restarting webserver", "code": 0}
@@ -282,7 +189,7 @@ def deploy():
 
                 @response.call_on_close
                 def on_close():
-                    logger.warning(
+                    current_app.logger.warning(
                         subprocess.run(
                             ["/bin/bash", basepath + "/restart.sh"],
                             stdout=subprocess.PIPE,
