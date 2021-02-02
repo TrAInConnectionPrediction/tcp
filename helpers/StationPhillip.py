@@ -3,22 +3,15 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import random
-import logging
-
-logger = logging.getLogger("webserver." + __name__)
-
 
 class StationPhillip:
     def __init__(self):
         cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
         if not os.path.isdir(cache_dir):
-            logger.info("Creating cache dir")
             try:
                 os.mkdir(cache_dir)
             except OSError:
-                logger.error("Creation of the cache directory failed")
-
-        logger.info("Getting stations...")
+                pass
 
         self.CACHE_PATH = cache_dir + 'station_cache'
         try:
@@ -26,14 +19,14 @@ class StationPhillip:
             self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
             engine.dispose()
             self.station_df.to_pickle(self.CACHE_PATH)
-        except:
+        except Exception as e:
+            print(e)
             try:
                 self.station_df = pd.read_pickle(self.CACHE_PATH)
-                logger.warning('Using offline station buffer')
+                print('Using offline station buffer')
             except FileNotFoundError:
                 raise FileNotFoundError('There is no connection to the database and no local buffer')
         
-        logger.info("Done")
 
         self.station_df['eva'] = self.station_df['eva'].astype(int)
         self.name_index_stations = self.station_df.set_index('name')
