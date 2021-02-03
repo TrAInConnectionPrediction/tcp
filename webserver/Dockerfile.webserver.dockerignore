@@ -16,5 +16,4 @@
 !ml_models/
 !database/
 !helpers/
-#!config.py
 !fancy_print_tcp.py

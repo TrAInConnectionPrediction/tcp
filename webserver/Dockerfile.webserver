@@ -1,4 +1,4 @@
-# In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=0"
+# In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
 # To test the container locally you can run:
 # docker build -f webserver/Dockerfile.webserver . -t webserver
 # docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py webserver

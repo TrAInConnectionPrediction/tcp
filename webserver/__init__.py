@@ -21,7 +21,6 @@ logHandler.setFormatter(formatter)
 logHandler.setLevel(logging.INFO)
 app.logger.addHandler(logHandler)
 app.logger.setLevel(logging.INFO)
-logger = app.logger
 
 #Print our cool logo
 from helpers.fancy_print_tcp import TCP_SIGN
@@ -40,9 +39,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONNECT_STRING
 logHandler.setLevel(logging.DEBUG if app.debug else logging.INFO)
 app.logger.addHandler(logHandler)
 app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
-logger = app.logger
 
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.logger.info("Done")
 
 
