@@ -20,17 +20,20 @@ TrAIn_Connection_Prediction ║   ║
 
 Winning project of the German National Artificial Intelligence Competition 2019 called [BWKI](https://bw-ki.de).
 Visit our website at [TrAInConnectionPrediction.github.io](https://trainconnectionprediction.github.io).
+
 ## Setup
 
 If you for whatever reason want to run our website on you computer just do as described below.
 Our latest ML-models will always be in the repository under [ml_models](ml_models)
 
-To setup the project just use Docker:
-(You are going to need access to our Database,
- to do so [contact us...](mailto:marius@kepi.de))
+To run our webserver we strongly recommend to use use Docker:
+(You are going to our config, with access to our Database, to do so [contact us...](mailto:marius@kepi.de))
+
+First it's important to set this enviroment variable `export DOCKER_BUILDKIT=1`
+
 ```bash
-(sudo) docker-compose build
-(sudo) docker-compose up
+docker build -f webserver/Dockerfile.webserver . -t webserver
+docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py webserver
 ```
 
 ### Credits

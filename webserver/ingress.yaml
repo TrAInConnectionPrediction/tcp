@@ -1,0 +1,23 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: webserver-service
+spec:
+  selector:
+    app: webserver
+  ports:
+    - port: 5000 # Default port for image
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: webserver-ingress
+spec:
+  rules:
+  - http:
+      paths:
+        - path: /
+          backend:
+            serviceName: webserver-service
+            servicePort: 5000

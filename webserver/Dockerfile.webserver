@@ -1,3 +1,8 @@
+# In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
+# To test the container locally you can run:
+# docker build -f webserver/Dockerfile.webserver . -t webserver
+# docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py webserver
+
 # pull official base image
 FROM python:3.8.1-slim-buster
 
@@ -20,5 +25,9 @@ COPY ./cache/ /usr/src/server/cache/
 COPY ./webserver/ /usr/src/server/webserver/
 COPY ./helpers/ /usr/src/server/helpers/
 COPY ./database/ /usr/src/server/database/
-COPY ./config.py /usr/src/server/config.py
-COPY ./webserver_entrypoint.py /usr/src/server/webserver_entrypoint.py
+# Don't leak our secrets, pls
+#COPY ./config.py /usr/src/server/config.py
+
+EXPOSE 5000
+
+CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:app", "-t 40"]
