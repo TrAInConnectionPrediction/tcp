@@ -56,6 +56,7 @@ app.logger.info("Done")
 app.logger.info("DB init...")
 db = SQLAlchemy()
 db.init_app(app)
+db.create_all(app=app)
 app.logger.info("Done")
 
 # ensure the instance folder exists
@@ -72,9 +73,6 @@ from webserver import api
 app.register_blueprint(api.bp)
 app.logger.info("Done")
 
-db.create_all(app=app)
-
-app.logger.info("Setup done... starting webserver")
 app.logger.info(
     "\nSetup done, webserver is up and running!\
     \n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n")
