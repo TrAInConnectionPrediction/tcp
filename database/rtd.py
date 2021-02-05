@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from database.engine import engine
 import datetime
 from sqlalchemy import exc
+from config import RTD_TABLENAME
 
 
 Base = declarative_base()
@@ -20,7 +21,7 @@ class Rtd(Base):
     """
     Scheme for parsed data.
     """
-    __tablename__ = 'recent_change_rtd'
+    __tablename__ = RTD_TABLENAME
     ar_pp = Column(Text)
     ar_cp = Column(Text)
     ar_pt = Column(DateTime)
@@ -71,7 +72,7 @@ class Rtd(Base):
 
 
 class RtdArrays(Base):
-    __tablename__ = 'recent_change_rtd_arrays'
+    __tablename__ = RTD_TABLENAME + '_arrays'
     ar_ppth = Column(ARRAY(Text))
     ar_cpth = Column(ARRAY(Text))
     ar_m_id = Column(ARRAY(Text))
