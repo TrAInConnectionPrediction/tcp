@@ -41,20 +41,19 @@ def get_connecting_trains(df):
     with progressbar.ProgressBar(max_value=len(df)) as bar:
         i = 0
         for index, row in df.iterrows():
-            connecting_trains = df.loc[(df['dp_pt'] - row['ar_pt']).between(min_tranfer_time, max_tranfer_time)
-                                        & (index != df.index), :]
-            if not connecting_trains.empty:
-                for idx in connecting_trains.index:
+            connecting_trains = df.loc[(df['dp_pt']).between(row['ar_pt'] + min_tranfer_time,
+                                                             row['ar_pt'] + max_tranfer_time), 'ar_pt'].index
+            for idx in connecting_trains:
+                if idx != index:
                     ar_index.append(index)
                     dp_index.append(idx)
-                for con_train in connecting_trains.values.tolist():
-                    ar.append(row.values.tolist())
-                    dp.append(con_train)
             i += 1
             bar.update(i)
-    if len(ar):
-        ar = pd.DataFrame(ar, columns=df.columns, index=ar_index)
-        dp = pd.DataFrame(dp, columns=df.columns, index=dp_index)
+    if len(ar_index):
+        ar = pd.DataFrame(columns=df.columns, index=ar_index)
+        ar.loc[:, :] = df.loc[:, :]
+        dp = pd.DataFrame(columns=df.columns, index=dp_index)
+        dp.loc[:, :] = df.loc[:, :]
         return ar, dp
     else:
         return None, None
@@ -72,10 +71,10 @@ def save_connecting_trains(part):
 
 if __name__ == "__main__":
     from helpers import fancy_print_tcp
-    from dask.distributed import Client
-    client = Client()
+    # from dask.distributed import Client
+    # client = Client()
 
-    separate_stations()
+    # separate_stations()
 
     station_rtd = pd.read_parquet('cache/station_rtd/part.0.parquet')
     get_connecting_trains(station_rtd)
