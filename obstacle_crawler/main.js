@@ -1,6 +1,6 @@
 // Read Config
 console.log("Reading config...")
-require('dotenv').config({ path: 'config.py' })
+require('dotenv').config({ path: '/mnt/config/config.py' })
 console.log("Done")
 console.log(process.env.db_server)
 console.log("Connecting to DB...")
@@ -15,12 +15,16 @@ const client = new Client({
 client.connect();
 console.log("Done")
 
-// pool.query(`CREATE TABLE obstacle(                                                        
+
+// client.query(`DROP TABLE obstacle`, (err, res) => {
+//     console.log(err, res)
+// })
+
+// client.query(`CREATE TABLE obstacle(                                                        
 //     id VARCHAR(20) PRIMARY KEY NOT NULL,
 //     data JSONB NOT NULL 
 //     );`, (err, res) => {
 //     console.log(err, res)
-//     pool.end()
 // })
 
 async function get(id) {
@@ -62,7 +66,7 @@ setInterval(function() {
         var obstacle;
         for (obstacle of data) {
             console.log(obstacle.id)
-                // set(obstacle.id, obstacle);
+            set(obstacle.id, obstacle);
         }
     }, console.error)
 }, 1000 * 60)
