@@ -1,7 +1,8 @@
-from concurrent.futures.process import ProcessPoolExecutor
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if os.path.isfile("/mnt/config/config.py"):
+    sys.path.append("/mnt/config/")
 import lxml.etree as etree
 from helpers.StationPhillip import StationPhillip
 from rtd_crawler.SimplestDownloader import SimplestDownloader
@@ -10,7 +11,6 @@ import time
 import datetime
 from database.plan import PlanManager
 from rtd_crawler.xml_parser import xml_to_json
-import progressbar
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -23,6 +23,7 @@ def preparse_plan(plan):
 
 def get_plan(eva, str_date, hour):
     return dd.get_plan(station_id=eva, date=str_date, hour=hour)
+
 
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
@@ -40,18 +41,15 @@ if __name__ == '__main__':
             hour = datetime.datetime.now().time().hour
             str_date = datetime.datetime.now().strftime('%y%m%d')
             try:
-                bar = progressbar.ProgressBar(max_value=len(stations)).start()
-                i = 0
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     plans = executor.map(lambda eva: get_plan(eva, str_date, hour), evas)
+                    print(datetime.datetime.now(), 'getting plan')
                 for bhf, plan in zip(stations.sta_list, plans):
                     if plan is not None:
                         plan = preparse_plan(plan)
                         db.add_plan(plan=plan, bhf=bhf, date=date, hour=hour)
-                    bar.update(i)
-                    i += 1
                 db.commit()
-                bar.finish()
+                print(datetime.datetime.now(), 'uploaded plan to db')
 
             except Exception as ex:
                 print(ex)
