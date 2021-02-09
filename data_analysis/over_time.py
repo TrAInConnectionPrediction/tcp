@@ -358,7 +358,7 @@ if __name__ == '__main__':
                                         'dp_cancellations'])
 
     # lagecy code to plot older data
-    # from data_analisys.delay import load_with_delay
+    # from data_analysis.delay import load_with_delay
     # rtd_df = load_with_delay(columns=['station', 'c', 'f'])
 
     # time = OverHour(rtd_df, use_cache=False)
