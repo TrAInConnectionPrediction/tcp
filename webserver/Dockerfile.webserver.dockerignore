@@ -1,5 +1,5 @@
 #Ignore everything
-*
+**
 
 #Except
 !cache/models
@@ -16,6 +16,12 @@
 !ml_models/
 !database/
 !helpers/
-!config.py
 !fancy_print_tcp.py
-!webserver_entrypoint.py
+
+# Ignore unnecessary files inside allowed directories
+# This should go after the allowed directories
+**/*~
+**/__pycache__/
+**/*.log
+**/.DS_Store
+**/Thumbs.db

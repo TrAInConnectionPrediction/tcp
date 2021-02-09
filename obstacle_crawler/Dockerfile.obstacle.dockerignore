@@ -1,0 +1,8 @@
+#Ignore everything
+*
+
+#Except
+!obstacle_crawler
+!config.py
+
+#But

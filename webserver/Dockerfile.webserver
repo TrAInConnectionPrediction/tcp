@@ -1,0 +1,61 @@
+# In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
+# To test the container locally you can run:
+# docker build -f webserver/Dockerfile.webserver . -t webserver
+# docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py webserver
+
+# This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
+
+## base image
+FROM python:3.8.1-slim-buster AS compile-image
+
+## install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends gcc
+
+## virtualenv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+## add and install requirements
+RUN pip install --upgrade pip && pip install pip-tools
+COPY ./webserver/requirements.txt requirements.in
+RUN pip-compile requirements.in > requirements.txt && pip-sync
+RUN pip install -r requirements.txt
+
+## build-image
+FROM python:3.8.1-slim-buster AS runtime-image
+
+## install updates - this increases the size and I don't think this is necessery
+# RUN apt-get update
+
+## copy Python dependencies from build image
+COPY --from=compile-image /opt/venv /opt/venv
+
+## set working directory
+WORKDIR /usr/src/app
+
+## If this turns out to be usefull on can use this
+## add user
+RUN addgroup --system user && adduser --system --no-create-home --group user
+
+## add webserver and librays
+COPY ./cache/ /usr/src/app/cache/
+COPY ./webserver/ /usr/src/app/webserver/
+COPY ./helpers/ /usr/src/app/helpers/
+COPY ./database/ /usr/src/app/database/
+# Don't leak our secrets, pls
+# COPY ./config.py /usr/src/server/config.py
+
+## switch to non-root user
+## for some reason doing this before the copy results in weird permissions
+RUN chown -R user:user /usr/src/app/ && chmod -R 777 /usr/src/app/
+USER user
+
+## set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PATH="/opt/venv/bin:$PATH"
+
+EXPOSE 5000
+
+CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:app", "-t 40"]
