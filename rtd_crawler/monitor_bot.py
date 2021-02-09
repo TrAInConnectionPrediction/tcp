@@ -3,15 +3,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import discord
 from discord.ext import tasks, commands
 from config import discord_bot_token
-from rtd_crawler.DatabaseOfDoom import DatabaseOfDoom
 import datetime
 from database.change import ChangeManager
 from database.plan import PlanManager
-from time import sleep
 
 client = discord.Client()
 
-db = DatabaseOfDoom()
 changes = ChangeManager()
 plan = PlanManager()
 old_change_count = 0
@@ -32,19 +29,6 @@ async def monitor_hour(old_change_count):
     hour = datetime.datetime.now().time().hour
     date_to_check = datetime.datetime.combine(datetime.date.today(),
                                               datetime.time(hour, 0)) - datetime.timedelta(hours=1)
-    
-    # Old Tables with hourely changes
-    # try:
-    #     new_row_cont = db.count_entries_at_date(date_to_check)
-    #     if new_row_cont < 7000:
-    #         message = '@everyone The gatherer is not working, as {} new entries where added to database at {}'\
-    #                 .format(str(new_row_cont), str(date_to_check))
-    #         await channel.send(message)
-    #     print('checked ' + str(date_to_check) + ': ' + str(new_row_cont) + ' rows were added')
-    # except Exception as ex:
-    #     message = '@everyone Error reading Database:\n{}'.format(str(ex))
-    #     await channel.send(message)
-    #     print('checked ' + str(date_to_check) + ': ???? rows were added')
 
     # Plan (hourly)
     try:

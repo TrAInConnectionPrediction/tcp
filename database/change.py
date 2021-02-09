@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from database.engine import engine
+import json
 
 Base = declarative_base()
 
@@ -28,6 +29,7 @@ class ChangeManager:
     session = Session()
 
     queue = []
+    changes = {}
 
     def upsert(self, rows: list):
         table = Change.__table__
@@ -45,6 +47,17 @@ class ChangeManager:
     def add_change(self, hash_id: int, change: dict):
         self.queue.append({'hash_id': hash_id, 'change': change})
         if len(self.queue) > 10000:
+            self.commit()
+
+    def add_changes(self, changes: dict):
+        self.changes.update(changes)
+        # self.queue.extend(changes)
+        if len(self.changes) > 10000:
+            new_changes = [{'hash_id': train_id, 'change': json.dumps(self.changes[train_id])}
+                            for train_id in self.changes]
+            self.upsert(new_changes)
+            self.changes = {}
+            self.session.commit()
             self.commit()
 
     def commit(self):
