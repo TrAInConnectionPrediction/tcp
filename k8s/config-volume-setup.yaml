@@ -30,23 +30,15 @@ spec:
   volumeName: config-pv
   
 
-    # spec:
-    #   containers:
-    #   - image: mariusdkm/testing101:latest
-    #     imagePullPolicy: Always
-    #     name: testing101
-    #     resources: {}
-    #     terminationMessagePath: /dev/termination-log
-    #     terminationMessagePolicy: File
-    #     volumeMounts:
-    #     - mountPath: "/mnt/config"
-    #       name: config-pvc-storage
-    #   dnsPolicy: ClusterFirst
-    #   restartPolicy: Always
-    #   schedulerName: default-scheduler
-    #   securityContext: {}
-    #   terminationGracePeriodSeconds: 30
-    #   volumes:
-    #   - name: config-pvc-storage
-    #     persistentVolumeClaim:
-    #       claimName: config-pv
+      #   volumeMounts:
+      #   - mountPath: /mnt/config
+      #     name: config-pvc-storage
+      # dnsPolicy: ClusterFirst
+      # restartPolicy: Always
+      # schedulerName: default-scheduler
+      # securityContext: {}
+      # terminationGracePeriodSeconds: 30
+      # volumes:
+      # - name: config-pvc-storage
+      #   persistentVolumeClaim:
+      #     claimName: config-pvc

@@ -1,0 +1,15 @@
+{
+    "name": "obstacle_crawler",
+    "version": "1.0.0",
+    "description": "Crawls all the obsacles for trains in germany",
+    "author": "McToel & NotSomeBot",
+    "main": "main.js",
+    "scripts": {
+        "start": "node main.js"
+    },
+    "dependencies": {
+        "db-netz-hafas": "^2.0.0",
+        "dotenv": "^8.2.0",
+        "pg": "^8.5.1"
+    }
+}
