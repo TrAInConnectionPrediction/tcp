@@ -1,6 +1,5 @@
 import os
 import sys
-from numpy.core.numeric import True_
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import datetime
@@ -8,11 +7,10 @@ import progressbar
 from rtd_crawler.hash64 import hash64
 from database.plan import PlanManager
 from database.change import ChangeManager
-from database.rtd import RtdManager, sql_types, Rtd, RtdArrays
+from database.rtd import RtdManager, sql_types, RtdArrays
 from helpers.StreckennetzSteffi import StreckennetzSteffi
 import json
 import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
@@ -24,6 +22,7 @@ streckennetz = StreckennetzSteffi(prefer_cache=False)
 
 # These are the names of columns that contain time information and should be parsed into a datetime
 time_names = ('pt', 'ct', 'clt', 'ts')
+# These are parts of message that might be interesting to us
 message_parts_to_parse = ('id', 't', 'c', 'ts')
 
 
@@ -153,7 +152,7 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
                         stop['m_c'].append(int(msg[msg_part]))
                     else:
                         stop['m_' + msg_part].append(msg[msg_part])
-    return stop
+    return stop    
 
 
 def add_distance(rtd):
@@ -241,8 +240,10 @@ def parse_station(station, start_date, end_date):
         parsed['station'] = station
         parsed = add_distance(parsed)
         current_array_cols = [col for col in RtdArrays.__table__.columns.keys() if col in parsed.columns]
-        rtd_arrays_df = parsed.loc[:, current_array_cols]
-        rtd.upsert_arrays(rtd_arrays_df)
+        # There are many columns that contain arrays. These take up munch space and aren't
+        # used after parsing, so we currently don't store them in the database
+        # rtd_arrays_df = parsed.loc[:, current_array_cols]
+        # rtd.upsert_arrays(rtd_arrays_df)
         rtd_df = parsed.drop(current_array_cols, axis=1)
         rtd.upsert(rtd_df)
     return True
@@ -261,11 +262,3 @@ if __name__ == "__main__":
         for i, station in enumerate(streckennetz):
             parse_station(station, start_date, end_date)
             bar.update(i)
-
-    # with ThreadPoolExecutor(max_workers=10) as executor:
-    #     tasks = [executor.submit(lambda s: parse_station(s, start_date, end_date), station) for station in streckennetz]
-    #     i = 1
-    #     with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
-    #         for thread in as_completed(tasks):
-    #             bar.update(i)
-    #             i += 1

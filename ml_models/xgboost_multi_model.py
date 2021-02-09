@@ -10,21 +10,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-CACHE_PATH = 'cache/ar_models/model_{}.pkl'
+CACHE_PATH = 'cache/models/model_{}.pkl'
+CLASSES_TO_COMPUTE = range(40)
 
 
 def train_models():
-    from dask.distributed import Client
+    # from dask.distributed import Client
 
-    client = Client()
-    rtd = RtdRay()
-    rtd_df = load_for_ml_model(max_date=datetime.datetime.today(), min_date=datetime.datetime.today() - datetime.timedelta(days=7*3))
+    # client = Client()
+    rtd_ray = RtdRay()
+    train = rtd_ray.load_for_ml_model(max_date=datetime.datetime(2020, 10, 24),
+                                       min_date=datetime.datetime(2020, 10, 24) - datetime.timedelta(days=7*2))
     print('loaded data')
 
-    CLASSES_TO_COMPUTE = range(40)
-
-    train = rtd_df
-    del rtd_df
     train = train.compute()
     ar_train = train.dropna(subset=['ar_delay'])
     dp_train = train.dropna(subset=['dp_delay'])
@@ -41,18 +39,25 @@ def train_models():
     del dp_train['ar_delay']
     del dp_train['dp_delay']
 
+    newpath = 'cache/models'
+    if not os.path.exists(newpath):
+        os.makedirs(newpath)
+
+    parameters = pickle.load(open('cache/hyperparameters.pkl', 'rb'))
+
     models = {}
     for label in CLASSES_TO_COMPUTE:
-        est = XGBClassifier(n_estimators=50, max_depth=6, n_jobs=-1, objective='binary:logistic',
-                            random_state=0, tree_method='gpu_hist', gpu_id=0)
+        est = XGBClassifier(n_jobs=-1, objective='binary:logistic', n_estimators=50, max_depth=6,
+                            random_state=0, tree_method='gpu_hist',
+                            gpu_id=0, use_label_encoder=False)
         est.fit(ar_train, ar_labels[label])
-        pickle.dump(est, open(CACHE_PATH.format(label), "wb"))
+        pickle.dump(est, open(CACHE_PATH.format('ar_' + str(label)), "wb"))
         print('trained', label)
 
         est = XGBClassifier(n_estimators=50, max_depth=6, n_jobs=-1, objective='binary:logistic',
-                            random_state=0, tree_method='gpu_hist', gpu_id=0)
+                            random_state=0, tree_method='gpu_hist', gpu_id=0, use_label_encoder=False)
         est.fit(dp_train, dp_labels[label])
-        pickle.dump(est, open(CACHE_PATH.format(label), "wb"))
+        pickle.dump(est, open(CACHE_PATH.format('dp_' + str(label)), "wb"))
         print('trained', label)
 
 
@@ -71,20 +76,20 @@ def test_model(model, x_test, y_test, model_number):
 
     print('Model improvement:\t', round((model_score - baseline) * 100, 4), '%')
 
-    prediction = model.predict_proba(x_test)[:, 1]
-    fpr, tpr, thresholds = roc_curve(y_test, prediction, pos_label=1)
-    roc_auc = auc(fpr, tpr)
+    # prediction = model.predict_proba(x_test)[:, 1]
+    # fpr, tpr, thresholds = roc_curve(y_test, prediction, pos_label=1)
+    # roc_auc = auc(fpr, tpr)
 
-    lw = 2
-    axs[model_number % 5, model_number // 5].plot(fpr, tpr, color='darkorange',
-        lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
-    axs[model_number % 5, model_number // 5].plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-    axs[model_number % 5, model_number // 5].set_xlim([0.0, 1.0])
-    axs[model_number % 5, model_number // 5].set_ylim([0.0, 1.05])
-    axs[model_number % 5, model_number // 5].set_xlabel('False Positive Rate')
-    axs[model_number % 5, model_number // 5].set_ylabel('True Positive Rate')
-    axs[model_number % 5, model_number // 5].set_title('Receiver operating characteristic model {}'.format(model_number))
-    axs[model_number % 5, model_number // 5].legend(loc="lower right")
+    # lw = 2
+    # axs[model_number % 5, model_number // 5].plot(fpr, tpr, color='darkorange',
+    #     lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    # axs[model_number % 5, model_number // 5].plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    # axs[model_number % 5, model_number // 5].set_xlim([0.0, 1.0])
+    # axs[model_number % 5, model_number // 5].set_ylim([0.0, 1.05])
+    # axs[model_number % 5, model_number // 5].set_xlabel('False Positive Rate')
+    # axs[model_number % 5, model_number // 5].set_ylabel('True Positive Rate')
+    # axs[model_number % 5, model_number // 5].set_title('Receiver operating characteristic model {}'.format(model_number))
+    # axs[model_number % 5, model_number // 5].legend(loc="lower right")
 
     # fig1, ax1 = plt.subplots()
     # ax1.set_title('Predictions')
@@ -118,20 +123,23 @@ def test_model(model, x_test, y_test, model_number):
 
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
-    # train_models()
+    train_models()
 
-    # TODO: Load with RtdRay
-    rtd_df = pd.read_pickle('cache/training_rtd.pkl')# .sample(frac=0.01)
-    rtd_df = rtd_df.dropna(subset=['ar_delay'])
-    test_x = rtd_df.copy()
-    del test_x['ar_delay']
-    del test_x['dp_delay']
-    fig, axs = plt.subplots(5, 8)
+    # rtd_ray = RtdRay()
+    # # test = rtd_ray.load_for_ml_model(max_date=datetime.datetime(2020, 10, 24) + datetime.timedelta(days=3),
+    # #                                  min_date=datetime.datetime(2020, 10, 24)).compute()
+    # test = rtd_ray.load_for_ml_model(max_date=datetime.datetime(2020, 10, 24),
+    #                                  min_date=datetime.datetime(2020, 10, 24) - datetime.timedelta(days=7*2)).compute()
+    # test = test.dropna(subset=['ar_delay'])
+    # test_x = test.copy()
+    # del test_x['ar_delay']
+    # del test_x['dp_delay']
+    # # fig, axs = plt.subplots(5, 8)
 
-    for model_number in range(40):
-        print('test_results for model {}'.format(model_number))
-        test_y = rtd_df['ar_delay'] <= model_number
-        model = pickle.load(open(CACHE_PATH.format(model_number), "rb"))
-        test_model(model, test_x, test_y, model_number)
-        print('')
-    plt.show()
+    # for model_number in CLASSES_TO_COMPUTE:
+    #     print('test_results for model {}'.format(model_number))
+    #     test_y = test['ar_delay'] <= model_number
+    #     model = pickle.load(open(CACHE_PATH.format('ar_' + str(model_number)), "rb"))
+    #     test_model(model, test_x, test_y, model_number)
+    #     print('')
+    # # plt.show()
