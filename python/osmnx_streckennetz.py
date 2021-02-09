@@ -15,6 +15,7 @@ from helpers.StationPhillip import StationPhillip
 import matplotlib.pyplot as plt
 import pickle
 from concurrent.futures import ProcessPoolExecutor
+from config import streckennetz_threads
 
 
 def get_streckennetz_from_osm():
@@ -231,6 +232,20 @@ def upload_minimal(streckennetz):
     streckennetz.to_sql('minimal_streckennetz', if_exists='replace', method='multi', con=engine)
 
 
+def upload_full(streckennetz):
+    """
+    Upload edges of Streckennetz
+
+    Parameters
+    ----------
+    streckennetz: nx.Graph
+        Graph of the Streckennetz
+    """
+    from database.engine import engine
+    streckennetz = ox.graph_to_gdfs(streckennetz, nodes=False)
+    streckennetz.to_sql('full_streckennetz', if_exists='replace', method='multi', con=engine)
+
+
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     stations = StationPhillip()
@@ -277,7 +292,7 @@ if __name__ == '__main__':
     import math
     chunksize = math.ceil(len(edges_to_split) / 8)
     edges_to_split_chunks = [edges_to_split[i:i + chunksize] for i in range(0, len(edges_to_split), chunksize)]
-    with ProcessPoolExecutor(max_workers=8) as executor:
+    with ProcessPoolExecutor(max_workers=streckennetz_threads) as executor:
         result = executor.map(split_edges, edges_to_split_chunks)
     result = list(result)
     nodes_to_add = [node for single_result in result for node in single_result[0]]
@@ -304,7 +319,7 @@ if __name__ == '__main__':
                 geometries.append(None)
                 pass
             bar.update(i)
-        with ProcessPoolExecutor(max_workers=8) as executor:
+        with ProcessPoolExecutor(max_workers=streckennetz_threads) as executor:
                 lengths = executor.map(length_of_line, geometries)
         lengths = [length for length in lengths]
         for i, (u, v) in enumerate(streckennetz.edges()):
@@ -312,6 +327,7 @@ if __name__ == '__main__':
                 streckennetz[u][v][0]['length'] = lengths[i]
 
     # upload_minimal(streckennetz)
+    upload_full(streckennetz)
 
     # Test functionality
     path = ox.shortest_path(streckennetz, 'Tübingen Hbf', 'Altingen(Württ)')
