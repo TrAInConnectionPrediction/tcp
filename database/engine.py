@@ -12,3 +12,10 @@ engine = sqlalchemy.create_engine(
     pool_pre_ping=True,
     pool_recycle=3600
 )
+
+def get_engine():
+    return sqlalchemy.create_engine(
+        DB_CONNECT_STRING,
+        pool_pre_ping=True,
+        pool_recycle=3600
+    )
