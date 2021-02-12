@@ -9,7 +9,7 @@ from mpl_toolkits.basemap import Basemap
 # Install Basemap on Linux: https://stackoverflow.com/questions/46560591/how-can-i-install-basemap-in-python-3-matplotlib-2-on-ubuntu-16-04
 from helpers.StationPhillip import StationPhillip
 from helpers.RtdRay import RtdRay
-from data_analisys.delay import load_with_delay
+from data_analysis.delay import load_with_delay
 
 
 class PerStationAnalysis(StationPhillip):

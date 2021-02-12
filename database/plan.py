@@ -6,7 +6,7 @@ from sqlalchemy import Column, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from database.engine import engine
+from database.engine import get_engine
 import datetime
 
 Base = declarative_base()
@@ -18,18 +18,22 @@ class Plan(Base):
     bhf = Column(Text, primary_key=True)
     plan = Column(JSON)
 
-
-try:
-    Base.metadata.create_all(engine)
-except sqlalchemy.exc.OperationalError:
-    print('database.plan running offline!')
+    def __init__(self) -> None:
+        try:
+            engine = get_engine()
+            Base.metadata.create_all(engine)
+            engine.dispose()
+        except sqlalchemy.exc.OperationalError:
+            print('database.plan running offline!')
 
 
 class PlanManager:
-    Session = sessionmaker(bind=engine)
-    session = Session()
 
-    queue = []
+    def __init__(self) -> None:
+        Session = sessionmaker(bind=get_engine())
+        self.session = Session()
+
+        self.queue = []
 
     def upsert(self, rows, no_update_cols=[]):
         table = Plan.__table__

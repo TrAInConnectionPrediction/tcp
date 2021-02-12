@@ -9,7 +9,7 @@ import matplotlib.dates as mdates
 import matplotlib
 from helpers.StationPhillip import StationPhillip
 import datetime
-from data_analisys.delay import load_with_delay, load_long_distance_with_delay
+from data_analysis.delay import load_with_delay, load_long_distance_with_delay
 
 
 class DelayAnalysis:

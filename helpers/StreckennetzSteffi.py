@@ -110,9 +110,12 @@ class StreckennetzSteffi(StationPhillip):
         if u in self.streckennetz and v in self.streckennetz:
             return nx.shortest_path_length(self.streckennetz, u, v, weight='length')
         else:
-            u_coords = self.get_location(name=u)
-            v_coords = self.get_location(name=v)
-            return geopy.distance.distance(u_coords, v_coords).meters
+            try:
+                u_coords = self.get_location(name=u)
+                v_coords = self.get_location(name=v)
+                return geopy.distance.distance(u_coords, v_coords).meters
+            except KeyError:
+                return 0
 
 
 if __name__ == "__main__":

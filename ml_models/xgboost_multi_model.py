@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pickle
 from xgboost import XGBClassifier
 from helpers.RtdRay import RtdRay
-from data_analisys.delay import load_for_ml_model
+from data_analysis.delay import load_for_ml_model
 import datetime
 import pandas as pd
 import numpy as np

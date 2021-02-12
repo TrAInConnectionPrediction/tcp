@@ -10,7 +10,7 @@ from sklearn import neighbors
 from sklearn.preprocessing import minmax_scale
 from sklearn.preprocessing import MinMaxScaler
 from sklearn import linear_model
-from data_analisys.delay import load_with_delay
+from data_analysis.delay import load_with_delay
 from helpers.RtdRay import RtdRay
 
 

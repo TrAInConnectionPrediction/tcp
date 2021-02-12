@@ -3,19 +3,22 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import datetime
-import progressbar
+from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
-from database.plan import PlanManager
-from database.change import ChangeManager
+# from database.plan import PlanManager
+# from database.change import ChangeManager
 from database.rtd import RtdManager, sql_types, RtdArrays
 from helpers.StreckennetzSteffi import StreckennetzSteffi
 import json
 import re
+import concurrent.futures
+import numpy as np
+from database.db_manager import DBManager
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
-plan_db = PlanManager()
-change_db = ChangeManager()
+# plan_db = PlanManager()
+# change_db = ChangeManager()
 rtd = RtdManager()
 streckennetz = StreckennetzSteffi(prefer_cache=False)
 
@@ -158,8 +161,9 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
 def add_distance(rtd):
     for prefix in ('ar', 'dp'):
         if prefix + '_ct' in rtd.columns:
-            no_ct = rtd[prefix + '_ct'].isna()
-            rtd.loc[no_ct, prefix + '_ct'] = rtd.loc[no_ct, prefix + '_pt']
+            rtd[prefix + '_ct'] = rtd[prefix + '_ct'].fillna(value=rtd[prefix + '_pt'])
+            # no_ct = rtd[prefix + '_ct'].isna()
+            # rtd.loc[no_ct, prefix + '_ct'] = rtd.loc[no_ct, prefix + '_pt']
         elif prefix + '_pt' in rtd.columns:
             rtd[prefix + '_ct'] = rtd[prefix + '_pt']
         else:
@@ -167,8 +171,9 @@ def add_distance(rtd):
             rtd[prefix + '_ct'] = pd.NaT
 
         if prefix + '_cpth' in rtd.columns:
-            no_cpth = rtd[prefix + '_cpth'].isna()
-            rtd.loc[no_cpth, prefix + '_cpth'] = rtd.loc[no_cpth, prefix + '_ppth']
+            rtd[prefix + '_cpth'] = rtd[prefix + '_cpth'].fillna(value=rtd[prefix + '_ppth'])
+            # no_cpth = rtd[prefix + '_cpth'].isna()
+            # rtd.loc[no_cpth, prefix + '_cpth'] = rtd.loc[no_cpth, prefix + '_ppth']
         elif prefix + '_ppth' in rtd.columns:
             rtd[prefix + '_cpth'] = rtd[prefix + '_ppth']
         else:
@@ -176,8 +181,9 @@ def add_distance(rtd):
             rtd[prefix + '_cpth'] = ''
 
         if prefix + '_cp' in rtd.columns:
-            no_cp = rtd[prefix + '_cp'].isna()
-            rtd.loc[no_cp, prefix + '_cp'] = rtd.loc[no_cp, prefix + '_pp']
+            rtd[prefix + '_cp'] = rtd[prefix + '_cp'].fillna(value=rtd[prefix + '_pp'])
+            # no_cp = rtd[prefix + '_cp'].isna()
+            # rtd.loc[no_cp, prefix + '_cp'] = rtd.loc[no_cp, prefix + '_pp']
         elif prefix + '_pp' in rtd.columns:
             rtd[prefix + '_cp'] = rtd[prefix + '_pp']
         else:
@@ -186,33 +192,36 @@ def add_distance(rtd):
 
     for col in ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']:
         if col in rtd.columns:
-            rtd[col] = rtd[col].astype('str')
+            rtd[col] = rtd[col].astype('str').replace('nan', np.nan)
             rtd[col] = rtd[col].str.split('|')
 
     for i, row in rtd.iterrows():
-            try:
-                rtd.at[i, 'distance_to_last'] = streckennetz.route_length([row['ar_cpth'][-1]] + [row['station']])
-                rtd.at[i, 'distance_to_start'] = streckennetz.route_length(row['ar_cpth'] + [row['station']])
-            except KeyError:
-                rtd.at[i, 'distance_to_last'] = 0
-                rtd.at[i, 'distance_to_start'] = 0
+        ar_cpth = row['ar_cpth']
+        if isinstance(ar_cpth, list):
+            rtd.at[i, 'distance_to_last'] = streckennetz.route_length([ar_cpth[-1]] + [row['station']])
+            rtd.at[i, 'distance_to_start'] = streckennetz.route_length(ar_cpth + [row['station']])
+        else:
+            rtd.at[i, 'distance_to_last'] = 0
+            rtd.at[i, 'distance_to_start'] = 0
 
-            try:
-                rtd.at[i, 'distance_to_next'] = streckennetz.route_length([row['station']] + [row['dp_cpth'][0]])
-                rtd.at[i, 'distance_to_end'] = streckennetz.route_length([row['station']] + row['dp_cpth'])
-            except KeyError:
-                rtd.at[i, 'distance_to_next'] = 0
-                rtd.at[i, 'distance_to_end'] = 0
+        dp_cpth = row['dp_cpth']
+        if isinstance(dp_cpth, list):
+            rtd.at[i, 'distance_to_next'] = streckennetz.route_length([row['station']] + [dp_cpth[0]])
+            rtd.at[i, 'distance_to_end'] = streckennetz.route_length([row['station']] + dp_cpth)
+        else:
+            rtd.at[i, 'distance_to_next'] = 0
+            rtd.at[i, 'distance_to_end'] = 0
+
     return rtd
 
 
-def parse_timetable(timetables):
+def parse_timetable(timetables, db):
     parsed = []
     timetables = [timetable.plan for timetable in timetables]
     train_ids_to_get = []
     for timetable in timetables:
         train_ids_to_get.extend(timetable.keys())
-    changes = change_db.get_changes(train_ids_to_get)
+    changes = db.get_changes(train_ids_to_get)
     changes = {change.hash_id: json.loads(change.change) for change in changes}
     for timetable in timetables:
         if timetable is None:
@@ -228,8 +237,9 @@ def parse_timetable(timetables):
 
 
 def parse_station(station, start_date, end_date):
-    stations_timetables = plan_db.plan_of_station(station, date1=start_date, date2=end_date)
-    parsed = parse_timetable(stations_timetables)
+    with DBManager() as db:
+        stations_timetables = db.plan_of_station(station, date1=start_date, date2=end_date)
+        parsed = parse_timetable(stations_timetables, db)
 
     if parsed:
         parsed = pd.DataFrame(parsed)
@@ -245,7 +255,9 @@ def parse_station(station, start_date, end_date):
         # rtd_arrays_df = parsed.loc[:, current_array_cols]
         # rtd.upsert_arrays(rtd_arrays_df)
         rtd_df = parsed.drop(current_array_cols, axis=1)
-        rtd.upsert(rtd_df)
+        db = DBManager()
+        db.upsert_rtd(rtd_df)
+
     return True
 
 
@@ -258,7 +270,12 @@ if __name__ == "__main__":
         start_date = rtd.max_date() - datetime.timedelta(days=2)
 
     end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-    with progressbar.ProgressBar(max_value=len(streckennetz)) as bar:
-        for i, station in enumerate(streckennetz):
-            parse_station(station, start_date, end_date)
-            bar.update(i)
+
+    # parse_station('Tübingen Hbf', start_date, end_date)
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = {executor.submit(parse_station, station, start_date, end_date): station
+                   for station
+                   in streckennetz}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
+            future.result()

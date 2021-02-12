@@ -204,21 +204,14 @@ class RtdManager:
             Data to upsert
         """
         if not df.empty:
-            try:
-                df.to_sql(name=Rtd.__tablename__,
-                          if_exists='append',
-                          con=engine,
-                          method='multi',
-                          dtype=sql_types)
-            except exc.IntegrityError:
-                pangres.upsert(engine,
-                            df,
-                            if_row_exists='update',
-                            table_name=Rtd.__tablename__,
-                            dtype=sql_types,
-                            create_schema=False,
-                            add_new_columns=False,
-                            adapt_dtype_of_empty_db_columns=False)
+            pangres.upsert(engine,
+                        df,
+                        if_row_exists='update',
+                        table_name=Rtd.__tablename__,
+                        dtype=sql_types,
+                        create_schema=False,
+                        add_new_columns=False,
+                        adapt_dtype_of_empty_db_columns=False)
 
     
     @staticmethod
@@ -232,18 +225,11 @@ class RtdManager:
             Arrays to upsert
         """
         if not df.empty:
-            try:
-                df.to_sql(name=RtdArrays.__tablename__,
-                          if_exists='append',
-                          con=engine,
-                          method='multi',
-                          dtype=sql_types)
-            except exc.IntegrityError:
-                pangres.upsert(engine,
-                            df,
-                            if_row_exists='update',
-                            table_name=RtdArrays.__tablename__,
-                            dtype=sql_types,
-                            create_schema=False,
-                            add_new_columns=False,
-                            adapt_dtype_of_empty_db_columns=False)
+            pangres.upsert(engine,
+                        df,
+                        if_row_exists='update',
+                        table_name=RtdArrays.__tablename__,
+                        dtype=sql_types,
+                        create_schema=False,
+                        add_new_columns=False,
+                        adapt_dtype_of_empty_db_columns=False)

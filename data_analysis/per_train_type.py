@@ -5,8 +5,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from data_analisys.packed_bubbles import BubbleChart
-from data_analisys.delay import load_with_delay
+from data_analysis.packed_bubbles import BubbleChart
+from data_analysis.delay import load_with_delay
 from helpers.RtdRay import RtdRay
 
 
