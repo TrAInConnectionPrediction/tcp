@@ -108,7 +108,15 @@ class StreckennetzSteffi(StationPhillip):
             Distance in meters between u and v.
         """
         if u in self.streckennetz and v in self.streckennetz:
-            return nx.shortest_path_length(self.streckennetz, u, v, weight='length')
+            try:
+                return nx.shortest_path_length(self.streckennetz, u, v, weight='length')
+            except nx.exception.NetworkXNoPath:
+                try:
+                    u_coords = self.get_location(name=u)
+                    v_coords = self.get_location(name=v)
+                    return geopy.distance.distance(u_coords, v_coords).meters
+                except KeyError:
+                    return 0
         else:
             try:
                 u_coords = self.get_location(name=u)
