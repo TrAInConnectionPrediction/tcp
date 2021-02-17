@@ -27,14 +27,14 @@ class PerStationAnalysis(StationPhillip):
         'color_value': 'dp_cancellations'
     }
 
-    CACHE_PATH = 'cache/per_station_data.csv'
+    PER_STATION_CACHE_PATH = 'cache/per_station_data.csv'
 
     def __init__(self, rtd_df, use_cache=True):
         super().__init__()
         try:
             if not use_cache:
                 raise FileNotFoundError
-            self.data = pd.read_csv(self.CACHE_PATH, header=[0, 1], index_col=0)
+            self.data = pd.read_csv(self.PER_STATION_CACHE_PATH, header=[0, 1], index_col=0)
             print('using cached data')
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
@@ -50,7 +50,7 @@ class PerStationAnalysis(StationPhillip):
             # remove station with less than 1000 stops
             self.data = self.data.loc[self.data[('dp_delay', 'count')] > 2000, :]
 
-            self.data.to_csv(self.CACHE_PATH)
+            self.data.to_csv(self.PER_STATION_CACHE_PATH)
 
     def plot(self, data_to_plot):
         self.data = self.data.loc[self.data[('dp_delay', 'count')] > 2000, :]
