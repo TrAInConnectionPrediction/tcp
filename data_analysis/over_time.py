@@ -52,7 +52,17 @@ def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:
     return df.iloc[dist_from_center:-dist_from_center]
 
 
-def plot(data, title, x_label, y1_label, y2_label, formatter, locator, ax1_ylim_bottom=None, ax2_ylim_bottom=None, nticks=5):
+def plot(data,
+         title,
+         x_label,
+         formatter,
+         locator,
+         ax1_ylim_bottom=None,
+         ax2_ylim_bottom=None,
+         nticks=5,
+         kind='delay') -> None:
+    if kind not in ['delay', 'cancellations']:
+        raise ValueError(f'kind must be "delay" or "cancellations" not {kind}')
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
     ax1.tick_params(axis="both", labelsize=20) 
@@ -73,21 +83,36 @@ def plot(data, title, x_label, y1_label, y2_label, formatter, locator, ax1_ylim_
 
     ax1.set_title(title, fontsize=50)
     ax1.set_xlabel(x_label, fontsize=30)
-    ax1.set_ylabel(y1_label, color="blue", fontsize=30)
-    ax2.set_ylabel(y2_label, color="orange", fontsize=30)
+    ax1.set_ylabel('Stops', color="blue", fontsize=30)
 
     ax1.plot(data[('ar_delay', 'count_rolling_mean')] + data[('dp_delay', 'count_rolling_mean')],
-                color="blue",
-                linewidth=3,
-                label='Stops')        
-    ax2.plot(data[('ar_delay', 'mean_rolling_mean')],
-                color="red",
-                linewidth=3,
-                label='Arrival delay')
-    ax2.plot(data[('dp_delay', 'mean_rolling_mean')],
-                color="orange",
-                linewidth=3,
-                label='Departure delay')
+                    color="blue",
+                    linewidth=3,
+                    label='Stops')  
+
+    if kind == 'delay':
+        ax2.set_ylabel('Delay in Minutes', color="orange", fontsize=30)
+      
+        ax2.plot(data[('ar_delay', 'mean_rolling_mean')],
+                    color="red",
+                    linewidth=3,
+                    label='Arrival delay')
+        ax2.plot(data[('dp_delay', 'mean_rolling_mean')],
+                    color="orange",
+                    linewidth=3,
+                    label='Departure delay')
+
+    elif kind == 'cancellations':
+        ax2.set_ylabel('Relative non-cancellations', color="orange", fontsize=30)
+      
+        ax2.plot(data[('ar_cancellations', 'mean_rolling_mean')],
+                    color="red",
+                    linewidth=3,
+                    label='Arrival non-cancellations')
+        ax2.plot(data[('dp_cancellations', 'mean_rolling_mean')],
+                    color="orange",
+                    linewidth=3,
+                    label='Departure non-cancellations')
     
     fig.legend(fontsize=20)
     ax1.set_ylim(bottom=ax1_ylim_bottom)
@@ -132,8 +157,6 @@ class OverHour:
         self.plot = lambda: plot(self.data,
                                  title='Delay within one hour',
                                  x_label='Minute',
-                                 y1_label='Stops',
-                                 y2_label='Delay in minutes',
                                  formatter=mdates.DateFormatter("%M"),
                                  locator=mdates.MinuteLocator(byminute=range(0, 60, 10)))
 
@@ -191,8 +214,6 @@ class OverDay:
         self.plot = lambda: plot(self.data,
                                  title='Delay within one day',
                                  x_label='Time',
-                                 y1_label='Stops',
-                                 y2_label='Delay in minutes',
                                  formatter=mdates.DateFormatter("%H:%M"),
                                  locator=mdates.HourLocator(),
                                  ax1_ylim_bottom=0)
@@ -251,8 +272,6 @@ class OverWeek:
         self.plot = lambda: plot(self.data,
                                  title='Delay within one week',
                                  x_label='Time',
-                                 y1_label='Stops',
-                                 y2_label='Delay in minutes',
                                  formatter=mdates.DateFormatter("%A %H:%M"), # E.g.: Monday 08:00
                                  locator=mdates.HourLocator(interval=8),
                                  ax1_ylim_bottom=0)
@@ -318,15 +337,14 @@ class OverYear:
                 self.data[new_col_name] = self.data[col].rolling(3, center=True).mean()
             self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
         
-        self.plot = lambda: plot(self.data,
+        self.plot = lambda kind='delay': plot(self.data,
                                  title='Delay over the years',
                                  x_label='Time',
-                                 y1_label='Stops',
-                                 y2_label='Delay in minutes',
                                  formatter=mdates.DateFormatter("%D"),
                                  locator=mdates.HourLocator(interval=24*7),
                                  ax1_ylim_bottom=0,
-                                 ax2_ylim_bottom=0)
+                                 ax2_ylim_bottom=0,
+                                 kind=kind)
         
 
     @staticmethod
@@ -348,7 +366,7 @@ class OverYear:
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     rtd_ray = RtdRay()
     rtd_df = rtd_ray.load_data(columns=['ar_pt',
                                         'dp_pt',
@@ -370,5 +388,5 @@ if __name__ == '__main__':
     # time = OverWeek(rtd_df, use_cache=True)
     # time.plot()
 
-    # time = OverYear(rtd_df, use_cache=False)
-    # time.plot()
+    time = OverYear(rtd_df, use_cache=True)
+    time.plot(kind='cancellations')
