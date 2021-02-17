@@ -36,6 +36,7 @@ def get_streckennetz_from_osm():
         streckennetz = ox.graph_from_place('Germany',
                                         simplify=True,
                                         network_type='none',
+                                        truncate_by_edge=True,
                                         custom_filter=rail_filter
                                         )
         nx.write_gpickle(streckennetz, "cache/original_osm_rail_graph.gpickle")
@@ -242,8 +243,20 @@ def upload_full(streckennetz):
         Graph of the Streckennetz
     """
     from database.engine import engine
-    streckennetz = ox.graph_to_gdfs(streckennetz, nodes=False)
-    streckennetz.to_sql('full_streckennetz', if_exists='replace', method='multi', con=engine)
+    streckennetz_nodes, streckennetz_edges = ox.graph_to_gdfs(streckennetz, nodes=True)
+    # Function to generate WKB hex
+    def wkb_hexer(line):
+        return line.wkb_hex
+
+    # Convert `'geom'` column in GeoDataFrame `gdf` to hex
+    # Note that following this step, the GeoDataFrame is just a regular DataFrame
+    # because it does not have a geometry column anymore. Also note that
+    # it is assumed the `'geom'` column is correctly datatyped.
+    streckennetz_edges['geometry'] = streckennetz_edges['geometry'].apply(wkb_hexer)
+    streckennetz_edges.to_sql('full_streckennetz', if_exists='replace', method='multi', con=engine)
+
+    streckennetz_nodes['geometry'] = streckennetz_nodes['geometry'].apply(wkb_hexer)
+    streckennetz_nodes.to_sql('full_streckennetz_nodes', if_exists='replace', method='multi', con=engine)
 
 
 if __name__ == '__main__':
