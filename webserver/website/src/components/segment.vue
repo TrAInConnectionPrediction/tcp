@@ -60,7 +60,7 @@ export default {
         IC: require("../assets/img/IC.svg"),
         RE: require("../assets/img/RE.svg"),
         S: require("../assets/img/S.svg"),
-        RB: require("../assets/img/RB.svg"),
+        RB: require("../assets/img/RB.svg")
       }
     };
   }

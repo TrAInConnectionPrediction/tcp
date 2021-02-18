@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "bootstrap": "^5.0.0-beta2",
-    "flatpickr": "^4.6.9",
-    "jquery": "^3.5.1",
-    "progressbar.js": "^1.1.0"
-  }
-}

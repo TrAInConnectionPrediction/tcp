@@ -16,6 +16,7 @@
 !ml_models/
 !database/
 !helpers/
+!data_analysis/
 !fancy_print_tcp.py
 
 # Ignore unnecessary files inside allowed directories
@@ -25,3 +26,7 @@
 **/*.log
 **/.DS_Store
 **/Thumbs.db
+
+# Node stuff
+**/node_modules
+**/dist
