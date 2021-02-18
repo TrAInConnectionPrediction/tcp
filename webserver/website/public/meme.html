@@ -13,10 +13,7 @@ Find rated connections using Random Forests">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/css/mdb.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
-    <link rel="stylesheet" href="assets/css/styles.min.css">
-    <link rel="stylesheet" href="assets/css/connections_style.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 
 <body class="body" style="background-color: #000000;overflow: auto;">
@@ -31,13 +28,13 @@ Find rated connections using Random Forests">
             </div>
         </div>
     </nav>
-    <div id="intro" class="view shadow" style="background-image: url(&quot;assets/img/ice.jpg&quot;);background-position: center;background-repeat: no-repeat;background-size: cover;background-attachment: fixed;">
+    <div id="intro" class="view shadow" style="background-image: url(&quot;https://pyxis.nymag.com/v1/imgs/09c/923/65324bb3906b6865f904a72f8f8a908541-16-spongebob-explainer.2x.rsocial.w600.jpg&quot;);background-position: center;background-repeat: no-repeat;background-size: cover;background-attachment: fixed;">
         <div class="d-flex justify-content-center align-items-center mask" style="background-color: rgba(0, 0, 0, 0.1);">
             <div class="row" style="justify-content: center;">
                 <div class="col mb-4 white-text text-center">
-                    <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br></h2>
+                    <h2 id="midheader" class="shadowheader">MeMe_COnNeCtIon_pREdIctIOn: MCP<br></h2>
                     <hr class="hr-light">
-                    <p><strong>Ihre&nbsp;Verbindungsvorhersage<br></strong></p>
+                    <p><strong>Ihre&nbsp;MEEEEMES<br></strong></p>
                 </div>
                 <div class="col mb-4">
                     <div class="card hover">
@@ -77,29 +74,20 @@ Find rated connections using Random Forests">
     </div>
     <main id="main" style="margin-top: 0px;max-width: 100%;width: 100%;">
         <section id="pgr_bar" class="m-5 d-none"></section>
-        <section id="results" class="m-5 d-none"><div v-for='connection in connections'
-     is="connection" v-bind:summary='connection.summary' v-bind:segments='connection.segments'
-     v-bind:con_score='connection.summary.score'>
-</div>
-</section>
+        <section id="results" class="m-5 d-none"></section>
         <section id="about" class="d-none"></section>
         <section id="stats" class="d-none"></section>
     </main>
     <footer class="text-center page-footer mt-4" style="margin-top: 0px!important;">
         <hr style="margin-top: 0px;">
         <div class="d-flex justify-content-center align-items-xl-center pb-4"><a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px;"><img src="https://www.meteoblue.com/favicon.ico" width="24" height="24"></a><div style="margin: 5px">Wetterdaten von Meteoblue</div><a href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank" style="margin: 5px;"><i class="fab fa-github"></i></a></div>
-        <div class="footer-copyright py-3">© 2020 Copyright: <a href="mailto:marius@kepi.de">_®<br /></a></div>
+        <div class="footer-copyright py-3">© 2020 Copyright: <a href="mailto:marius@kepi.de">YOuR MoMA®<br /></a></div>
     </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.11.0/js/mdb.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.devbridge-autocomplete/1.4.10/jquery.autocomplete.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.0.1/progressbar.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="assets/js/script.min.js"></script>
-    <script src="assets/js/main.min.js"></script>
-    <script src="assets/js/navigation.min.js"></script>
+    <script src="assets/js/jquery.connections.js"></script>
 </body>
 
 </html>

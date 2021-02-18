@@ -17,18 +17,18 @@ def home(output=[]):
     return render_template('index.html')
 
 
-@index_blueprint.app_errorhandler(404)
-def not_found(e):
-    """
-    Custom 404 Page
-    Get's called if the page can not be found.
+# @index_blueprint.app_errorhandler(404)
+# def not_found(e):
+#     """
+#     Custom 404 Page
+#     Get's called if the page can not be found.
 
-    Args:
-        -
+#     Args:
+#         -
 
-    Returns:
-        webpage: our custom 404-page
-    """
-    # inbuilt function which takes error as parameter
-    # defining function
-    return render_template("404.html")
+#     Returns:
+#         webpage: our custom 404-page
+#     """
+#     # inbuilt function which takes error as parameter
+#     # defining function
+#     return render_template("404.html")

@@ -13,7 +13,7 @@ import logging.handlers as handlers
 
 # Create app with changed paths  https://stackoverflow.com/a/42791810
 app = Flask(__name__, instance_relative_config=True,
-        template_folder='website', static_folder='website/', static_url_path='')
+        template_folder='website/dist', static_folder='website/dist', static_url_path='')
 
 logHandler = handlers.TimedRotatingFileHandler(basepath + '/logs/website.log', when='midnight', backupCount=100)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -28,8 +28,8 @@ from helpers.fancy_print_tcp import TCP_SIGN
 app.logger.info("Loading config...")
 if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
-from config import config
-app.config.from_mapping(config)
+import config
+# app.config.from_mapping(config)
 
 from database.engine import DB_CONNECT_STRING
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_CONNECT_STRING

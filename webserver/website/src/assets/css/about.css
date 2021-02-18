@@ -1,0 +1,80 @@
+.parallax {
+  perspective: 1px;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 100%;
+  -ms-overflow-style: none;
+  overflow: -moz-scrollbars-none;
+}
+
+.parallax__layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.parallax__layer--base {
+  transform: translateZ(-4px) scale(5);
+}
+
+.parallax__layer--train {
+  transform: translateZ(-1px) scale(1.4);
+}
+
+.parallax__layer--train img {
+  margin: 0 auto;
+  display: block;
+  /*-webkit-filter: drop-shadow(20px 2px 20px #222);*/
+  /*filter: drop-shadow(20px 2px 20px#222);*/
+}
+
+.parallax__layer--tracks img {
+  margin: 0 auto;
+  display: block;
+}
+
+.parallax__layer--tracks {
+  transform: translateZ(-30px) scale(24);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+
+.parallax::-webkit-scrollbar {
+  display: none;
+}
+
+.shadowed {
+  -webkit-filter: drop-shadow(15px 5px 10px rgba(0,0,0,0.5));
+  filter: url(#drop-shadow);
+  -ms-filter: "progid:DXImageTransform.Microsoft.Dropshadow(OffX=12, OffY=12, Color='#444')";
+  filter: "progid:DXImageTransform.Microsoft.Dropshadow(OffX=12, OffY=12, Color='#444')";
+}
+
+.step p {
+  padding: 10px;
+  border-radius: 25px;
+  border: 2px solid #2b387c;
+  margin: 10%;
+  width: 200px;
+  background-color: rgba(43,56,124,0.59);
+  font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace!important;
+}
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
+}
+
+.step {
+  width: 100%;
+  margin-top: 400px !important;
+  padding: 5px;
+  color: white;
+}
+

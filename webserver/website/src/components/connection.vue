@@ -1,0 +1,455 @@
+<template>
+  <!-- summary -->
+  <div v-bind:style="background_color" class="custom_card">
+    <div v-on:click="show_details = !show_details" class="card_header">
+      <div class="card_header_item">
+        <div class="card_header_item_header">Bahnhof</div>
+        <div class="card_header_item_item">{{ summary.dp_station }}</div>
+        <div class="card_header_item_item">{{ summary.ar_station }}</div>
+      </div>
+      <div class="card_header_item">
+        <div class="card_header_item_header">Zeit</div>
+        <div class="card_header_item_item">{{ summary.dp_pt }}</div>
+        <div class="card_header_item_item">{{ summary.ar_pt }}</div>
+      </div>
+      <div class="card_header_item">
+        <div class="card_header_item_header">Dauer</div>
+        <div class="card_header_item_item">{{ summary.duration }}</div>
+      </div>
+      <div class="card_header_item">
+        <div class="card_header_item_header">Umstiege</div>
+        <div class="card_header_item_item">{{ summary.transfers }}</div>
+      </div>
+      <div class="card_header_item">
+        <div class="card_header_item_header">Produkte</div>
+        <div
+          v-for="cat in summary.train_categories"
+          :key="cat"
+          class="card_header_item_item"
+        >
+          {{ cat }}
+        </div>
+      </div>
+      <div class="card_header_item">
+        <div class="card_header_item_header">Verbindungs-Score</div>
+        <div class="card_header_item_item">{{ summary.score }}%</div>
+      </div>
+    </div>
+    <!-- segments -->
+    <transition name="open">
+      <div v-if="show_details" class="card_contents">
+        <div>
+          <div class="details_grid">
+            <segment
+              v-for="(segment, index) in segments"
+              v-bind:key="index"
+              v-bind:segment="segment"
+              v-bind:con_score="con_score"
+            ></segment>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
+<script>
+import { rdylgr_colormap } from "../assets/js/colormap.js";
+import segment from "./segment.vue";
+
+export default {
+  name: "connection",
+  components: {
+    segment
+  },
+  props: ["summary", "segments", "con_score"],
+  data: function() {
+    return {
+      show_details: false,
+      background_color: {
+        "background-color": rdylgr_colormap(this.con_score, 50, 100)
+      }
+    };
+  }
+};
+</script>
+
+<style>
+/* Required height of parents */
+
+html,
+body,
+header,
+.view {
+  height: 100%;
+}
+
+/* Desing for mobile pages */
+
+/* @media (max-width: 740px) {
+  .full-page-intro {
+    height: 1000px;
+  }
+} */
+
+@media (max-width: 740px) {
+  h2 {
+    font-size: 5vw;
+  }
+}
+
+/* Navbar animation */
+
+.navbar {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.top-nav-collapse {
+  background-color: #202020;
+}
+
+/* Adding color to the Navbar on mobile */
+
+@media only screen and (max-width: 768px) {
+  .navbar {
+    background-color: #202020;
+  }
+}
+
+/* Footer color for sake of consistency with Navbar */
+
+/* @media (max-width: 740px) {
+  html, body, header, .view {
+    height: 1000px;
+  }
+}
+
+@media (min-width: 800px) and (max-width: 850px) {
+  html, body, header, .view {
+    height: 650px;
+  }
+} */
+
+/* Progressbar space */
+
+#pgr_bar {
+  margin: 5px;
+  height: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* @media (min-width: 800px) and (max-width: 850px) {
+  .navbar:not(.top-nav-collapse) {
+    background: #1C2331 !important;
+  }
+} */
+
+.autocomplete-suggestions {
+  background: #212529;
+  overflow: auto;
+  color: #fff;
+  box-shadow: 0px 0px 10px 4px black !important;
+}
+
+.autocomplete-suggestion {
+  padding: 2px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.autocomplete-selected {
+  background: #000;
+}
+
+.autocomplete-suggestions strong {
+  font-weight: normal;
+  color: #3399ff;
+}
+
+.autocomplete-group {
+  padding: 2px 5px;
+}
+
+.autocomplete-group strong {
+  display: block;
+  border-bottom: 1px solid #fff;
+}
+
+.flatpickr-calendar,
+.flatpickr-calendar.arrowTop {
+  background: #202020;
+}
+
+.flatpickr-months .flatpickr-month {
+  background: #202020;
+}
+
+.flatpickr-current-month
+  .flatpickr-monthDropdown-months
+  .flatpickr-monthDropdown-month {
+  background: #202020;
+}
+
+span.flatpickr-weekday {
+  background: #202020;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  background: #202020;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.startRange.inRange,
+.flatpickr-day.endRange.inRange,
+.flatpickr-day.selected:focus,
+.flatpickr-day.startRange:focus,
+.flatpickr-day.endRange:focus,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover,
+.flatpickr-day.selected.prevMonthDay,
+.flatpickr-day.startRange.prevMonthDay,
+.flatpickr-day.endRange.prevMonthDay,
+.flatpickr-day.selected.nextMonthDay,
+.flatpickr-day.startRange.nextMonthDay,
+.flatpickr-day.endRange.nextMonthDay {
+  background: #3f51b5;
+  border-color: #3f51b5;
+}
+
+.shadow {
+  -webkit-box-shadow: 0 -140px 70px -70px black inset !important;
+  box-shadow: 0 -140px 70px -70px black inset !important;
+}
+
+.shadow .card {
+  -webkit-box-shadow: 10px 10px 50px 5px black;
+  box-shadow: 10px 10px 50px 5px black;
+}
+
+.hover:hover {
+  position: relative;
+  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
+}
+
+.shadowheader2:hover {
+  position: relative;
+  top: -3px;
+  left: -3px;
+  text-shadow: 0px 1px var(--shadow-bg-color1), 2px 2px var(--shadow-bg-color1),
+    3px 3px var(--shadow-bg-color1), 4px 4px var(--shadow-bg-color1),
+    5px 5px var(--shadow-bg-color1), 6px 6px var(--shadow-bg-color1),
+    7px 7px var(--shadow-bg-color1), 8px 8px var(--shadow-bg-color1) !important;
+}
+
+.backshadow:hover {
+  box-shadow: 1px 1px #2b387c, 2px 2px #2b387c, 3px 3px #2b387c, 4px 4px #2b387c,
+    5px 5px #2b387c, 6px 6px #2b387c;
+}
+
+.shadowheader {
+  color: white;
+  text-shadow: 1px 1px #000, 2px 2px #000;
+}
+
+:root {
+  --shadow-bg-color1: #125163;
+}
+
+@media (max-width: 400px) {
+  #brand_button {
+    font-size: 4.6vw;
+    margin: 0;
+  }
+}
+
+@media (max-width: 300px) {
+  #brand_button {
+    font-size: 4vw;
+    margin: 0;
+  }
+}
+
+@media (max-width: 300px) {
+  .navbar-dark .navbar-toggler {
+    font-size: 4vw;
+  }
+}
+
+@media (max-width: 400px) {
+  .navbar-dark .navbar-toggler {
+    font-size: 5vw;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg {
+    -ms-flex-flow: row nowrap;
+    flex-flow: row nowrap;
+    -ms-flex-pack: start;
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-nav {
+    -ms-flex-direction: row;
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-nav .dropdown-menu {
+    position: absolute;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-nav .nav-link {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg > .container,
+  .navbar-expand-lg > .container-fluid,
+  .navbar-expand-lg > .container-lg,
+  .navbar-expand-lg > .container-md,
+  .navbar-expand-lg > .container-sm,
+  .navbar-expand-lg > .container-xl {
+    -ms-flex-wrap: nowrap;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-collapse {
+    display: -ms-flexbox !important;
+    display: flex !important;
+    -ms-flex-preferred-size: auto;
+    flex-basis: auto;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-toggler {
+    display: none;
+  }
+}
+
+.col {
+  width: 40vw;
+  min-width: 350px;
+  max-width: 75vw;
+  margin: 30px;
+}
+
+#midheader {
+  font-weight: bold;
+  font-size: calc(12px + 1.5vw);
+  white-space: nowrap;
+}
+
+/* connection style */
+.custom_card {
+  margin-bottom: 5px;
+}
+
+.card_header {
+  padding: 20px;
+  min-height: 60px;
+  height: max-content;
+  display: flex;
+  flex-wrap: wrap;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.card_header_item {
+  display: inline-grid;
+  height: max-content;
+  min-width: 100px;
+  flex-grow: 1;
+}
+
+.card_header_item_header {
+  padding: 10px 10px 0 10px;
+  border-bottom: 1.5px solid black;
+  font-weight: bold;
+}
+
+.card_header_item_item {
+  padding: 0 10px 0 10px;
+}
+
+.card_contents {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.details_grid {
+  margin: 20px;
+  display: inline-grid;
+  grid-template-columns: repeat(3, max-content);
+  grid-gap: 0px;
+  width: max-content;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.open-enter-active,
+.open-leave-active {
+  transition: all 0.5s;
+  max-height: 99em;
+  overflow: hidden;
+}
+
+.open-enter,
+.open-leave-to {
+  display: block;
+  max-height: 0px;
+  overflow: hidden;
+}
+
+.station {
+  margin: 10px;
+  width: 100%;
+  padding: 5px;
+  border: solid 1px;
+}
+
+.time {
+  margin: 15px;
+}
+
+.platform {
+  margin: 15px;
+}
+
+.train {
+  margin: 10px;
+}
+
+.score {
+  border: solid 10px;
+  grid-column-start: span 2;
+}
+
+.transfer {
+  border: solid 10px;
+}
+
+.walk {
+  border: solid 10px;
+  grid-column-start: span 3;
+}
+
+@media (max-width: 700px) {
+  .m-5 {
+    margin: 3rem 0.5rem 3rem 0.5rem !important;
+  }
+}
+</style>
