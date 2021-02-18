@@ -84,7 +84,7 @@ def calc_con(startbhf, zielbhf, date):
     return connections
 
 
-@bp.route("/connect", methods=["POST"])
+@bp.route("/connect", methods=["GET"])
 @log_activity
 def connect():
     """
@@ -95,7 +95,7 @@ def connect():
     Returns:
         list: a list of strings with all the known train stations
     """
-    return {"bhf": streckennetz.sta_list}
+    return {"stations": streckennetz.sta_list}
 
 
 @bp.route("/trip", methods=["POST"])
@@ -113,7 +113,7 @@ def api():
         json: All the possible connections
     """
     data = calc_con(
-        request.form["startbhf"], request.form["zielbhf"], request.form["date"]
+        request.json['start'], request.json['destination'], request.json['date']
     )
     resp = jsonify(data)
     resp.headers.add("Access-Control-Allow-Origin", "*")

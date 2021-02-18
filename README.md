@@ -36,6 +36,15 @@ docker build -f webserver/Dockerfile.webserver . -t webserver
 docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py webserver
 ```
 
+## Development
+
+For development, build the vue frontend in dev mode:
+
+```bash
+cd webserver/website
+./node_modules/.bin/vue-cli-service build --mode development
+```
+
 ### Credits
 
 - Marius De Kuthy Meurers aka [NotSomeBot](https://github.com/mariusdkm)

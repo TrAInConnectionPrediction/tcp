@@ -49,64 +49,7 @@
           <div class="col mb-4">
             <div class="card hover">
               <div class="card-body bg-dark">
-                <form id="input" method="post">
-                  <!-- Heading -->
-                  <h3 class="white-text text-center">
-                    <strong>Verbindung finden:</strong>
-                  </h3>
-                  <hr />
-                  <!-- Start Bhf Form-->
-                  <div class="md-form">
-                    <i class="fas fa-train prefix grey-text"></i>
-                    <label class="form-control-label" for="startbhf"
-                      >Start Bahnhof</label
-                    >
-                    <input
-                      class="form-control white-text typeahead"
-                      id="startbhf"
-                      name="startbhf"
-                      type="text"
-                      value=""
-                    />
-                  </div>
-                  <!-- End Bhf Form -->
-                  <div class="md-form">
-                    <i class="fas fa-train prefix grey-text"></i>
-                    <label class="form-control-label" for="zielbhf"
-                      >Ziel Bahnhof</label
-                    >
-                    <input
-                      class="form-control white-text typeahead"
-                      id="zielbhf"
-                      name="zielbhf"
-                      type="text"
-                      value=""
-                    />
-                  </div>
-                  <!-- Date Form -->
-                  <div class="md-form">
-                    <i class="fas fa-calendar prefix grey-text"></i>
-                    <label class="form-control-label" for="datetime"
-                      >Datum</label
-                    >
-                    <input
-                      class="form-control white-text"
-                      type="text"
-                      id="datetime"
-                      name="datetime"
-                    />
-                  </div>
-                  <!-- Submit Button -->
-                  <div class="text-center">
-                    <input
-                      class="btn btn-indigo backshadow"
-                      id=""
-                      name="submit"
-                      type="submit"
-                      value="SUCHEN"
-                    />
-                  </div>
-                </form>
+                <searchform> </searchform>
               </div>
             </div>
           </div>
@@ -114,19 +57,17 @@
       </div>
     </div>
     <main id="main" style="margin-top: 0px;max-width: 100%;width: 100%;">
-      <section id="pgr_bar" class="m-5 d-none"></section>
-      <section id="results" class="m-5 d-none">
-        <connection
-          v-for="connection in connections"
-          :key="connection"
-          v-bind:summary="connection.summary"
-          v-bind:segments="connection.segments"
-          v-bind:con_score="connection.summary.score"
-        >
-        </connection>
-      </section>
-      <section id="about" class="d-none"></section>
-      <section id="stats" class="d-none"></section>
+      <section id="pgr_bar" class="m-5" v-show="show_progress"></section>
+      <connectionDisplay
+        v-show="show_connections"
+        id="connection_display"
+        class="m-5"
+        ref="connection_display"
+        :connections="connections"
+      >
+      </connectionDisplay>
+      <section id="about" class="" v-show="show_about"></section>
+      <section id="stats" class="" v-show="show_stats"></section>
     </main>
     <footer
       class="text-center page-footer mt-4"
@@ -159,19 +100,84 @@
 </template>
 
 <script>
-import connection from "./components/connection.vue";
+import connectionDisplay from "./components/connectionDisplay.vue";
+import searchform from "./components/searchform.vue";
+// var ProgressBar = require("progressbar.js");
+
+// // Progressbar init
+// var bar = new ProgressBar.Line("#pgr_bar", {
+//   strokeWidth: 4,
+//   easing: "easeInOut",
+//   duration: 1400,
+//   color: "#FFEA82",
+//   trailColor: "#eee",
+//   trailWidth: 1,
+//   svgStyle: { width: "100%", height: "100%" }
+// });
 
 export default {
   name: "mymain",
   data: function() {
-    return { connections: [] };
+    return {
+      show_progress: Boolean,
+      show_connections: Boolean,
+      show_stats: Boolean,
+      show_about: Boolean,
+      connections: Array
+    };
   },
   components: {
-    connection
+    connectionDisplay,
+    searchform
   },
   methods: {
-    set_connections: function(connections) {
-      this.connections = connections;
+    toggle_progress: function() {
+      this.show_progress = true;
+      this.show_connections = false;
+      this.show_stats = false;
+      this.show_about = false;
+    },
+
+    toggle_connections: function() {
+      this.show_progress = false;
+      this.show_connections = true;
+      this.show_stats = false;
+      this.show_about = false;
+    },
+
+    toggle_stats: function() {
+      this.show_progress = false;
+      this.show_connections = false;
+      this.show_stats = true;
+      this.show_about = false;
+    },
+
+    toggle_about: function() {
+      this.show_progress = false;
+      this.show_connections = false;
+      this.show_stats = false;
+      this.show_about = true;
+    },
+    get_connections: function(search_data) {
+      // start progress animation
+      // bar.animate(60, { duration: 30000, easing: "linear" });
+      this.toggle_progress();
+      console.log(search_data);
+
+      fetch("api/trip", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(search_data)
+      })
+        .then(response => response.json())
+        .then(connections => {
+          //stop animation
+          // bar.animate(0, { duration: 10, easing: "linear" });
+          this.connections = connections;
+          this.toggle_connections();
+        });
     }
   }
 };
@@ -184,5 +190,285 @@ export default {
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
+}
+
+/* Required height of parents */
+
+html,
+body,
+header,
+.view {
+  height: 100%;
+}
+
+/* Desing for mobile pages */
+
+/* @media (max-width: 740px) {
+  .full-page-intro {
+    height: 1000px;
+  }
+} */
+
+@media (max-width: 740px) {
+  h2 {
+    font-size: 5vw;
+  }
+}
+
+/* Navbar animation */
+
+.navbar {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.top-nav-collapse {
+  background-color: #202020;
+}
+
+/* Adding color to the Navbar on mobile */
+
+@media only screen and (max-width: 768px) {
+  .navbar {
+    background-color: #202020;
+  }
+}
+
+/* Footer color for sake of consistency with Navbar */
+
+/* @media (max-width: 740px) {
+  html, body, header, .view {
+    height: 1000px;
+  }
+}
+
+@media (min-width: 800px) and (max-width: 850px) {
+  html, body, header, .view {
+    height: 650px;
+  }
+} */
+
+/* Progressbar space */
+
+#pgr_bar {
+  margin: 5px;
+  height: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* @media (min-width: 800px) and (max-width: 850px) {
+  .navbar:not(.top-nav-collapse) {
+    background: #1C2331 !important;
+  }
+} */
+
+.autocomplete-suggestions {
+  background: #212529;
+  overflow: auto;
+  color: #fff;
+  box-shadow: 0px 0px 10px 4px black !important;
+}
+
+.autocomplete-suggestion {
+  padding: 2px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.autocomplete-selected {
+  background: #000;
+}
+
+.autocomplete-suggestions strong {
+  font-weight: normal;
+  color: #3399ff;
+}
+
+.autocomplete-group {
+  padding: 2px 5px;
+}
+
+.autocomplete-group strong {
+  display: block;
+  border-bottom: 1px solid #fff;
+}
+
+/* .flatpickr-calendar,
+.flatpickr-calendar.arrowTop {
+  background: #202020;
+}
+
+.flatpickr-months .flatpickr-month {
+  background: #202020;
+}
+
+.flatpickr-current-month
+  .flatpickr-monthDropdown-months
+  .flatpickr-monthDropdown-month {
+  background: #202020;
+}
+
+span.flatpickr-weekday {
+  background: #202020;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  background: #202020;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.startRange.inRange,
+.flatpickr-day.endRange.inRange,
+.flatpickr-day.selected:focus,
+.flatpickr-day.startRange:focus,
+.flatpickr-day.endRange:focus,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover,
+.flatpickr-day.selected.prevMonthDay,
+.flatpickr-day.startRange.prevMonthDay,
+.flatpickr-day.endRange.prevMonthDay,
+.flatpickr-day.selected.nextMonthDay,
+.flatpickr-day.startRange.nextMonthDay,
+.flatpickr-day.endRange.nextMonthDay {
+  background: #3f51b5;
+  border-color: #3f51b5;
+} */
+
+.shadow {
+  -webkit-box-shadow: 0 -140px 70px -70px black inset !important;
+  box-shadow: 0 -140px 70px -70px black inset !important;
+}
+
+.shadow .card {
+  -webkit-box-shadow: 10px 10px 50px 5px black;
+  box-shadow: 10px 10px 50px 5px black;
+}
+
+.hover:hover {
+  position: relative;
+  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
+}
+
+.shadowheader2:hover {
+  position: relative;
+  top: -3px;
+  left: -3px;
+  text-shadow: 0px 1px var(--shadow-bg-color1), 2px 2px var(--shadow-bg-color1),
+    3px 3px var(--shadow-bg-color1), 4px 4px var(--shadow-bg-color1),
+    5px 5px var(--shadow-bg-color1), 6px 6px var(--shadow-bg-color1),
+    7px 7px var(--shadow-bg-color1), 8px 8px var(--shadow-bg-color1) !important;
+}
+
+.backshadow:hover {
+  box-shadow: 1px 1px #2b387c, 2px 2px #2b387c, 3px 3px #2b387c, 4px 4px #2b387c,
+    5px 5px #2b387c, 6px 6px #2b387c;
+}
+
+.shadowheader {
+  color: white;
+  text-shadow: 1px 1px #000, 2px 2px #000;
+}
+
+:root {
+  --shadow-bg-color1: #125163;
+}
+
+@media (max-width: 400px) {
+  #brand_button {
+    font-size: 4.6vw;
+    margin: 0;
+  }
+}
+
+@media (max-width: 300px) {
+  #brand_button {
+    font-size: 4vw;
+    margin: 0;
+  }
+}
+
+@media (max-width: 300px) {
+  .navbar-dark .navbar-toggler {
+    font-size: 4vw;
+  }
+}
+
+@media (max-width: 400px) {
+  .navbar-dark .navbar-toggler {
+    font-size: 5vw;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg {
+    -ms-flex-flow: row nowrap;
+    flex-flow: row nowrap;
+    -ms-flex-pack: start;
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-nav {
+    -ms-flex-direction: row;
+    flex-direction: row;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-nav .dropdown-menu {
+    position: absolute;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-nav .nav-link {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg > .container,
+  .navbar-expand-lg > .container-fluid,
+  .navbar-expand-lg > .container-lg,
+  .navbar-expand-lg > .container-md,
+  .navbar-expand-lg > .container-sm,
+  .navbar-expand-lg > .container-xl {
+    -ms-flex-wrap: nowrap;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-collapse {
+    display: -ms-flexbox !important;
+    display: flex !important;
+    -ms-flex-preferred-size: auto;
+    flex-basis: auto;
+  }
+}
+
+@media (min-width: 600px) {
+  .navbar-expand-lg .navbar-toggler {
+    display: none;
+  }
+}
+
+.col {
+  width: 40vw;
+  min-width: 350px;
+  max-width: 75vw;
+  margin: 30px;
+}
+
+#midheader {
+  font-weight: bold;
+  font-size: calc(12px + 1.5vw);
+  white-space: nowrap;
 }
 </style>
