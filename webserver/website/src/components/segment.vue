@@ -37,7 +37,7 @@
   </div>
 </template>
 <script>
-import { rdylgrColormap } from '../assets/js/colormap.js'
+import { rdylgr_colormap } from '../assets/js/colormap.js'
 
 export default {
   name: 'segment',
@@ -46,14 +46,14 @@ export default {
     return {
       show_details: false,
       dp_station_style: {
-        'background-color': rdylgrColormap(this.segment.dp_delay, 0.2, 0.8)
+        'background-color': rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8)
       },
       ar_station_style: {
-        'background-color': rdylgrColormap(this.segment.ar_delay, 0.2, 0.8)
+        'background-color': rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8)
       },
       transfer_style: {
-        'background-color': rdylgrColormap(this.con_score, 50, 100),
-        'border-color': rdylgrColormap(this.con_score, 50, 100)
+        'background-color': rdylgr_colormap(this.con_score, 50, 100),
+        'border-color': rdylgr_colormap(this.con_score, 50, 100)
       },
       train_icons: {
         ICE: require('../assets/img/ICE.svg'),

@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { rdylgrColormap } from '../assets/js/colormap.js'
+import { rdylgr_colormap } from '../assets/js/colormap.js'
 import segment from './segment.vue'
 
 export default {
@@ -67,7 +67,7 @@ export default {
     return {
       show_details: false,
       background_color: {
-        'background-color': rdylgrColormap(this.con_score, 50, 100)
+        'background-color': rdylgr_colormap(this.con_score, 50, 100)
       }
     }
   }
