@@ -1,21 +1,13 @@
 <template>
-<<<<<<< HEAD:webserver/website/src/App.vue
-  <body class="body" style="background-color: #000000;overflow: auto;">
-    <!-- navbar -->
-=======
   <body class="body" style="background-color: #000000; overflow: auto">
->>>>>>> dd4874b6b52e963ec2cc853c1c8c1e37ace7aa94:webserver/website/src/mymain.vue
     <nav
       class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top scrolling-navbar"
       id="navbar"
-<<<<<<< HEAD:webserver/website/src/App.vue
-=======
       style="opacity: 1"
->>>>>>> dd4874b6b52e963ec2cc853c1c8c1e37ace7aa94:webserver/website/src/mymain.vue
     >
       <div class="container-fluid">
-        <a class="navbar-brand home_button" id="brand_button" href="#"
-          >TrAIn_Connection_Prediction: TCP<br /></a
+        <a class="navbar-brand home_button" id="brand_button" href="#">
+          TrAIn_Connection_Prediction: TCP <br /> </a
         ><button
           data-toggle="collapse"
           class="navbar-toggler"
@@ -30,10 +22,14 @@
               <a class="nav-link active" href="#">Home</a>
             </li>
             <li class="nav-item nav_button" id="about_button">
-              <a class="nav-link" @click="toggle_about" href="#about">Über TCP</a>
+              <a class="nav-link" @click="toggle_about" href="#about">
+                Über TCP
+              </a>
             </li>
             <li class="nav-item nav_button" id="stats_button">
-              <a class="nav-link" @click="toggle_stats" href="#stats">Statistiken</a>
+              <a class="nav-link" @click="toggle_stats" href="#stats">
+                Statistiken
+              </a>
             </li>
           </ul>
         </div>
@@ -43,16 +39,23 @@
     <div id="intro" class="view shadow" style="">
       <div
         class="d-flex justify-content-center align-items-center mask"
-        style="height: 100%;"
+        style="height: 100%"
       >
-        <div class="row" style="justify-content: center; min-width: 0; width: 100%;">
+        <div
+          class="row"
+          style="justify-content: center; min-width: 0; width: 100%"
+        >
           <div class="col white-text text-center">
             <h2 id="midheader" class="shadowheader">
               TrAIn_Connection_Prediction: TCP<br />
             </h2>
             <hr class="hr-light" />
             <p>
-              <strong>Die Webseite geht momentan überarbeitung<br>Bitte versuchen sie es in den kommenden Tagen noch einmal</strong>
+              <strong>
+                Die Webseite übergeht momentan Überarbeitung<br />Falls etwas
+                nicht funktioniert versuchen sie es in den kommenden Tagen noch
+                einmal
+              </strong>
             </p>
           </div>
           <div class="col">
@@ -108,7 +111,7 @@
 <script>
 import connectionDisplay from './components/connectionDisplay.vue'
 import searchform from './components/searchform.vue'
-var ProgressBar = require('progressbar.js')
+const ProgressBar = require('progressbar.js')
 
 export default {
   name: 'App',
@@ -170,8 +173,9 @@ export default {
     },
     get_connections: function (search_data) {
       // start progress animation
-      this.progress.animate(60, { duration: 30000, easing: 'linear' })
       this.toggle_progress()
+      this.progress.animate(60, { duration: 30000, easing: 'linear' })
+
       console.log(search_data)
 
       fetch('api/trip', {
@@ -179,10 +183,10 @@ export default {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(searchData)
+        body: JSON.stringify(search_data)
       })
-        .then(response => response.json())
-        .then(connections => {
+        .then((response) => response.json())
+        .then((connections) => {
           // stop animation
           this.progress.animate(0, { duration: 10, easing: 'linear' })
           this.connections = connections
