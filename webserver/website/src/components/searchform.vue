@@ -63,43 +63,43 @@
 </template>
 
 <script>
-import flatPickr from "vue-flatpickr-component";
-import "flatpickr/dist/flatpickr.css";
-import flatpickr from "flatpickr";
+import flatPickr from 'vue-flatpickr-component'
+import 'flatpickr/dist/flatpickr.css'
+import flatpickr from 'flatpickr'
 
 export default {
-  name: "searchform",
-  data: function() {
+  name: 'searchform',
+  data: function () {
     return {
-      start: "",
-      destination: "",
+      start: '',
+      destination: '',
       date: new Date().getTime(),
       stations: [],
       // Get more form https://flatpickr.js.org/options/
       config: {
         enableTime: true,
         time_24hr: true,
-        dateFormat: "d.m.Y H:i",
-        altFormat: "d.m.Y H:i"
+        dateFormat: 'd.m.Y H:i',
+        altFormat: 'd.m.Y H:i'
       }
-    };
+    }
   },
-  created() {
-    fetch("/api/connect", {
-      type: "GET",
+  created () {
+    fetch('/api/connect', {
+      type: 'GET',
       data: null,
-      dataType: "json"
+      dataType: 'json'
     })
       .then(response => response.json())
       .then(data => {
-        this.stations = data.stations;
-      });
+        this.stations = data.stations
+      })
   },
   methods: {
-    get_connections: function(event) {
-      event.preventDefault(); // it prevent from page reload
+    get_connections: function (event) {
+      event.preventDefault() // it prevent from page reload
 
-      //First show and hide stuff
+      // First show and hide stuff
       // document.querySelector("#datetime")._flatpickr.close();
       // showSection("pgr_bar");
       // window.location.hash = ""; //delete any # in the url
@@ -111,15 +111,15 @@ export default {
         this.$parent.get_connections({
           start: this.start,
           destination: this.destination,
-          date: flatpickr.formatDate(new Date(this.date), "d.m.Y H:i")
-        });
+          date: flatpickr.formatDate(new Date(this.date), 'd.m.Y H:i')
+        })
       }
     }
   },
   components: {
     flatPickr
   }
-};
+}
 </script>
 <style>
 .flatpickr-calendar,
