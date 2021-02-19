@@ -1,15 +1,15 @@
 # In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
 # To test the container locally you can run:
 # docker build -f webserver/Dockerfile.webserver . -t webserver
-# docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py webserver
+# docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py -v $(pwd)/cache:/usr/src/app/cache webserver
 
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
 ## base image
-FROM python:3.8.1-slim-buster AS compile-image
+FROM python:3.8.1 AS compile-image
 
 ## install dependencies (libgeos in order for basemap to work)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libgeos-dev
 
 ## virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -18,10 +18,12 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ## add and install requirements
 RUN pip install --upgrade pip && pip install pip-tools
-# RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
 COPY ./webserver/requirements.txt requirements.in
 RUN pip-compile requirements.in > requirements.txt && pip-sync
 RUN pip install -r requirements.txt
+
+# He needs special treatment
+RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
 
 #Complie website
 FROM node:14-alpine as node-image
@@ -34,12 +36,12 @@ RUN npm run build
 ## build-image
 FROM python:3.8.1-slim-buster AS runtime-image
 
-## install updates - this increases the size and I don't think this is necessery
-# RUN apt-get update
-
 ## copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv
 
+## Install libgeos
+# TODO: Copy libgeos from build image
+RUN apt-get update && apt-get install -y --no-install-recommends libgeos-dev
 ## set working directory
 WORKDIR /usr/src/app
 
@@ -48,13 +50,14 @@ WORKDIR /usr/src/app
 RUN addgroup --system user && adduser --system --no-create-home --group user
 
 ## add webserver and librays
-COPY ./cache/ /usr/src/app/cache/
 COPY ./webserver/ /usr/src/app/webserver/
 COPY ./helpers/ /usr/src/app/helpers/
 COPY ./database/ /usr/src/app/database/
 COPY ./data_analysis/ /usr/src/app/data_analysis
 # Don't leak our secrets, pls
 # COPY ./config.py /usr/src/server/config.py
+# Cache should be mounted
+# COPY ./cache/ /usr/src/app/cache/
 
 # copy website
 COPY --from=node-image /app/dist /usr/src/app/webserver/website/dist/
@@ -62,7 +65,7 @@ COPY --from=node-image /app/dist /usr/src/app/webserver/website/dist/
 ## switch to non-root user
 ## for some reason doing this before the copy results in weird permissions
 RUN chown -R user:user /usr/src/app/ && chmod -R 777 /usr/src/app/
-USER user
+# USER user
 
 ## set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -72,3 +75,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 EXPOSE 5000
 
 CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:app", "-t 40"]
+
+
+        # "eslint": "^7.20.0",
+        # "eslint-config-prettier": "^7.2.0",
+        # "eslint-plugin-prettier": "^3.3.1",
+        # "eslint-plugin-vue": "^7.6.0",
+        # "prettier": "^2.2.1",

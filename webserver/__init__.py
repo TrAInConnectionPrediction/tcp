@@ -51,12 +51,6 @@ app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
 
 app.logger.info("Done")
 
-# app.logger.info("Statistic init...")
-# from data_analysis.per_station import PerStationOverTime
-
-# per_station_time = PerStationOverTime(None, use_cache=True)
-# app.logger.info("Done")
-
 app.logger.info("Initializing streckennetz...")
 from helpers.StreckennetzSteffi import StreckennetzSteffi
 
@@ -84,6 +78,12 @@ except OSError:
 from webserver.index import index_blueprint
 
 app.register_blueprint(index_blueprint)
+
+app.logger.info("Statistic init...")
+from data_analysis.per_station import PerStationOverTime
+
+per_station_time = PerStationOverTime(None, use_cache=True)
+app.logger.info("Done")
 
 app.logger.info("Initializing the api...")
 from webserver import api

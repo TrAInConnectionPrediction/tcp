@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cache-pv
+spec:
+  capacity:
+    storage: 10G
+  storageClassName: cache
+  accessModes:
+    - ReadOnlyMany
+  hostPath:
+    #where the config will be mounted
+    path: "/mnt/cache/"
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cache-pvc
+  labels:
+    type: local
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: cache
+  resources:
+    requests:
+      storage: 1G
+  volumeName: cache-pv
+  
+
+      #   volumeMounts:
+      #   - mountPath: /mnt/config
+      #     name: config-pvc-storage
+      #   - mountPath: /usr/src/app/cache
+      #     name: cache-pvc-storage
+      # volumes:
+      # - name: config-pvc-storage
+      #   persistentVolumeClaim:
+      #     claimName: config-pvc
+      # - name: cache-pvc-storage
+      #   persistentVolumeClaim:
+      #     claimName: cache-pvc

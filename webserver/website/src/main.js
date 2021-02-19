@@ -2,6 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import './registerServiceWorker'
 
+/* eslint-disable no-new */
 new Vue({
   render: h => h(App)
 }).$mount('#app')

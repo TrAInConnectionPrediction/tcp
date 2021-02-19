@@ -33,6 +33,9 @@ class LogEntry(db.Model):
 
 
 def log_activity(func):
+    """
+    A decorator, that logs all the traffic through this function to the Database
+    """
     @wraps(func)
     def decorated(*args, **kwargs):
         db.session.add(

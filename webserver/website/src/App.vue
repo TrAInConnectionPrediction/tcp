@@ -1,9 +1,17 @@
 <template>
+<<<<<<< HEAD:webserver/website/src/App.vue
   <body class="body" style="background-color: #000000;overflow: auto;">
     <!-- navbar -->
+=======
+  <body class="body" style="background-color: #000000; overflow: auto">
+>>>>>>> dd4874b6b52e963ec2cc853c1c8c1e37ace7aa94:webserver/website/src/mymain.vue
     <nav
       class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top scrolling-navbar"
       id="navbar"
+<<<<<<< HEAD:webserver/website/src/App.vue
+=======
+      style="opacity: 1"
+>>>>>>> dd4874b6b52e963ec2cc853c1c8c1e37ace7aa94:webserver/website/src/mymain.vue
     >
       <div class="container-fluid">
         <a class="navbar-brand home_button" id="brand_button" href="#"
@@ -44,7 +52,7 @@
             </h2>
             <hr class="hr-light" />
             <p>
-              <strong>Ihre&nbsp;Verbindungsvorhersage<br /></strong>
+              <strong>Die Webseite geht momentan überarbeitung<br>Bitte versuchen sie es in den kommenden Tagen noch einmal</strong>
             </p>
           </div>
           <div class="col">
@@ -57,7 +65,7 @@
         </div>
       </div>
     </div>
-    <main id="main" style="margin-top: 0px;max-width: 100%;width: 100%;">
+    <main id="main" style="margin-top: 0px; max-width: 100%; width: 100%">
       <section id="pgr_bar" class="m-5" v-show="show_progress"></section>
       <connectionDisplay
         v-show="show_connections"
@@ -72,14 +80,11 @@
     </main>
     <footer
       class="text-center page-footer mt-4"
-      style="margin-top: 0px!important;"
+      style="margin-top: 0px !important"
     >
-      <hr style="margin-top: 0px;" />
+      <hr style="margin-top: 0px" />
       <div class="d-flex justify-content-center align-items-xl-center pb-4">
-        <a
-          href="https://www.meteoblue.com/"
-          target="_blank"
-          style="margin: 5px;"
+        <a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px"
           ><img
             src="https://www.meteoblue.com/favicon.ico"
             width="24"
@@ -89,7 +94,7 @@
         <a
           href="https://github.com/TrAInConnectionPrediction/tcp"
           target="_blank"
-          style="margin: 5px;"
+          style="margin: 5px"
           ><i class="fab fa-github"></i
         ></a>
       </div>
@@ -174,7 +179,7 @@ export default {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(search_data)
+        body: JSON.stringify(searchData)
       })
         .then(response => response.json())
         .then(connections => {
