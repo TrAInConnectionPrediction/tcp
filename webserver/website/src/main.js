@@ -1,12 +1,11 @@
-import Vue from "vue";
-import mymain from "./mymain.vue";
-import "./registerServiceWorker";
-import flatpickr from "flatpickr";
+import Vue from 'vue'
+import mymain from './mymain.vue'
+import './registerServiceWorker'
+import flatpickr from 'flatpickr'
 // import { showSection } from "./assets/js/navigation.js";
 // const bootstrap = require("bootstrap");
 
-var $;
-$ = require("jquery");
+const $ = require('jquery')
 
 // var ProgressBar = require("progressbar.js");
 
@@ -15,39 +14,36 @@ $ = require("jquery");
 // var position_about = $("#about").offset().top - $("#navbar").innerHeight();
 // var position_about = $("#about").offset().top - $("#navbar").innerHeight();
 
-Vue.mixin({ delimiters: ["[[", "]]"] });
+Vue.mixin({ delimiters: ['[[', ']]'] })
 
+/* eslint-disable no-new */
 new Vue({
-  el: "#app",
+  el: '#app',
   components: { mymain }
-});
+})
 // console.log(App);
 
 // var App_main = new Vue({
 //   render: h => h(App)
 // }).$mount("#app");
 
-var position = $("#results").offset().top - 60;
+let position = $('#connection_display').offset().top - 60
 
-//Sets labels over forms on top or on bottom
-$("input[type=text]").each(function(i, element) {
+// Sets labels over forms on top or on bottom
+$('input[type=text]').each(function (i, element) {
   if (element.value.length > 0) {
-    $(this)
-      .siblings("label")
-      .addClass("active");
+    $(this).siblings('label').addClass('active')
   } else {
-    $(this)
-      .siblings("label")
-      .removeClass("active");
+    $(this).siblings('label').removeClass('active')
   }
-});
+})
 
-flatpickr("#datetime", {
+flatpickr('#datetime', {
   enableTime: true,
   time_24hr: true,
-  dateFormat: "d.m.Y H:i",
+  dateFormat: 'd.m.Y H:i',
   defaultDate: new Date().getTime()
-});
+})
 
 // // Progressbar init
 // var bar = new ProgressBar.Line("#pgr_bar", {
@@ -189,71 +185,66 @@ flatpickr("#datetime", {
 //     });
 // });
 
-$(".nav_button").click(function() {
-  var name = this.id.replace("_button", "");
-  showSection(name);
-  highlightButton(this.id);
-  if ($("#" + name)[0].innerHTML == "") loadContent("#" + name, "wip.html");
-  //loadContent("#" + name, name + ".html");
+$('.nav_button').click(function () {
+  const name = this.id.replace('_button', '')
+  showSection(name)
+  highlightButton(this.id)
+  if ($('#' + name)[0].innerHTML === '') loadContent('#' + name, 'wip.html')
+  // loadContent("#" + name, name + ".html");
 
-  $("body").css("overflow", "auto"); //make sure to enable global scrolling
+  $('body').css('overflow', 'auto') // make sure to enable global scrolling
   position =
-    $("#" + name).offset().top +
-    $("body").scrollTop() -
-    $("#navbar").innerHeight();
-  $("body").animate({ scrollTop: position }, 1000);
-});
+    $('#' + name).offset().top +
+    $('body').scrollTop() -
+    $('#navbar').innerHeight()
+  $('body').animate({ scrollTop: position }, 1000)
+})
 
-$("#home_button").click(function() {
-  showSection("results");
-  highlightButton("home");
-  $("body").css("overflow", "auto");
-  $("body").animate({ scrollTop: 0 }, 1000); //Scroll down
-});
+$('#home_button').click(function () {
+  showSection('results')
+  highlightButton('home')
+  $('body').css('overflow', 'auto')
+  $('body').animate({ scrollTop: 0 }, 1000) // Scroll down
+})
 
-$("#brand_button").click(function() {
-  $("#home_button").click();
-});
+$('#brand_button').click(function () {
+  $('#home_button').click()
+})
 
-function loadContent(target, url) {
-  var selector = "#content";
+function loadContent (target, url) {
+  const selector = '#content'
   $.ajax({
     url: url,
-    success: function(data) {
-      $(target).html(
-        $(data)
-          .find(selector)
-          .addBack(selector)
-          .children()
-      );
+    success: function (data) {
+      $(target).html($(data).find(selector).addBack(selector).children())
     }
-  });
+  })
 }
 
-function showSection(id) {
-  $("#main")
+function showSection (id) {
+  $('#main')
     .children()
-    .each(function() {
-      if (id == this.id) {
-        $(this).removeClass("d-none");
+    .each(function () {
+      if (id === this.id) {
+        $(this).removeClass('d-none')
       } else {
-        $(this).addClass("d-none");
+        $(this).addClass('d-none')
       }
-    });
+    })
   // if(id == "about")
   //     $("footer").addClass("d-none");
   // else
   //     $("footer").removeClass("d-none");
 }
 
-function highlightButton(id) {
-  $("#nav_buttons")
+function highlightButton (id) {
+  $('#nav_buttons')
     .children()
-    .each(function() {
-      if (id == this.id + "_button") {
-        $(this).addClass("active");
+    .each(function () {
+      if (id === this.id + '_button') {
+        $(this).addClass('active')
       } else {
-        $(this).removeClass("active");
+        $(this).removeClass('active')
       }
-    });
+    })
 }

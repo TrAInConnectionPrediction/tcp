@@ -1,9 +1,9 @@
 <template>
-  <body class="body" style="background-color: #000000;overflow: auto;">
+  <body class="body" style="background-color: #000000; overflow: auto">
     <nav
       class="navbar navbar-dark navbar-expand-lg fixed-top scrolling-navbar"
       id="navbar"
-      style="opacity: 1;"
+      style="opacity: 1"
     >
       <div class="container-fluid">
         <a class="navbar-brand home_button" id="brand_button" href="#"
@@ -34,16 +34,16 @@
     <div id="intro" class="view shadow" style="">
       <div
         class="d-flex justify-content-center align-items-center mask"
-        style="background-color: rgba(0, 0, 0, 0.1);"
+        style="background-color: rgba(0, 0, 0, 0.1)"
       >
-        <div class="row" style="justify-content: center;">
+        <div class="row" style="justify-content: center">
           <div class="col mb-4 white-text text-center">
             <h2 id="midheader" class="shadowheader">
               TrAIn_Connection_Prediction: TCP<br />
             </h2>
             <hr class="hr-light" />
             <p>
-              <strong>Ihre&nbsp;Verbindungsvorhersage<br /></strong>
+              <strong>Die Webseite geht momentan überarbeitung<br>Bitte versuchen sie es in den kommenden Tagen noch einmal</strong>
             </p>
           </div>
           <div class="col mb-4">
@@ -56,7 +56,7 @@
         </div>
       </div>
     </div>
-    <main id="main" style="margin-top: 0px;max-width: 100%;width: 100%;">
+    <main id="main" style="margin-top: 0px; max-width: 100%; width: 100%">
       <section id="pgr_bar" class="m-5" v-show="show_progress"></section>
       <connectionDisplay
         v-show="show_connections"
@@ -71,14 +71,11 @@
     </main>
     <footer
       class="text-center page-footer mt-4"
-      style="margin-top: 0px!important;"
+      style="margin-top: 0px !important"
     >
-      <hr style="margin-top: 0px;" />
+      <hr style="margin-top: 0px" />
       <div class="d-flex justify-content-center align-items-xl-center pb-4">
-        <a
-          href="https://www.meteoblue.com/"
-          target="_blank"
-          style="margin: 5px;"
+        <a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px"
           ><img
             src="https://www.meteoblue.com/favicon.ico"
             width="24"
@@ -88,7 +85,7 @@
         <a
           href="https://github.com/TrAInConnectionPrediction/tcp"
           target="_blank"
-          style="margin: 5px;"
+          style="margin: 5px"
           ><i class="fab fa-github"></i
         ></a>
       </div>
@@ -100,8 +97,8 @@
 </template>
 
 <script>
-import connectionDisplay from "./components/connectionDisplay.vue";
-import searchform from "./components/searchform.vue";
+import connectionDisplay from './components/connectionDisplay.vue'
+import searchform from './components/searchform.vue'
 // var ProgressBar = require("progressbar.js");
 
 // // Progressbar init
@@ -116,71 +113,71 @@ import searchform from "./components/searchform.vue";
 // });
 
 export default {
-  name: "mymain",
-  data: function() {
+  name: 'mymain',
+  data: function () {
     return {
       show_progress: Boolean,
       show_connections: Boolean,
       show_stats: Boolean,
       show_about: Boolean,
       connections: Array
-    };
+    }
   },
   components: {
     connectionDisplay,
     searchform
   },
   methods: {
-    toggle_progress: function() {
-      this.show_progress = true;
-      this.show_connections = false;
-      this.show_stats = false;
-      this.show_about = false;
+    toggle_progress: function () {
+      this.show_progress = true
+      this.show_connections = false
+      this.show_stats = false
+      this.show_about = false
     },
 
-    toggle_connections: function() {
-      this.show_progress = false;
-      this.show_connections = true;
-      this.show_stats = false;
-      this.show_about = false;
+    toggle_connections: function () {
+      this.show_progress = false
+      this.show_connections = true
+      this.show_stats = false
+      this.show_about = false
     },
 
-    toggle_stats: function() {
-      this.show_progress = false;
-      this.show_connections = false;
-      this.show_stats = true;
-      this.show_about = false;
+    toggle_stats: function () {
+      this.show_progress = false
+      this.show_connections = false
+      this.show_stats = true
+      this.show_about = false
     },
 
-    toggle_about: function() {
-      this.show_progress = false;
-      this.show_connections = false;
-      this.show_stats = false;
-      this.show_about = true;
+    toggle_about: function () {
+      this.show_progress = false
+      this.show_connections = false
+      this.show_stats = false
+      this.show_about = true
     },
-    get_connections: function(search_data) {
+    get_connections: function (searchData) {
       // start progress animation
       // bar.animate(60, { duration: 30000, easing: "linear" });
-      this.toggle_progress();
-      console.log(search_data);
+      this.toggle_progress()
+      console.log(searchData)
 
-      fetch("api/trip", {
-        method: "POST",
+      fetch('api/trip', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(search_data)
+        body: JSON.stringify(searchData)
       })
-        .then(response => response.json())
-        .then(connections => {
-          //stop animation
+        .then((response) => response.json())
+        .then((connections) => {
+          // stop animation
           // bar.animate(0, { duration: 10, easing: "linear" });
-          this.connections = connections;
-          this.toggle_connections();
-        });
+          this.connections = connections
+          this.toggle_connections()
+        })
     }
   }
-};
+}
 </script>
 
 <style>

@@ -54,22 +54,22 @@
 </template>
 
 <script>
-import { rdylgr_colormap } from "../assets/js/colormap.js";
-import segment from "./segment.vue";
+import { rdylgr_colormap } from '../assets/js/colormap.js'
+import segment from './segment.vue'
 
 export default {
-  name: "connection",
+  name: 'connection',
   components: {
     segment
   },
-  props: ["summary", "segments", "con_score"],
-  data: function() {
+  props: ['summary', 'segments', 'con_score'],
+  data: function () {
     return {
       show_details: false,
       background_color: {
-        "background-color": rdylgr_colormap(this.con_score, 50, 100)
+        'background-color': rdylgr_colormap(this.con_score, 50, 100)
       }
-    };
+    }
   }
-};
+}
 </script>
