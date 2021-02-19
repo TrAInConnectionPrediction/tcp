@@ -1,58 +1,51 @@
 <template>
-  <form v-on:submit="get_connections">
+  <form v-on:submit="get_connections" class="pretty_form">
     <!-- Heading -->
-    <h3 class="white-text text-center">
+    <h3 style="text-align: center;">
       <strong>Verbindung finden:</strong>
+      <hr />
     </h3>
-    <hr />
     <!-- Start Bhf Form-->
-    <div class="md-form">
-      <i class="fas fa-train prefix grey-text"></i>
-      <label class="form-control-label" for="startbhf">Start Bahnhof</label>
-      <input
-        class="form-control white-text typeahead"
-        id="startbhf"
-        name="startbhf"
-        type="text"
-        v-model="start"
-      />
+    <div>
+      <!-- <i class="fas fa-train prefix grey-text"></i> -->
+      <label for="start">Von</label><br />
+      <autosuggest
+        name="start"
+        placeholder="Bahnhof"
+        :suggestions="stations"
+        @input="update_start"
+      >
+      </autosuggest>
     </div>
     <!-- End Bhf Form -->
-    <div class="md-form">
-      <i class="fas fa-train prefix grey-text"></i>
-      <label class="form-control-label" for="zielbhf">Ziel Bahnhof</label>
-      <input
-        class="form-control white-text typeahead"
-        id="zielbhf"
-        name="zielbhf"
-        type="text"
-        v-model="destination"
-      />
+    <div>
+      <!-- <i class="fas fa-train prefix grey-text"></i> -->
+      <label for="destination">Nach</label><br />
+      <autosuggest
+        name="destination"
+        placeholder="Bahnhof"
+        :suggestions="stations"
+        @input="update_destination"
+      >
+      </autosuggest>
     </div>
     <!-- Date Form -->
-    <div class="md-form">
-      <i class="fas fa-calendar prefix grey-text"></i>
-      <label class="form-control-label" for="datetime">Datum</label>
+    <div>
+      <!-- <i class="fas fa-calendar prefix grey-text"></i> -->
+      <label for="datetime">Datum</label><br />
       <flat-pickr
         v-model="date"
         :config="config"
-        class="form-control white-text"
+        class="pretty_textbox"
         placeholder="Select date"
         name="date"
       >
       </flat-pickr>
-      <!-- <input
-        class="form-control white-text"
-        type="text"
-        id="datetime"
-        name="datetime"
-        v-model="time"
-      /> -->
     </div>
     <!-- Submit Button -->
     <div class="text-center">
       <input
-        class="btn btn-indigo backshadow"
+        class="pretty_button"
         id=""
         name="submit"
         type="submit"
@@ -63,43 +56,47 @@
 </template>
 
 <script>
-import flatPickr from "vue-flatpickr-component";
-import "flatpickr/dist/flatpickr.css";
-import flatpickr from "flatpickr";
+import flatpickr from 'flatpickr'
+import flatPickr from 'vue-flatpickr-component'
+import 'flatpickr/dist/flatpickr.css'
+
+import autosuggest from './autosuggest.vue'
+
+require('flatpickr/dist/themes/dark.css')
 
 export default {
-  name: "searchform",
-  data: function() {
+  name: 'searchform',
+  data: function () {
     return {
-      start: "",
-      destination: "",
-      date: new Date().getTime(),
+      start: '',
+      destination: '',
+      date: flatpickr.formatDate(new Date(), 'd.m.Y H:i'),
       stations: [],
-      // Get more form https://flatpickr.js.org/options/
+      // Get more from https://flatpickr.js.org/options/
       config: {
         enableTime: true,
         time_24hr: true,
-        dateFormat: "d.m.Y H:i",
-        altFormat: "d.m.Y H:i"
+        dateFormat: 'd.m.Y H:i',
+        altFormat: 'd.m.Y H:i'
       }
-    };
+    }
   },
-  created() {
-    fetch("/api/connect", {
-      type: "GET",
+  created () {
+    fetch('/api/connect', {
+      type: 'GET',
       data: null,
-      dataType: "json"
+      dataType: 'json'
     })
       .then(response => response.json())
       .then(data => {
-        this.stations = data.stations;
-      });
+        this.stations = data.stations
+      })
   },
   methods: {
-    get_connections: function(event) {
-      event.preventDefault(); // it prevent from page reload
+    get_connections: function (event) {
+      event.preventDefault() // prevent page reload
 
-      //First show and hide stuff
+      // First show and hide stuff
       // document.querySelector("#datetime")._flatpickr.close();
       // showSection("pgr_bar");
       // window.location.hash = ""; //delete any # in the url
@@ -111,18 +108,62 @@ export default {
         this.$parent.get_connections({
           start: this.start,
           destination: this.destination,
-          date: flatpickr.formatDate(new Date(this.date), "d.m.Y H:i")
-        });
+          date: this.date // flatpickr.formatDate(new Date(this.date), "d.m.Y H:i")
+        })
       }
+    },
+    update_start (station) {
+      this.start = station
+    },
+    update_destination (station) {
+      this.destination = station
     }
   },
   components: {
-    flatPickr
+    flatPickr,
+    autosuggest
   }
-};
+}
 </script>
 <style>
-.flatpickr-calendar,
+.pretty_form {
+  width: 95%;
+  /* max-width: 400px; */
+  margin: auto;
+  display: grid;
+  row-gap: 20px;
+  color: white;
+}
+
+.pretty_textbox {
+  color: #e0e0e0 !important;
+  border-radius: 0px;
+  background-color: #292d31;
+  /* box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075); */
+  padding: 6px 12px;
+  width: 100%;
+  border-width: 0;
+  /* border-bottom-width: 2px; */
+  /* border-color: #000000; */
+  line-height: 1.6 !important;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s,
+    -webkit-box-shadow ease-in-out 0.15s;
+}
+
+.pretty_button {
+  background-color: #0275d8;
+  color: #e0e0e0 !important;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 0px;
+  line-height: 1.6 !important;
+}
+
+.pretty_button:hover {
+  background-color: #0065c8;
+}
+
+/* .flatpickr-calendar,
 .flatpickr-calendar.arrowTop {
   background: #202020;
 }
@@ -165,5 +206,5 @@ span.flatpickr-weekday {
 .flatpickr-day.endRange.nextMonthDay {
   background: #3f51b5;
   border-color: #3f51b5;
-}
+} */
 </style>

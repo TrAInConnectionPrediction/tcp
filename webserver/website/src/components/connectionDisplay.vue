@@ -11,15 +11,15 @@
 </template>
 
 <script>
-import connection from "./connection.vue";
+import connection from './connection.vue'
 
 export default {
-  name: "connectionDisplay",
-  props: ["connections"],
+  name: 'connectionDisplay',
+  props: ['connections'],
   components: {
     connection
   }
-};
+}
 </script>
 
 <style>

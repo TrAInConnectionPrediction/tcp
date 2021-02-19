@@ -1,9 +1,9 @@
 <template>
   <body class="body" style="background-color: #000000;overflow: auto;">
+    <!-- navbar -->
     <nav
-      class="navbar navbar-dark navbar-expand-lg fixed-top scrolling-navbar"
+      class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top scrolling-navbar"
       id="navbar"
-      style="opacity: 1;"
     >
       <div class="container-fluid">
         <a class="navbar-brand home_button" id="brand_button" href="#"
@@ -22,22 +22,23 @@
               <a class="nav-link active" href="#">Home</a>
             </li>
             <li class="nav-item nav_button" id="about_button">
-              <a class="nav-link" href="#about">Über TCP</a>
+              <a class="nav-link" @click="toggle_about" href="#about">Über TCP</a>
             </li>
             <li class="nav-item nav_button" id="stats_button">
-              <a class="nav-link" href="#stats">Statistiken</a>
+              <a class="nav-link" @click="toggle_stats" href="#stats">Statistiken</a>
             </li>
           </ul>
         </div>
       </div>
     </nav>
+    <!-- navbar -->
     <div id="intro" class="view shadow" style="">
       <div
         class="d-flex justify-content-center align-items-center mask"
-        style="background-color: rgba(0, 0, 0, 0.1);"
+        style="height: 100%;"
       >
-        <div class="row" style="justify-content: center;">
-          <div class="col mb-4 white-text text-center">
+        <div class="row" style="justify-content: center; min-width: 0; width: 100%;">
+          <div class="col white-text text-center">
             <h2 id="midheader" class="shadowheader">
               TrAIn_Connection_Prediction: TCP<br />
             </h2>
@@ -46,8 +47,8 @@
               <strong>Ihre&nbsp;Verbindungsvorhersage<br /></strong>
             </p>
           </div>
-          <div class="col mb-4">
-            <div class="card hover">
+          <div class="col">
+            <div class="card hover bg-dark">
               <div class="card-body bg-dark">
                 <searchform> </searchform>
               </div>
@@ -100,87 +101,91 @@
 </template>
 
 <script>
-import connectionDisplay from "./components/connectionDisplay.vue";
-import searchform from "./components/searchform.vue";
-// var ProgressBar = require("progressbar.js");
-
-// // Progressbar init
-// var bar = new ProgressBar.Line("#pgr_bar", {
-//   strokeWidth: 4,
-//   easing: "easeInOut",
-//   duration: 1400,
-//   color: "#FFEA82",
-//   trailColor: "#eee",
-//   trailWidth: 1,
-//   svgStyle: { width: "100%", height: "100%" }
-// });
+import connectionDisplay from './components/connectionDisplay.vue'
+import searchform from './components/searchform.vue'
+var ProgressBar = require('progressbar.js')
 
 export default {
-  name: "mymain",
-  data: function() {
+  name: 'App',
+  data: function () {
     return {
-      show_progress: Boolean,
-      show_connections: Boolean,
-      show_stats: Boolean,
-      show_about: Boolean,
-      connections: Array
-    };
+      show_progress: false,
+      show_connections: false,
+      show_stats: false,
+      show_about: false,
+      connections: [],
+      progress: null
+    }
   },
   components: {
     connectionDisplay,
     searchform
   },
+  mounted () {
+    // Progressbar init
+    this.progress = new ProgressBar.Line('#pgr_bar', {
+      strokeWidth: 4,
+      easing: 'easeInOut',
+      duration: 1400,
+      color: '#FFEA82',
+      trailColor: '#eee',
+      trailWidth: 1,
+      svgStyle: { width: '100%', height: '100%' }
+    })
+  },
   methods: {
-    toggle_progress: function() {
-      this.show_progress = true;
-      this.show_connections = false;
-      this.show_stats = false;
-      this.show_about = false;
+    toggle_progress: function () {
+      this.show_progress = true
+      this.show_connections = false
+      this.show_stats = false
+      this.show_about = false
     },
 
-    toggle_connections: function() {
-      this.show_progress = false;
-      this.show_connections = true;
-      this.show_stats = false;
-      this.show_about = false;
+    toggle_connections: function () {
+      this.show_progress = false
+      this.show_connections = true
+      this.show_stats = false
+      this.show_about = false
     },
 
-    toggle_stats: function() {
-      this.show_progress = false;
-      this.show_connections = false;
-      this.show_stats = true;
-      this.show_about = false;
+    toggle_stats: function () {
+      this.show_progress = false
+      this.show_connections = false
+      this.show_stats = true
+      this.show_about = false
     },
 
-    toggle_about: function() {
-      this.show_progress = false;
-      this.show_connections = false;
-      this.show_stats = false;
-      this.show_about = true;
+    toggle_about: function () {
+      this.show_progress = false
+      this.show_connections = false
+      this.show_stats = false
+      this.show_about = true
+
+      // document.getElementById('#about').scrollIntoView()
     },
-    get_connections: function(search_data) {
+    get_connections: function (search_data) {
       // start progress animation
-      // bar.animate(60, { duration: 30000, easing: "linear" });
-      this.toggle_progress();
-      console.log(search_data);
+      this.progress.animate(60, { duration: 30000, easing: 'linear' })
+      this.toggle_progress()
+      console.log(search_data)
 
-      fetch("api/trip", {
-        method: "POST",
+      fetch('api/trip', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(search_data)
       })
         .then(response => response.json())
         .then(connections => {
-          //stop animation
-          // bar.animate(0, { duration: 10, easing: "linear" });
-          this.connections = connections;
-          this.toggle_connections();
-        });
+          // stop animation
+          this.progress.animate(0, { duration: 10, easing: 'linear' })
+          this.connections = connections
+          this.toggle_connections()
+        })
     }
   }
-};
+}
 </script>
 
 <style>

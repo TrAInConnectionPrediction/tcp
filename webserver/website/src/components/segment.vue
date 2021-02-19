@@ -37,32 +37,32 @@
   </div>
 </template>
 <script>
-import { rdylgr_colormap } from "../assets/js/colormap.js";
+import { rdylgr_colormap } from '../assets/js/colormap.js'
 
 export default {
-  name: "segment",
-  props: ["segment", "con_score"],
-  data: function() {
+  name: 'segment',
+  props: ['segment', 'con_score'],
+  data: function () {
     return {
       show_details: false,
       dp_station_style: {
-        "background-color": rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8)
+        'background-color': rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8)
       },
       ar_station_style: {
-        "background-color": rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8)
+        'background-color': rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8)
       },
       transfer_style: {
-        "background-color": rdylgr_colormap(this.con_score, 50, 100),
-        "border-color": rdylgr_colormap(this.con_score, 50, 100)
+        'background-color': rdylgr_colormap(this.con_score, 50, 100),
+        'border-color': rdylgr_colormap(this.con_score, 50, 100)
       },
       train_icons: {
-        ICE: require("../assets/img/ICE.svg"),
-        IC: require("../assets/img/IC.svg"),
-        RE: require("../assets/img/RE.svg"),
-        S: require("../assets/img/S.svg"),
-        RB: require("../assets/img/RB.svg")
+        ICE: require('../assets/img/ICE.svg'),
+        IC: require('../assets/img/IC.svg'),
+        RE: require('../assets/img/RE.svg'),
+        S: require('../assets/img/S.svg'),
+        RB: require('../assets/img/RB.svg')
       }
-    };
+    }
   }
-};
+}
 </script>
