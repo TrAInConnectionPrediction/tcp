@@ -353,9 +353,9 @@ class PerStationOverTime(StationPhillip):
                 plt.colorbar(sc)
 
                 plot_name = (
-                    start_time.strftime("%d.%m.%y %H:%M")
+                    start_time.strftime("%d-%m-%y_%H_%M")
                     + "-"
-                    + end_time.strftime("%d.%m.%y %H:%M")
+                    + end_time.strftime("%d-%m-%y_%H_%M")
                 )
 
                 plt.title(plot_name)

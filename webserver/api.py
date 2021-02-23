@@ -2,7 +2,6 @@ import os
 import sys
 
 from datetime import datetime
-from pytz import timezone
 import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -13,32 +12,12 @@ from flask.helpers import send_file
 from webserver.connection import (
     datetimes_to_text,
     get_connections,
-)  # , clean_data, get_trips_of_trains
+)
 from webserver import pred, streckennetz, per_station_time
 from webserver.db_logger import log_activity
+from config import CACHE_PATH
 
 bp = Blueprint("api", __name__, url_prefix="/api")
-
-
-def fromUnix(unix):
-    """
-    Convert from unix timestamp to GMT+1
-    Removes millisecons (/1000), adds one hour (+3600) and sets timezone
-
-    Parameters
-    ----------
-    unix : int
-        UNIX timestamp with milliseconds
-
-    Return
-    ------
-    datetime:
-        A datetime object with GMT+1 Timezone set
-    """
-
-    return datetime.utcfromtimestamp(float(unix) / 1000 + 3600).replace(
-        tzinfo=timezone("Europe/Berlin")
-    )
 
 
 def analysis(connection):
@@ -72,10 +51,10 @@ def analysis(connection):
 
 
 @log_activity
-def calc_con(startbhf, zielbhf, date):
+def calc_con(start, destination, date):
     """
-    Gets a connection from `startbhf``` to `zielbhf` at a given date `date`
-    using marudors HAFAS api. And rates the connection.
+    Gets a connection from `start` to `destination` at a given date `date`
+    using marudors HAFAS api. And evaluates the connection.
 
     Parameters
     ----------
@@ -92,10 +71,10 @@ def calc_con(startbhf, zielbhf, date):
         a list with different connections
     """
     current_app.logger.info(
-        "Getting connections from " + startbhf + " to " + zielbhf + ", " + date
+        "Getting connections from " + start + " to " + destination + ", " + date
     )
     connections = get_connections(
-        startbhf, zielbhf, datetime.strptime(date, "%d.%m.%Y %H:%M")
+        start, destination, datetime.strptime(date, "%d.%m.%Y %H:%M")
     )
 
     for i in range(len(connections)):
@@ -168,8 +147,8 @@ def station_plot(date_range):
     """
     date_range = date_range.split("-")
     plot_name = per_station_time.generate_plot(
-        datetime.strptime(date_range[0], "%d.%m.%Y, %H:%M"),
-        datetime.strptime(date_range[1], "%d.%m.%Y, %H:%M"),
+        datetime.strptime(date_range[0], "%d-%m-%y_%H_%M"),
+        datetime.strptime(date_range[1], "%d-%m-%y_%H_%M"),
     )
 
     current_app.logger.info(
@@ -179,4 +158,4 @@ def station_plot(date_range):
     current_app.logger.info(os.path.isfile("cache/plot_cache/" + plot_name + ".jpg"))
     # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
     # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.jpg') works
-    return send_file("../cache/plot_cache/" + plot_name + ".jpg", mimetype="image/jpg")
+    return send_file(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", mimetype="image/jpg")
