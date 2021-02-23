@@ -262,6 +262,10 @@ class RtdRay(Rtd):
 
 
     def update_local_buffer(self):
+        """
+        Pull data from database, that is not yet in the local cache.
+        This function seems to work but is not properly tested.
+        """
         rtd = self.load_data()
         len_beginning = len(rtd)
         print('Rows befor update:', len_beginning)
@@ -278,13 +282,13 @@ class RtdRay(Rtd):
             query = sql.select([Column(c) for c in self.df_dict] + [Column('hash_id')])\
                 .where((Column('ar_pt', DateTime) > str(max_date)) | (Column('dp_pt', DateTime) > str(max_date)))\
                 .select_from(sql.table(Rtd.__tablename__))\
-                .alias('new_rtd_mat')
+                .alias('new_rtd')
             view_query = 'CREATE OR REPLACE VIEW new_rtd AS {}'\
                          .format(str(query.compile(dialect=postgresql.dialect(),
                                                    compile_kwargs={"literal_binds": True})))
             connection.execute(view_query)
             new_rtd = dd.read_sql_table('new_rtd', DB_CONNECT_STRING,
-                                        index_col='hash_id', meta=self.meta, divisions=rtd.divisions)
+                                        index_col='hash_id', meta=self.meta, npartitions=20)
 
             new_rtd.to_parquet(self.DATA_CACHE_PATH + '_new', engine='pyarrow', schema='infer') 
         new_rtd = dd.read_parquet(self.DATA_CACHE_PATH + '_new', engine='pyarrow')
@@ -320,9 +324,8 @@ class RtdRay(Rtd):
         print('Got', len_end - len_beginning, 'new rows')
         print('Number of dublicate indicies', rtd.index.compute().duplicated(keep='last').sum())
 
-        # rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow')
 
-    def load_data(self, max_date=None, min_date=None, **kwargs):
+    def load_data(self, max_date=None, min_date=None, long_distance_only=False, **kwargs):
         """
         Try to load data from disk. If not present, pull db to disk and then open it.
         It may not work after the data was pulled from db (unicode decode error).
@@ -380,9 +383,30 @@ class RtdRay(Rtd):
                 rtd = rtd.loc[(_filter['ar_pt'] < max_date)
                               | (_filter['dp_pt'] < max_date)]
 
+        if long_distance_only:
+            _filter = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', columns=['f'])
+            rtd = rtd.loc[_filter['f'] == 'F']
+
         return rtd
 
-    def load_for_ml_model(self, max_date=None, min_date=None, return_date_id=False, label_encode=True, return_times=False):
+    def load_for_ml_model(self, return_date_id=False, label_encode=True, return_times=False, **kwargs):
+        """
+        Load columns that are used in machine learning
+
+        Parameters
+        ----------
+        return_date_id : bool, optional
+            Whether to return the column 'stop_id', by default False
+        label_encode : bool, optional
+            Whether to label encode categorical columns, by default True
+        return_times : bool, optional
+            Whether to return planned and changed arrival and departure times, by default False
+
+        Returns
+        -------
+        Dask.DataFrame
+            DataFrame with loaded data
+        """
         rtd = self.load_data(columns=['station',
                                       'lat',
                                       'lon',
@@ -399,9 +423,7 @@ class RtdRay(Rtd):
                                       'dp_ct',
                                       'dp_pt',
                                       'pp',
-                                      'stop_id'])
-        if min_date and max_date:
-            rtd = rtd.loc[(rtd['date_id'] > min_date) & (rtd['date_id'] < max_date)]
+                                      'stop_id'], **kwargs)
 
         rtd['minute'] = rtd['ar_pt'].fillna(value=rtd['dp_pt'])
         rtd['minute'] = rtd['minute'].dt.minute + rtd['minute'].dt.hour * 60
@@ -440,8 +462,8 @@ class RtdRay(Rtd):
 
 if __name__ == "__main__":
     from helpers import fancy_print_tcp
-    from dask.distributed import Client
-    client = Client()
+    # from dask.distributed import Client
+    # client = Client()
 
     rtd_ray = RtdRay()
     # rtd_ray.refresh_local_buffer()
