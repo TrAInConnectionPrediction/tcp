@@ -7,7 +7,7 @@
     >
       <div class="container-fluid">
         <a class="navbar-brand home_button" id="brand_button" href="#">
-          TrAIn_Connection_Prediction: TCP <br /> </a
+          TCP </a
         ><button
           data-toggle="collapse"
           class="navbar-toggler"
@@ -69,7 +69,13 @@
       </div>
     </div>
     <main id="main" style="margin-top: 0px; max-width: 100%; width: 100%">
+      <div id="prg_bar_anchor"></div>
       <section id="pgr_bar" class="m-5" v-show="show_progress"></section>
+      <div class="m-5 custom_card" id="error_box" style="background-color: rgb(255, 69, 69);">
+        <div v-if="error" @click="error=null" class="card_header">
+          <b>Holy Guacamole</b>! Something went wrong: {{ error.toString() }}
+        </div>
+      </div>
       <connectionDisplay
         v-show="show_connections"
         id="connection_display"
@@ -97,12 +103,12 @@
         <a
           href="https://github.com/TrAInConnectionPrediction/tcp"
           target="_blank"
-          style="margin: 5px"
-          ><i class="fab fa-github"></i
+          style="margin: 5px;color: inherit;text-decoration: none;"
+          ><i class="tcp-github"></i
         ></a>
       </div>
       <div class="footer-copyright py-3">
-        © 2020 Copyright: <a href="mailto:marius@kepi.de">_®<br /></a>
+        © 2021 <a href="mailto:marius@kepi.de">TrAIn_Connection_Prediction<br /></a>
       </div>
     </footer>
   </body>
@@ -122,7 +128,8 @@ export default {
       show_stats: false,
       show_about: false,
       connections: [],
-      progress: null
+      progress: null,
+      error: null
     }
   },
   components: {
@@ -171,12 +178,19 @@ export default {
 
       // document.getElementById('#about').scrollIntoView()
     },
+    display_fetch_error: function (response) {
+      if (!response.ok) {
+        this.error = Error(response.statusText)
+        document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
+      }
+      return response
+    },
+
     get_connections: function (search_data) {
       // start progress animation
       this.toggle_progress()
       this.progress.animate(60, { duration: 30000, easing: 'linear' })
-
-      console.log(search_data)
+      document.getElementById('prg_bar_anchor').scrollIntoView({ behavior: 'smooth' })
 
       fetch('api/trip', {
         method: 'POST',
@@ -185,6 +199,7 @@ export default {
         },
         body: JSON.stringify(search_data)
       })
+        .then((response) => this.display_fetch_error(response))
         .then((response) => response.json())
         .then((connections) => {
           // stop animation
@@ -198,12 +213,62 @@ export default {
 </script>
 
 <style>
+@font-face {
+  font-family: 'tcp_custom_font';
+  src:
+    url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
+    url('./fonts/tcp_custom_font.woff?1p3u8g') format('woff'),
+    url('./fonts/tcp_custom_font.svg?1p3u8g#tcp_custom_font') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+i {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'tcp_custom_font' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.tcp-train:before {
+  content: "\e92b";
+}
+.tcp-calendar:before {
+  content: "\e953";
+}
+.tcp-github:before {
+  content: "\eab0";
+}
+
+.custom_card {
+  margin-bottom: 5px;
+}
+
+.card_header {
+  padding: 20px;
+  min-height: 60px;
+  height: max-content;
+  display: flex;
+  flex-wrap: wrap;
+  background-color: rgb(0, 0, 0, 0.03);
+}
+
 #intro {
   background-image: url(./assets/img/ice.jpg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   background-attachment: fixed;
+  min-height: 800px;
 }
 
 /* Required height of parents */
@@ -245,6 +310,10 @@ header,
   .navbar {
     background-color: #202020;
   }
+}
+
+footer > div {
+  color: white;
 }
 
 /* Footer color for sake of consistency with Navbar */
@@ -306,51 +375,6 @@ header,
   display: block;
   border-bottom: 1px solid #fff;
 }
-
-/* .flatpickr-calendar,
-.flatpickr-calendar.arrowTop {
-  background: #202020;
-}
-
-.flatpickr-months .flatpickr-month {
-  background: #202020;
-}
-
-.flatpickr-current-month
-  .flatpickr-monthDropdown-months
-  .flatpickr-monthDropdown-month {
-  background: #202020;
-}
-
-span.flatpickr-weekday {
-  background: #202020;
-}
-
-.flatpickr-current-month .flatpickr-monthDropdown-months {
-  background: #202020;
-}
-
-.flatpickr-day.selected,
-.flatpickr-day.startRange,
-.flatpickr-day.endRange,
-.flatpickr-day.selected.inRange,
-.flatpickr-day.startRange.inRange,
-.flatpickr-day.endRange.inRange,
-.flatpickr-day.selected:focus,
-.flatpickr-day.startRange:focus,
-.flatpickr-day.endRange:focus,
-.flatpickr-day.selected:hover,
-.flatpickr-day.startRange:hover,
-.flatpickr-day.endRange:hover,
-.flatpickr-day.selected.prevMonthDay,
-.flatpickr-day.startRange.prevMonthDay,
-.flatpickr-day.endRange.prevMonthDay,
-.flatpickr-day.selected.nextMonthDay,
-.flatpickr-day.startRange.nextMonthDay,
-.flatpickr-day.endRange.nextMonthDay {
-  background: #3f51b5;
-  border-color: #3f51b5;
-} */
 
 .shadow {
   -webkit-box-shadow: 0 -140px 70px -70px black inset !important;
