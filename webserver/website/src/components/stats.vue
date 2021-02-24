@@ -24,7 +24,7 @@ const diffDays = Math.ceil(Math.abs(date2 - date1) / (1000 * 60 * 60))
 const dates = []
 let lastDate = date1
 for (let i = 0; i < diffDays; i++) {
-  lastDate = new Date(lastDate.getTime() + 60 * 60 * 1000);
+  lastDate = new Date(lastDate.getTime() + 60 * 60 * 1000)
   dates.push(
     lastDate.toLocaleString('de', {
       day: '2-digit',

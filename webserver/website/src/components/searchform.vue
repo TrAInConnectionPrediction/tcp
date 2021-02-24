@@ -6,8 +6,10 @@
       <hr />
     </h3>
     <!-- Start Bhf Form-->
-    <div>
+    <div style="display: flex;">
       <!-- <i class="fas fa-train prefix grey-text"></i> -->
+      <i class="tcp-train" style="position: relative; font-size: 2.5rem; top: 20px;width: 40px;"></i>
+      <div style="margin-left: 10px;width: 100%;">
       <label for="start">Von</label><br />
       <autosuggest
         name="start"
@@ -16,10 +18,13 @@
         @input="update_start"
       >
       </autosuggest>
+      </div>
     </div>
     <!-- End Bhf Form -->
-    <div>
+    <div style="display: flex;">
       <!-- <i class="fas fa-train prefix grey-text"></i> -->
+      <i class="tcp-train" style="position: relative; font-size: 2.5rem; top: 20px;width: 40px;"></i>
+      <div style="margin-left: 10px;width: 100%;">
       <label for="destination">Nach</label><br />
       <autosuggest
         name="destination"
@@ -28,10 +33,13 @@
         @input="update_destination"
       >
       </autosuggest>
+      </div>
     </div>
     <!-- Date Form -->
-    <div>
+    <div style="display: flex;">
       <!-- <i class="fas fa-calendar prefix grey-text"></i> -->
+      <i class="tcp-calendar" style="position: relative; font-size: 2.5rem; top: 20px;width: 40px;"></i>
+      <div style="margin-left: 10px;width: 100%;">
       <label for="datetime">Datum</label><br />
       <flat-pickr
         v-model="date"
@@ -41,6 +49,7 @@
         name="date"
       >
       </flat-pickr>
+      </div>
     </div>
     <!-- Submit Button -->
     <div class="text-center">
@@ -87,6 +96,7 @@ export default {
       data: null,
       dataType: 'json'
     })
+      .then(response => this.$parent.display_fetch_error(response))
       .then(response => response.json())
       .then(data => {
         this.stations = data.stations
@@ -151,39 +161,34 @@ export default {
 }
 
 .pretty_button {
-  background-color: #0275d8;
+  background-color: #3f51b5;
   color: #e0e0e0 !important;
-  padding: 6px 12px;
+  padding: 12px 34px;
   border: none;
   border-radius: 0px;
   line-height: 1.6 !important;
 }
 
 .pretty_button:hover {
-  background-color: #0065c8;
+  background-color: #344295;
 }
 
-/* .flatpickr-calendar,
-.flatpickr-calendar.arrowTop {
-  background: #202020;
+.pretty_button:active {
+    position: relative;
+    top: 2px;
 }
 
-.flatpickr-months .flatpickr-month {
-  background: #202020;
+.dropdown-item.active {
+  background-color: #3f51b5 !important;
 }
 
-.flatpickr-current-month
-  .flatpickr-monthDropdown-months
-  .flatpickr-monthDropdown-month {
-  background: #202020;
-}
-
-span.flatpickr-weekday {
-  background: #202020;
-}
-
+.flatpickr-calendar,
+.flatpickr-calendar.arrowTop,
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month,
+span.flatpickr-weekday,
 .flatpickr-current-month .flatpickr-monthDropdown-months {
-  background: #202020;
+  background: #2f2f2f;
 }
 
 .flatpickr-day.selected,
@@ -206,5 +211,5 @@ span.flatpickr-weekday {
 .flatpickr-day.endRange.nextMonthDay {
   background: #3f51b5;
   border-color: #3f51b5;
-} */
+}
 </style>

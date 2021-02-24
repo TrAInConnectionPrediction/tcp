@@ -1,5 +1,5 @@
 <template>
-  <div style="display: contents">
+  <div>
     <connection
       v-for="(connection, index) in connections"
       :key="index"
@@ -24,7 +24,7 @@ export default {
 
 <style>
 /* connection style */
-.custom_card {
+/* .custom_card {
   margin-bottom: 5px;
 }
 
@@ -35,7 +35,7 @@ export default {
   display: flex;
   flex-wrap: wrap;
   background-color: rgba(0, 0, 0, 0.03);
-}
+} */
 
 .card_header_item {
   display: inline-grid;
