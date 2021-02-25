@@ -1,6 +1,6 @@
 <template>
   <body class="body" style="background-color: #000000; overflow: auto">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" style="background-color: rgba(0, 0, 0, 0.5) !important; backdrop-filter: blur(5px);">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">TCP</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
