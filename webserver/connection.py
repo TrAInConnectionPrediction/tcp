@@ -13,11 +13,20 @@ from webserver import streckennetz
 
 
 def get_connections(start, destination, time, max_changes=-1, transfer_time=0, hafas_profile='db'):
-    """ Get connections using marudor hafas api \n
-        string ```start```: start station name \\
-        string ```destination```: destination station name \\
-        datetime ```time```: time of departure \n
-        \bReturn: text of the request
+    """ Get connections using marudor hafas api
+
+        Parameters
+        ----------
+        start : string
+            start station name
+        destination : string
+            destination station name
+        time : datetime.datetime
+            time of departure \n
+        
+        Returns
+        -------
+            list : Parsed connections
         """
     json = {
         "start": str(streckennetz.get_eva(name=start)),
@@ -116,30 +125,3 @@ def get_trip_of_train(jid):
                   for stop 
                   in trip]
     return waypoints, stay_times
-
-
-def clean_data(connection):
-    """ Remove unneded content"""
-    for i in range(len(connection)):
-        # we need the segmentTypes
-        connection[i]["segments"].append(
-            {"segmentTypes": connection[i]["segmentTypes"]}
-        )
-        connection[i] = connection[i]["segments"]
-        for n in range(len(connection[i])):
-            if "wings" in connection[i][n]:
-                del connection[i][n]["wings"]
-            if "messages" in connection[i][n]:
-                del connection[i][n]["messages"]
-            if "jid" in connection[i][n]:
-                del connection[i][n]["jid"]
-            if "type" in connection[i][n]:
-                del connection[i][n]["type"]
-            if "stops" in connection[i][n]:
-                del connection[i][n]["stops"]
-            if "finalDestination" in connection[i][n]:
-                del connection[i][n]["finalDestination"]
-            connection[i][-1]["segmentTypes"] = list(
-                dict.fromkeys(connection[i][-1]["segmentTypes"])
-            )
-    return connection

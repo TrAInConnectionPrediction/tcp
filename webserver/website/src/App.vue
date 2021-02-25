@@ -52,9 +52,7 @@
             <hr class="hr-light" />
             <p>
               <strong>
-                Die Webseite übergeht momentan Überarbeitung<br />Falls etwas
-                nicht funktioniert versuchen sie es in den kommenden Tagen noch
-                einmal
+                Ihr Verbindungsvorhersage
               </strong>
             </p>
           </div>
