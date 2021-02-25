@@ -213,6 +213,7 @@ export default {
 </script>
 
 <style>
+/* Font auf https://icomoon.io/app/#/select generiert */
 @font-face {
   font-family: 'tcp_custom_font';
   src:
