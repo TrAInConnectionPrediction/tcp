@@ -1,41 +1,30 @@
 <template>
   <body class="body" style="background-color: #000000; overflow: auto">
-    <nav
-      class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top scrolling-navbar"
-      id="navbar"
-      style="opacity: 1"
-    >
-      <div class="container-fluid">
-        <a class="navbar-brand home_button" id="brand_button" href="#">
-          TCP </a
-        ><button
-          data-toggle="collapse"
-          class="navbar-toggler"
-          data-target="#navcol-1"
-        >
-          <span class="sr-only">Toggle navigation</span
-          ><span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse text-center" id="navcol-1">
-          <ul class="nav navbar-nav" id="nav_buttons">
-            <li class="nav-item" id="home_button">
-              <a class="nav-link active" href="#">Home</a>
-            </li>
-            <li class="nav-item nav_button" id="about_button">
-              <a class="nav-link" @click="toggle_about" href="#about">
-                Über TCP
-              </a>
-            </li>
-            <li class="nav-item nav_button" id="stats_button">
-              <a class="nav-link" @click="toggle_stats" href="#stats">
-                Statistiken
-              </a>
-            </li>
-          </ul>
-        </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">TCP</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="#">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" @click="toggle_about" href="#about">Über TCP</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" @click="toggle_stats" href="#stats">Statistiken</a>
+        </li>
+      </ul>
+      <div class="d-flex">
+        <a class="btn btn-outline-success" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank"><i class="tcp-github"></i>TCP auf GitHub</a>
       </div>
-    </nav>
-    <!-- navbar -->
+    </div>
+  </div>
+</nav>
+
     <div id="intro" class="view shadow" style="">
       <div
         class="d-flex justify-content-center align-items-center mask"
@@ -175,8 +164,6 @@ export default {
       this.show_connections = false
       this.show_stats = false
       this.show_about = true
-
-      // document.getElementById('#about').scrollIntoView()
     },
     display_fetch_error: function (response) {
       if (!response.ok) {
@@ -317,34 +304,12 @@ footer > div {
   color: white;
 }
 
-/* Footer color for sake of consistency with Navbar */
-
-/* @media (max-width: 740px) {
-  html, body, header, .view {
-    height: 1000px;
-  }
-}
-
-@media (min-width: 800px) and (max-width: 850px) {
-  html, body, header, .view {
-    height: 650px;
-  }
-} */
-
-/* Progressbar space */
-
 #pgr_bar {
   margin: 5px;
   height: 8px;
   margin-top: 20px;
   margin-bottom: 20px;
 }
-
-/* @media (min-width: 800px) and (max-width: 850px) {
-  .navbar:not(.top-nav-collapse) {
-    background: #1C2331 !important;
-  }
-} */
 
 .autocomplete-suggestions {
   background: #212529;
