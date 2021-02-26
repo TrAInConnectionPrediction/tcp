@@ -5,17 +5,19 @@
       :key="index"
       :summary="connection.summary"
       :segments="connection.segments"
-      :con_score="connection.summary.score"
     ></connection>
   </div>
 </template>
 
 <script>
-import connection from './connection.vue'
+import { mapState } from 'vuex'
+import connection from '../components/connection.vue'
 
 export default {
   name: 'connectionDisplay',
-  props: ['connections'],
+  computed: {
+    ...mapState(['connections'])
+  },
   components: {
     connection
   }

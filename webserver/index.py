@@ -4,6 +4,8 @@ index_blueprint = Blueprint("index", __name__, url_prefix="")
 
 
 @index_blueprint.route("/")
+@index_blueprint.route("/about")
+@index_blueprint.route("/stats")
 def home(output=[]):
     """
     Gets called when somebody requests the website
@@ -15,7 +17,6 @@ def home(output=[]):
         webpage: the home-/landing page
     """
     return render_template('index.html')
-
 
 # @index_blueprint.app_errorhandler(404)
 # def not_found(e):
