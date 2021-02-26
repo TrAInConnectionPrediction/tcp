@@ -26,7 +26,6 @@ const router = new VueRouter({
   mode: 'history',
   routes: routes,
   scrollBehavior (to, from, savedPosition) {
-    console.log(to)
     if (to.hash) {
       Vue.nextTick(() => {
         document.getElementById(to.hash.substring(1)).scrollIntoView({ behavior: 'smooth' })
