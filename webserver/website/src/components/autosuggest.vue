@@ -35,6 +35,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -50,10 +52,6 @@ export default {
   },
 
   props: {
-    suggestions: {
-      type: Array,
-      required: true
-    },
     placeholder: {
       type: String,
       required: false
@@ -66,7 +64,7 @@ export default {
 
   computed: {
     matches () {
-      return this.suggestions.filter(
+      return this.stations.filter(
         function (item) {
           if (this.count < 20 && item.toLowerCase().indexOf(this.search) >= 0) {
             this.count++
@@ -84,7 +82,8 @@ export default {
         this.matches.length !== 0 &&
         this.open === true
       )
-    }
+    },
+    ...mapState(['stations'])
   },
 
   methods: {
@@ -125,7 +124,6 @@ export default {
     },
 
     suggestionClick (index) {
-      console.log(index)
       this.user_search = this.matches[index]
       this.open = false
       this.$emit('input', this.user_search)

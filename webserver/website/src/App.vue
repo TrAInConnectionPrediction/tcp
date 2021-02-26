@@ -1,29 +1,59 @@
 <template>
   <body class="body" style="background-color: #000000; overflow: auto">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" style="background-color: rgba(0, 0, 0, 0.5) !important; backdrop-filter: blur(5px);">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">TCP</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="#">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" @click="toggle_about" href="#about">Über TCP</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" @click="toggle_stats" href="#stats">Statistiken</a>
-        </li>
-      </ul>
-      <div class="d-flex">
-        <a class="btn btn-outline-success" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank"><i class="tcp-github"></i>TCP auf GitHub</a>
+    <nav
+      class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top"
+      style="
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(5px);
+      "
+    >
+      <div class="container-fluid">
+        <router-link class="navbar-brand" to="/">TCP</router-link>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <router-link class="nav-link" to="/">Home</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link
+                class="nav-link"
+                :to="{ path: '/about', hash: '#about' }"
+                >Über TCP</router-link
+              >
+            </li>
+            <!-- <li class="nav-item">
+              <router-link
+                class="nav-link"
+                :to="{ path: '/stats', hash: '#stats' }"
+                >Statistiken</router-link
+              >
+            </li> -->
+            <li class="nav-item">
+              <a class="nav-link" href="http://sfz-bw.de/eningen/">Impressum</a>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <a
+              class="btn btn-outline-success"
+              href="https://github.com/TrAInConnectionPrediction/tcp"
+              target="_blank"
+              ><i class="tcp-github"></i>TCP auf GitHub</a
+            >
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</nav>
+    </nav>
 
     <div id="intro" class="view shadow" style="">
       <div
@@ -40,9 +70,7 @@
             </h2>
             <hr class="hr-light" />
             <p>
-              <strong>
-                Ihr Verbindungsvorhersage
-              </strong>
+              <strong> Ihr Verbindungsvorhersage </strong>
             </p>
           </div>
           <div class="col">
@@ -58,21 +86,16 @@
     <main id="main" style="margin-top: 0px; max-width: 100%; width: 100%">
       <div id="prg_bar_anchor"></div>
       <section id="pgr_bar" class="m-5" v-show="show_progress"></section>
-      <div class="m-5 custom_card" id="error_box" style="background-color: rgb(255, 69, 69);">
-        <div v-if="error" @click="error=null" class="card_header">
+      <div
+        class="m-5 custom_card"
+        id="error_box"
+        style="background-color: rgb(255, 69, 69)"
+      >
+        <div v-if="error" @click="error = null" class="card_header">
           <b>Holy Guacamole</b>! Something went wrong: {{ error.toString() }}
         </div>
       </div>
-      <connectionDisplay
-        v-show="show_connections"
-        id="connection_display"
-        class="m-5"
-        ref="connection_display"
-        :connections="connections"
-      >
-      </connectionDisplay>
-      <section id="about" class="" v-show="show_about"></section>
-      <section id="stats" class="" v-show="show_stats"></section>
+      <router-view class="m-5" />
     </main>
     <footer
       class="text-center page-footer mt-4"
@@ -90,19 +113,25 @@
         <a
           href="https://github.com/TrAInConnectionPrediction/tcp"
           target="_blank"
-          style="margin: 5px;color: inherit;text-decoration: none;"
+          style="margin: 5px; color: inherit; text-decoration: none"
           ><i class="tcp-github"></i
         ></a>
       </div>
       <div class="footer-copyright py-3">
-        © 2021 <a href="mailto:marius@kepi.de">TrAIn_Connection_Prediction<br /></a>
+        © 2021
+        <a href="mailto:marius@kepi.de">TrAIn_Connection_Prediction<br /></a>
+        <span style="color: gray"
+          >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser
+          steht in keiner Verbindung mit der Deutschen Bahn und ihren
+          Tochter-Unternehmen.
+        </span>
       </div>
     </footer>
   </body>
 </template>
 
 <script>
-import connectionDisplay from './components/connectionDisplay.vue'
+// import connectionDisplay from './components/connectionDisplay.vue'
 import searchform from './components/searchform.vue'
 const ProgressBar = require('progressbar.js')
 
@@ -111,16 +140,12 @@ export default {
   data: function () {
     return {
       show_progress: false,
-      show_connections: false,
-      show_stats: false,
-      show_about: false,
       connections: [],
       progress: null,
       error: null
     }
   },
   components: {
-    connectionDisplay,
     searchform
   },
   mounted () {
@@ -136,61 +161,46 @@ export default {
     })
   },
   methods: {
-    toggle_progress: function () {
-      this.show_progress = true
-      this.show_connections = false
-      this.show_stats = false
-      this.show_about = false
-    },
-
-    toggle_connections: function () {
-      this.show_progress = false
-      this.show_connections = true
-      this.show_stats = false
-      this.show_about = false
-    },
-
-    toggle_stats: function () {
-      this.show_progress = false
-      this.show_connections = false
-      this.show_stats = true
-      this.show_about = false
-    },
-
-    toggle_about: function () {
-      this.show_progress = false
-      this.show_connections = false
-      this.show_stats = false
-      this.show_about = true
-    },
     display_fetch_error: function (response) {
       if (!response.ok) {
         this.error = Error(response.statusText)
-        document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
+        console.log(response.url)
+        console.log(this.error)
+        document
+          .getElementById('error_box')
+          .scrollIntoView({ behavior: 'smooth' })
       }
       return response
     },
 
     get_connections: function (search_data) {
+      // remove current connections
+      this.$store.commit('set_connections', [])
       // start progress animation
-      this.toggle_progress()
+      this.show_progress = true
       this.progress.animate(60, { duration: 30000, easing: 'linear' })
-      document.getElementById('prg_bar_anchor').scrollIntoView({ behavior: 'smooth' })
+      document
+        .getElementById('prg_bar_anchor')
+        .scrollIntoView({ behavior: 'smooth' })
 
-      fetch('api/trip', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(search_data)
-      })
+      fetch(
+        window.location.protocol + '//' + window.location.host + '/api/trip',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(search_data)
+        }
+      )
         .then((response) => this.display_fetch_error(response))
         .then((response) => response.json())
         .then((connections) => {
           // stop animation
           this.progress.animate(0, { duration: 10, easing: 'linear' })
-          this.connections = connections
-          this.toggle_connections()
+          this.$store.commit('set_connections', connections)
+          this.show_progress = false
+          this.$router.push('/')
         })
     }
   }
@@ -201,8 +211,7 @@ export default {
 /* Font auf https://icomoon.io/app/#/select generiert */
 @font-face {
   font-family: 'tcp_custom_font';
-  src:
-    url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
+  src: url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
     url('./fonts/tcp_custom_font.woff?1p3u8g') format('woff'),
     url('./fonts/tcp_custom_font.svg?1p3u8g#tcp_custom_font') format('svg');
   font-weight: normal;
@@ -226,13 +235,13 @@ i {
 }
 
 .tcp-train:before {
-  content: "\e92b";
+  content: '\e92b';
 }
 .tcp-calendar:before {
-  content: "\e953";
+  content: '\e953';
 }
 .tcp-github:before {
-  content: "\eab0";
+  content: '\eab0';
 }
 
 .custom_card {

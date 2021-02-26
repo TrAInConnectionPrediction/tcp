@@ -14,7 +14,6 @@
       <autosuggest
         name="start"
         placeholder="Bahnhof"
-        :suggestions="stations"
         @input="update_start"
       >
       </autosuggest>
@@ -29,7 +28,6 @@
       <autosuggest
         name="destination"
         placeholder="Bahnhof"
-        :suggestions="stations"
         @input="update_destination"
       >
       </autosuggest>
@@ -65,6 +63,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import flatpickr from 'flatpickr'
 import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
@@ -80,7 +79,6 @@ export default {
       start: '',
       destination: '',
       date: flatpickr.formatDate(new Date(), 'd.m.Y H:i'),
-      stations: [],
       // Get more from https://flatpickr.js.org/options/
       config: {
         enableTime: true,
@@ -91,7 +89,7 @@ export default {
     }
   },
   created () {
-    fetch('/api/connect', {
+    fetch(window.location.protocol + '//' + window.location.host + '/api/connect', {
       type: 'GET',
       data: null,
       dataType: 'json'
@@ -99,17 +97,13 @@ export default {
       .then(response => this.$parent.display_fetch_error(response))
       .then(response => response.json())
       .then(data => {
-        this.stations = data.stations
+        this.$store.commit('set_stations', data.stations)
+        // this.stations = data.stations
       })
   },
   methods: {
     get_connections: function (event) {
       event.preventDefault() // prevent page reload
-
-      // First show and hide stuff
-      // document.querySelector("#datetime")._flatpickr.close();
-      // showSection("pgr_bar");
-      // window.location.hash = ""; //delete any # in the url
 
       if (
         this.stations.includes(this.start) &&
@@ -128,6 +122,9 @@ export default {
     update_destination (station) {
       this.destination = station
     }
+  },
+  computed: {
+    ...mapState(['stations'])
   },
   components: {
     flatPickr,
