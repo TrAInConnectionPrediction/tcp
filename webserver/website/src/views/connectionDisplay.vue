@@ -5,7 +5,6 @@
       :key="index"
       :summary="connection.summary"
       :segments="connection.segments"
-      :con_score="connection.summary.score"
     ></connection>
   </div>
 </template>

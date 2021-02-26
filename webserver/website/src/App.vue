@@ -99,7 +99,6 @@
     </main>
     <footer
       class="text-center page-footer mt-4"
-      style="margin-top: 0px !important"
     >
       <hr style="margin-top: 0px" />
       <div class="d-flex justify-content-center align-items-xl-center pb-4">
@@ -305,6 +304,10 @@ header,
   .navbar {
     background-color: #202020;
   }
+}
+
+footer {
+  background-color: #212529;
 }
 
 footer > div {

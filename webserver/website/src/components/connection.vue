@@ -44,7 +44,7 @@
               v-for="(segment, index) in segments"
               v-bind:key="index"
               v-bind:segment="segment"
-              v-bind:con_score="con_score"
+              v-bind:con_score="summary.score"
             ></segment>
           </div>
         </div>
@@ -62,12 +62,12 @@ export default {
   components: {
     segment
   },
-  props: ['summary', 'segments', 'con_score'],
+  props: ['summary', 'segments'],
   data: function () {
     return {
       show_details: false,
       background_color: {
-        'background-color': rdylgr_colormap(this.con_score, 50, 100)
+        'background-color': rdylgr_colormap(this.summary.score, 50, 100)
       }
     }
   }
