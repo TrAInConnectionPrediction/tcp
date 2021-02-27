@@ -9,8 +9,11 @@
       </div>
       <div class="card_header_item">
         <div class="card_header_item_header">Zeit</div>
-        <div class="card_header_item_item">{{ summary.dp_pt }}</div>
-        <div class="card_header_item_item">{{ summary.ar_pt }}</div>
+        <div class="card_header_item_item" v-if="summary.dp_ct == summary.dp_pt">{{ summary.dp_ct }}</div>
+        <div class="card_header_item_item" v-else>{{ summary.dp_ct }}  <del class="pt">{{ summary.dp_pt }}</del></div>
+
+        <div class="card_header_item_item" v-if="summary.ar_ct == summary.ar_pt">{{ summary.ar_ct }}</div>
+        <div class="card_header_item_item" v-else>{{ summary.ar_ct }}  <del class="pt">{{ summary.ar_pt }}</del></div>
       </div>
       <div class="card_header_item">
         <div class="card_header_item_header">Dauer</div>
@@ -73,3 +76,8 @@ export default {
   }
 }
 </script>
+<style>
+  .pt {
+    color: #686868;
+  }
+</style>
