@@ -107,16 +107,16 @@ class PerStationAnalysis(StationPhillip):
 class PerStationOverTime(StationPhillip):
     DATA_CACHE_PATH = CACHE_PATH + "/per_station_over_time.csv"
     FREQ = "1H"
+    DEFAULT_PLOTS = ["error", "no data available", "default"]
 
     def __init__(self, rtd, use_cache=True, logger=None):
         super().__init__()
-
 
         try:
             if not use_cache:
                 raise FileNotFoundError
             if logger:
-                self.logger=logger
+                self.logger = logger
                 self.logger.info("Reading data...")
             self.data = (
                 pd.read_csv(
@@ -147,7 +147,7 @@ class PerStationOverTime(StationPhillip):
 
             rtd["stop_time"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"])
             rtd = rtd.loc[
-                rtd["stop_time"] > datetime.datetime(2021, 2, 1)
+                rtd["stop_time"] > datetime.datetime(2021, 1, 1)
             ].persist()  # .compute()
             rtd["stop_hour"] = rtd["stop_time"].dt.round(self.FREQ)
             rtd["str_stop_hour"] = rtd["stop_hour"].astype(
@@ -209,7 +209,7 @@ class PerStationOverTime(StationPhillip):
             print("Using cache")
 
         # Setup Plot https://stackoverflow.com/questions/9401658/how-to-animate-a-scatter-plot
-    
+
         # Bounding Box of Germany
         left = 5.67
         right = 15.64
@@ -234,7 +234,15 @@ class PerStationOverTime(StationPhillip):
         )
 
         self.sc = self.m.scatter(
-            np.zeros(1),np.zeros(1), c=np.zeros(1), s=np.zeros(1), cmap=self.cmap, vmin=0, vmax=7, alpha=0.2, latlon=True
+            np.zeros(1),
+            np.zeros(1),
+            c=np.zeros(1),
+            s=np.zeros(1),
+            cmap=self.cmap,
+            vmin=0,
+            vmax=7,
+            alpha=0.2,
+            latlon=True,
         )
 
         self.cbar = self.fig.colorbar(self.sc)
@@ -243,11 +251,12 @@ class PerStationOverTime(StationPhillip):
 
         if self.logger:
             self.logger.info("Done")
-            plot_names = ["error", "no data available", "default"]
-            for plot_name in plot_names:
+            for plot_name in self.DEFAULT_PLOTS:
                 if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg"):
                     self.ax.set_title(plot_name, fontsize=16)
-                    self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300)
+                    self.fig.savefig(
+                        f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300
+                    )
                     self.logger.info(f"Generating {plot_name} plot")
 
     def animate(self):
@@ -286,7 +295,7 @@ class PerStationOverTime(StationPhillip):
                 # c[c > 5] = 7
                 # c[c < 0] = 0
 
-                # change the positions 
+                # change the positions
                 # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
                 self.sc.set_offsets(np.c_[self.m(x, y)])
                 # change the sizes
@@ -301,7 +310,7 @@ class PerStationOverTime(StationPhillip):
             plt.title(str_date)
             plt.savefig(f"{CACHE_PATH}/animation/{str_date}.jpg")
 
-    def generate_plot(self, start_time, end_time):
+    def generate_plot(self, start_time, end_time, use_cached_images=False):
         """
         Generates a plot that visualizes all the delays on a Germany map between `start_time` and `end_time`
         The file is generated relative to this execution path inside of  `cache/plot_cache/{plot_name}.jpg`
@@ -318,9 +327,22 @@ class PerStationOverTime(StationPhillip):
         string
             The `plot_name` of the file that is generated without `.jpg`
         """
+
         if start_time == end_time:
             # Sometimes if they are equal, we just want the first hour...
             end_time = end_time + datetime.timedelta(hours=1)
+
+        plot_name = (
+            start_time.strftime("%d.%m.%Y %H_%M")
+            + "-"
+            + end_time.strftime("%d.%m.%Y %H_%M")
+        )
+
+        if use_cached_images and os.path.isfile(
+            f"{CACHE_PATH}/plot_cache/{plot_name}.jpg"
+        ):
+            # Return cached images, after the start-, end-time change
+            return plot_name
 
         current_data = self.data.loc[
             (start_time <= self.data[("stop_hour", "first")])
@@ -352,13 +374,15 @@ class PerStationOverTime(StationPhillip):
 
                 s[:] = (
                     current_data.loc[:, [("ar_cancellations", "sum")]].to_numpy()[:, 0]
-                    + current_data.loc[:, [("dp_cancellations", "sum")]].to_numpy()[:, 0]
+                    + current_data.loc[:, [("dp_cancellations", "sum")]].to_numpy()[
+                        :, 0
+                    ]
                 )
                 c[:] = current_data.loc[:, [("ar_delay", "mean")]].to_numpy()[:, 0]
 
                 s = s / current_data[("ar_delay", "count")].mean()
 
-                # change the positions 
+                # change the positions
                 # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
                 self.sc.set_offsets(np.c_[self.m(x, y)])
                 # change the sizes
@@ -367,17 +391,16 @@ class PerStationOverTime(StationPhillip):
                 self.sc.set_array(c)
                 # update colorbar
                 self.cbar.update_normal(self.sc)
-
-                plot_name = (
-                    start_time.strftime("%d.%m.%Y %H_%M")
-                    + "-"
-                    + end_time.strftime("%d.%m.%Y %H_%M")
-                )
+                self.cbar.ax.get_yaxis().labelpad = 15
+                self.cbar.ax.set_ylabel("min Verspätung", rotation=270)
 
                 self.ax.set_title(plot_name.replace("_", ":"), fontsize=12)
                 self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300)
             except:
-                self.logger.warning(sys.exc_info()[0])
+                if self.logger:
+                    self.logger.warning(sys.exc_info()[0])
+                else:
+                    raise sys.exc_info()[0]
                 plot_name = "error"
         else:
             # This file and the error file must exist
@@ -385,7 +408,6 @@ class PerStationOverTime(StationPhillip):
             plot_name = "no data available"
 
         return plot_name
-
 
 
 if __name__ == "__main__":
