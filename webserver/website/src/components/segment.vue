@@ -21,7 +21,7 @@
       {{ segment.ar_station }}
     </div>
     <div class="time" v-if="segment.ar_pt == segment.ar_ct">an {{ segment.ar_ct }}</div>
-    <div class="time" v-else>an {{ segment.ar_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
+    <div class="time" v-else>an {{ segment.ar_ct }}  <del class="pt">{{ segment.ar_pt }}</del></div>
     <div class="platform" v-if="segment.ar_pp == segment.ar_cp">an Gl. {{ segment.ar_cp }}</div>
     <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 

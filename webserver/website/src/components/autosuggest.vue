@@ -7,11 +7,13 @@
       :placeholder="placeholder"
       :name="name"
       v-model="user_search"
-      v-on:blur="loose_focus"
       @keydown.enter="enter"
       @keydown.down="down"
       @keydown.up="up"
+      @keydown.tab="tab"
+      @keydown.esc="loose_focus"
       @input="change"
+      v-on:blur="loose_focus"
     />
     <ul
       class="dropdown-menu dropdown-menu-dark"
@@ -22,6 +24,7 @@
         v-for="(suggestion, index) in matches"
         :key="index"
         @click="suggestionClick(index)"
+        @mousedown="mousedown_prevent"
       >
         <a
           class="dropdown-item"
@@ -36,10 +39,6 @@
 
 <script>
 import { mapState } from 'vuex'
-
-function sleep (ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
 
 export default {
   name: 'autosuggest',
@@ -87,10 +86,13 @@ export default {
   },
 
   methods: {
-    enter () {
-      this.user_search = this.matches[this.current]
-      this.open = false
-      this.$emit('input', this.user_search)
+    enter (event) {
+      if (this.open) {
+        event.preventDefault()
+        this.user_search = this.matches[this.current]
+        this.open = false
+        this.$emit('input', this.user_search)
+      }
     },
 
     up () {
@@ -113,12 +115,20 @@ export default {
       this.$emit('input', this.user_search)
     },
 
-    async loose_focus () {
-      // When you click on one of the items, you will loose focus
-      // on the text input, and the item you clicked on will be
-      // closed befor the click was registert. To avoid this, we
-      // are using a little delay.
-      await sleep(1000)
+    tab (event) {
+      if (this.open) {
+        event.preventDefault()
+        if (this.current < this.matches.length - 1) this.current++
+        else this.current = 0
+      }
+    },
+
+    mousedown_prevent (event) {
+      // clicking on a suggestion should not trigger blur
+      event.preventDefault()
+    },
+
+    loose_focus () {
       this.open = false
       this.$emit('input', this.user_search)
     },
