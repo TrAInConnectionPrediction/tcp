@@ -5,7 +5,8 @@
     </div>
     <div class="time" v-if="segment.dp_pt == segment.dp_ct">ab {{ segment.dp_ct }}</div>
     <div class="time" v-else>ab {{ segment.dp_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
-    <div class="platform">von Gl. {{ segment.dp_pp }}</div>
+    <div class="platform" v-if="segment.dp_pp == segment.dp_cp">von Gl. {{ segment.dp_cp }}</div>
+    <div class="platform" v-else>von Gl. {{ segment.dp_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 
     <div class="train" style="grid-column-start: span 3;">
       <img
@@ -19,9 +20,10 @@
     <div class="station" v-bind:style="ar_station_style">
       {{ segment.ar_station }}
     </div>
-    <div class="time" v-if="segment.ar_pt == segment.ar_ct">ab {{ segment.ar_ct }}</div>
-    <div class="time" v-else>ab {{ segment.ar_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
-    <div class="platform">an Gl. {{ segment.ar_pp }}</div>
+    <div class="time" v-if="segment.ar_pt == segment.ar_ct">an {{ segment.ar_ct }}</div>
+    <div class="time" v-else>an {{ segment.ar_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
+    <div class="platform" v-if="segment.ar_pp == segment.ar_cp">an Gl. {{ segment.ar_cp }}</div>
+    <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 
     <div v-if="'transfer_time' in segment" style="display: contents">
       <div class="transfer" v-bind:style="transfer_style">
@@ -60,7 +62,9 @@ export default {
       train_icons: {
         ICE: require('../assets/img/ICE.svg'),
         IC: require('../assets/img/IC.svg'),
+        EC: require('../assets/img/IC.svg'),
         RE: require('../assets/img/RE.svg'),
+        IRE: require('../assets/img/RE.svg'),
         S: require('../assets/img/S.svg'),
         RB: require('../assets/img/RB.svg')
       }
