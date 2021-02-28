@@ -15,6 +15,7 @@
         name="start"
         placeholder="Bahnhof"
         @input="update_start"
+        v-bind:class="{invalid: start_invalid}"
       >
       </autosuggest>
       </div>
@@ -29,6 +30,7 @@
         name="destination"
         placeholder="Bahnhof"
         @input="update_destination"
+        v-bind:class="{invalid: destination_invalid}"
       >
       </autosuggest>
       </div>
@@ -77,7 +79,9 @@ export default {
   data: function () {
     return {
       start: '',
+      start_invalid: false,
       destination: '',
+      destination_invalid: false,
       date: flatpickr.formatDate(new Date(), 'd.m.Y H:i'),
       // Get more from https://flatpickr.js.org/options/
       config: {
@@ -109,11 +113,20 @@ export default {
         this.stations.includes(this.start) &&
         this.stations.includes(this.destination)
       ) {
+        this.start_invalid = false
+        this.destination_invalid = false
         this.$parent.get_connections({
           start: this.start,
           destination: this.destination,
           date: this.date // flatpickr.formatDate(new Date(this.date), "d.m.Y H:i")
         })
+      } else {
+        if (!this.stations.includes(this.start)) {
+          this.start_invalid = true
+        }
+        if (!this.stations.includes(this.destination)) {
+          this.destination_invalid = true
+        }
       }
     },
     update_start (station) {
@@ -133,6 +146,10 @@ export default {
 }
 </script>
 <style>
+.invalid {
+  border-left: solid 3px rgb(255, 69, 69);
+}
+
 .pretty_form {
   width: 95%;
   /* max-width: 400px; */

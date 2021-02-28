@@ -39,9 +39,6 @@
                 >Statistiken</router-link
               >
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="http://sfz-bw.de/eningen/">Impressum</a>
-            </li>
           </ul>
           <div class="d-flex">
             <a
@@ -117,8 +114,9 @@
         ></a>
       </div>
       <div class="footer-copyright py-3">
+        <a class="pretty_link" href="http://sfz-bw.de/eningen/">Impressum</a><br>
         © 2021
-        <a href="mailto:marius@kepi.de">TrAIn_Connection_Prediction<br /></a>
+        <a class="pretty_link" href="mailto:marius@kepi.de">TrAIn_Connection_Prediction<br /></a>
         <span style="color: gray"
           >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser
           steht in keiner Verbindung mit der Deutschen Bahn und ihren
@@ -254,6 +252,10 @@ i {
   display: flex;
   flex-wrap: wrap;
   background-color: rgb(0, 0, 0, 0.03);
+}
+
+.pretty_link {
+  color: gray;
 }
 
 #intro {

@@ -86,12 +86,18 @@ class Predictor:
             # Encode categoricals
             for cat in self.cat_encoders:
                 try:
-                    ar_data.at[i, cat] = self.cat_encoders[cat][segment['ar_' + cat]]
+                    if cat == 'pp':
+                        ar_data.at[i, cat] = self.cat_encoders[cat][segment['ar_' + 'cp']]
+                    else:
+                        ar_data.at[i, cat] = self.cat_encoders[cat][segment['ar_' + cat]]
                 except KeyError:
                     ar_data.at[i, cat] = -1
                     print('unknown {cat}: {value}'.format(cat=cat, value=segment['ar_' + cat]))
                 try:
-                    dp_data.at[i, cat] = self.cat_encoders[cat][segment['dp_' + cat]]
+                    if cat == 'pp':
+                        dp_data.at[i, cat] = self.cat_encoders[cat][segment['dp_' + 'cp']]
+                    else:
+                        dp_data.at[i, cat] = self.cat_encoders[cat][segment['dp_' + cat]]
                 except KeyError:
                     dp_data.at[i, cat] = -1
                     print('unknown {cat}: {value}'.format(cat=cat, value=segment['dp_' + cat]))
@@ -109,10 +115,10 @@ class Predictor:
             dp_data.at[i, 'distance_to_start'] = streckennetz.route_length(segment['full_trip'][:dp_data.at[i, 'stop_id'] + 1])
             dp_data.at[i, 'distance_to_end'] = streckennetz.route_length(segment['full_trip'][dp_data.at[i, 'stop_id']:])
 
-            ar_data.at[i, 'minute'] = segment['ar_pt'].time().minute + segment['ar_pt'].time().hour * 60
-            ar_data.at[i, 'day'] = segment['ar_pt'].weekday()
-            dp_data.at[i, 'minute'] = segment['dp_pt'].time().minute + segment['dp_pt'].time().hour * 60
-            dp_data.at[i, 'day'] = segment['dp_pt'].weekday()
+            ar_data.at[i, 'minute'] = segment['ar_ct'].time().minute + segment['ar_ct'].time().hour * 60
+            ar_data.at[i, 'day'] = segment['ar_ct'].weekday()
+            dp_data.at[i, 'minute'] = segment['dp_ct'].time().minute + segment['dp_ct'].time().hour * 60
+            dp_data.at[i, 'day'] = segment['dp_ct'].weekday()
 
             ar_data.at[i, 'stay_time'] = segment['stay_times'][ar_data.at[i, 'stop_id']]
             dp_data.at[i, 'stay_time'] = segment['stay_times'][dp_data.at[i, 'stop_id']]
