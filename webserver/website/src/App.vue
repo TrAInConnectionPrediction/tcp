@@ -38,7 +38,7 @@
                 :to="{ path: '/stats', hash: '#stats' }"
                 >Statistiken</router-link
               >
-            </li> -->
+            </li>
           </ul>
           <div class="d-flex">
             <a
