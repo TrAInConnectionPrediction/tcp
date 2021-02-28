@@ -32,13 +32,13 @@
                 >Über TCP</router-link
               >
             </li>
-            <!-- <li class="nav-item">
+            <li class="nav-item">
               <router-link
                 class="nav-link"
                 :to="{ path: '/stats', hash: '#stats' }"
                 >Statistiken</router-link
               >
-            </li> -->
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="http://sfz-bw.de/eningen/">Impressum</a>
             </li>

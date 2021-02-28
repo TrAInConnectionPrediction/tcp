@@ -1,16 +1,28 @@
 <template>
-  <div>
-    <div>value: {{ value }}</div>
-    <vue-slider
-      v-model="value"
-      :data="data"
-      :tooltip-placement="['top', 'bottom']"
-      :max-range="168"
-      :lazy="true"
-      style="margin: 50px"
-    ></vue-slider>
-    <button v-on:click="updatePlot">Plot generieren</button>
-    <img :src="plotURL" />
+  <div id="stats" class="stats">
+    <div class="stats-picker">
+      <vue-slider
+        v-model="value"
+        :data="data"
+        :tooltipPlacement="['top', 'bottom']"
+        :maxRange="168"
+        :lazy="true"
+        :tooltip="'always'"
+        style="margin: 20px; width: 100%"
+      ></vue-slider>
+      <input
+        class="pretty_button"
+        type="button"
+        value="Plot generieren"
+        v-on:click="updatePlot"
+      />
+    </div>
+    <img
+      class="stats-image"
+      v-if="plotURL"
+      :src="plotURL"
+      @error="replaceByDefault"
+    />
   </div>
 </template>
 
@@ -59,18 +71,63 @@ export default {
         })
       ],
       data: dates,
-      plotURL: 'http://tcp.sfz-eningen.de/assets/img/IC.svg'
+      plotURL:
+        window.location.protocol +
+        '//' +
+        window.location.host +
+        '/api/stationplot/default.jpg'
     }
   },
   methods: {
-    async updatePlot () {
+    updatePlot () {
       this.plotURL =
-        'http://localhost:5000/api/stationplot/' +
+        window.location.protocol +
+        '//' +
+        window.location.host +
+        '/api/stationplot/' +
         this.value[0].replace(/,/g, '') +
         '-' +
         this.value[1].replace(/,/g, '') +
         '.jpg'
+    },
+    replaceByDefault () {
+      this.plotURL =
+        window.location.protocol +
+        '//' +
+        window.location.host +
+        '/api/stationplot/default.jpg'
     }
   }
 }
 </script>
+
+<style>
+.stats {
+  height: 100%;
+  margin: 20px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.stats-picker {
+  display: flex;
+  margin: auto;
+  width: 100%;
+  align-items: center;
+}
+
+.stats-image {
+  margin: auto;
+  max-height: 80vh;
+}
+
+.vue-slider-process {
+  background-color: #3f51b5;
+}
+
+.vue-slider-dot-tooltip-inner {
+  border-color: #3f51b5;
+  background-color: #3f51b5;
+}
+</style>
