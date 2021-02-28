@@ -1,6 +1,5 @@
 import os
 import sys
-from flask.globals import current_app
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
@@ -109,12 +108,16 @@ class PerStationOverTime(StationPhillip):
     DATA_CACHE_PATH = CACHE_PATH + "/per_station_over_time.csv"
     FREQ = "1H"
 
-    def __init__(self, rtd, use_cache=True):
+    def __init__(self, rtd, use_cache=True, logger=None):
         super().__init__()
+
 
         try:
             if not use_cache:
                 raise FileNotFoundError
+            if logger:
+                self.logger=logger
+                self.logger.info("Reading data...")
             self.data = (
                 pd.read_csv(
                     self.DATA_CACHE_PATH,
@@ -132,7 +135,10 @@ class PerStationOverTime(StationPhillip):
                 },
                 inplace=True,
             )
-            print("using cached data")
+            if self.logger:
+                self.logger.info("Done")
+            else:
+                print("Using cache")
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
@@ -197,6 +203,53 @@ class PerStationOverTime(StationPhillip):
 
             self.data.to_csv(self.DATA_CACHE_PATH)
 
+        if self.logger:
+            self.logger.info("Generating base template...")
+        else:
+            print("Using cache")
+
+        # Setup Plot https://stackoverflow.com/questions/9401658/how-to-animate-a-scatter-plot
+    
+        # Bounding Box of Germany
+        left = 5.67
+        right = 15.64
+        bot = 47.06
+        top = 55.06
+        self.fig, self.ax = plt.subplots(figsize=(8, 9))
+        self.m = Basemap(
+            llcrnrlon=left,
+            llcrnrlat=bot,
+            urcrnrlon=right,
+            urcrnrlat=top,
+            resolution="i",
+            projection="tmerc",
+            lat_0=51,
+            lon_0=10,
+        )
+
+        self.m.drawcoastlines(linewidth=0.72, color="black")
+        self.m.drawcountries(zorder=0, color="black")
+        self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+            "", ["green", "yellow", "red"]
+        )
+
+        self.sc = self.m.scatter(
+            np.zeros(1),np.zeros(1), c=np.zeros(1), s=np.zeros(1), cmap=self.cmap, vmin=0, vmax=7, alpha=0.2, latlon=True
+        )
+
+        self.cbar = self.fig.colorbar(self.sc)
+        self.cbar.ax.get_yaxis().labelpad = 15
+        self.cbar.ax.set_ylabel("min Verspätung", rotation=270)
+
+        if self.logger:
+            self.logger.info("Done")
+            plot_names = ["error", "no data available", "default"]
+            for plot_name in plot_names:
+                if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg"):
+                    self.ax.set_title(plot_name, fontsize=16)
+                    self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300)
+                    self.logger.info(f"Generating {plot_name} plot")
+
     def animate(self):
         self.data = self.data.loc[
             self.data[("stop_hour", "first")] > datetime.datetime(2021, 2, 1, hour=0)
@@ -206,24 +259,6 @@ class PerStationOverTime(StationPhillip):
             end=self.data[("stop_hour", "first")].max(),
             freq=self.FREQ,
         ):
-            # Bounding Box of Germany
-            left = 5.67
-            right = 15.64
-            bot = 47.06
-            top = 55.06
-            plt.figure(figsize=(9, 5))
-            m = Basemap(
-                llcrnrlon=left,
-                llcrnrlat=bot,
-                urcrnrlon=right,
-                urcrnrlat=top,
-                resolution="i",
-                projection="tmerc",
-                lat_0=51,
-                lon_0=10,
-            )
-            m.drawcoastlines(linewidth=0.72, color="black")
-            m.drawcountries(zorder=0, color="black")
 
             current_data = self.data.loc[self.data[("stop_hour", "first")] == date]
             if not current_data.empty:
@@ -251,18 +286,20 @@ class PerStationOverTime(StationPhillip):
                 # c[c > 5] = 7
                 # c[c < 0] = 0
 
-                cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-                    "", ["green", "yellow", "red"]
-                )
-                sc = m.scatter(
-                    x, y, c=c, cmap=cmap, vmin=0, vmax=7, s=s, alpha=0.2, latlon=True
-                )
-                plt.colorbar(sc)
+                # change the positions 
+                # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
+                self.sc.set_offsets(np.c_[self.m(x, y)])
+                # change the sizes
+                self.sc.set_sizes(s)
+                # change the color
+                self.sc.set_array(c)
+                # update colorbar
+                self.cbar.update_normal(self.sc)
 
             str_date = date.strftime("%Y-%m-%d %H_%M_%S")
             print(str_date)
             plt.title(str_date)
-            plt.savefig(f"data/animation/{str_date}.jpg")
+            plt.savefig(f"{CACHE_PATH}/animation/{str_date}.jpg")
 
     def generate_plot(self, start_time, end_time):
         """
@@ -305,23 +342,6 @@ class PerStationOverTime(StationPhillip):
                     }
                 )
 
-                left = 5.67
-                right = 15.64
-                bot = 47.06
-                top = 55.06
-                plt.figure(figsize=(4, 5))
-                m = Basemap(
-                    llcrnrlon=left,
-                    llcrnrlat=bot,
-                    urcrnrlon=right,
-                    urcrnrlat=top,
-                    resolution="i",
-                    projection="tmerc",
-                    lat_0=51,
-                    lon_0=10,
-                )
-                m.drawcoastlines(linewidth=0.72, color="black")
-                m.drawcountries(zorder=0, color="black")
                 x = np.zeros(len(current_data.index))
                 y = np.zeros(len(current_data.index))
                 s = np.zeros(len(current_data.index))
@@ -332,65 +352,66 @@ class PerStationOverTime(StationPhillip):
 
                 s[:] = (
                     current_data.loc[:, [("ar_cancellations", "sum")]].to_numpy()[:, 0]
-                    + current_data.loc[:, [("dp_cancellations", "sum")]].to_numpy()[
-                        :, 0
-                    ]
+                    + current_data.loc[:, [("dp_cancellations", "sum")]].to_numpy()[:, 0]
                 )
                 c[:] = current_data.loc[:, [("ar_delay", "mean")]].to_numpy()[:, 0]
 
-                s = s / current_data[("ar_delay", "count")].mean() / 2
-                # c = (c - min(c)) / max(c - min(c))
-                # norm = mpl.colors.Normalize(vmin=0, vmax=7)
-                # c[c > 5] = 7
-                # c[c < 0] = 0
+                s = s / current_data[("ar_delay", "count")].mean()
 
-                cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-                    "", ["green", "yellow", "red"]
-                )
-                sc = m.scatter(
-                    x, y, c=c, cmap=cmap, vmin=0, vmax=7, s=s, alpha=0.2, latlon=True
-                )
-                plt.colorbar(sc)
+                # change the positions 
+                # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
+                self.sc.set_offsets(np.c_[self.m(x, y)])
+                # change the sizes
+                self.sc.set_sizes(s)
+                # change the color
+                self.sc.set_array(c)
+                # update colorbar
+                self.cbar.update_normal(self.sc)
 
                 plot_name = (
-                    start_time.strftime("%d-%m-%y_%H_%M")
+                    start_time.strftime("%d.%m.%Y %H_%M")
                     + "-"
-                    + end_time.strftime("%d-%m-%y_%H_%M")
+                    + end_time.strftime("%d.%m.%Y %H_%M")
                 )
 
-                plt.title(plot_name)
-                plt.savefig(f"cache/plot_cache/{plot_name}.jpg")
+                self.ax.set_title(plot_name.replace("_", ":"), fontsize=12)
+                self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300)
             except:
-                current_app.logger.warning(sys.exc_info()[0])
+                self.logger.warning(sys.exc_info()[0])
                 plot_name = "error"
         else:
             # This file and the error file must exist
             # Or one could just gerate them using plt.title(plot_name) plt.savefig(f'cache/plot_cache/{plot_name}.jpg')
-            plot_name = "do data available"
+            plot_name = "no data available"
 
         return plot_name
 
 
+
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
-    from helpers.RtdRay import RtdRay
 
-    rtd_ray = RtdRay()
-    rtd_df = rtd_ray.load_data(
-        columns=[
-            "ar_pt",
-            "dp_pt",
-            "station",
-            "ar_delay",
-            "ar_cancellations",
-            "dp_delay",
-            "dp_cancellations",
-        ]
-    )
+    # from helpers.RtdRay import RtdRay
+
+    # rtd_ray = RtdRay()
+    # rtd_df = rtd_ray.load_data(
+    #     columns=[
+    #         "ar_pt",
+    #         "dp_pt",
+    #         "station",
+    #         "ar_delay",
+    #         "ar_cancellations",
+    #         "dp_delay",
+    #         "dp_cancellations",
+    #     ]
+    # )
     # per_station = PerStationAnalysis(rtd_df, use_cache=False)
     # per_station.plot(per_station.ALL_ON_TIME_PLOT)
 
-    per_station_time = PerStationOverTime(rtd_df, use_cache=True)
+    per_station_time = PerStationOverTime(None, use_cache=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 2, 1, hour=0), datetime.datetime(2021, 2, 2, hour=0)
+    )
+    per_station_time.generate_plot(
+        datetime.datetime(2021, 2, 2, hour=0), datetime.datetime(2021, 2, 3, hour=0)
     )

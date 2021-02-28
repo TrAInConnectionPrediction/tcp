@@ -145,17 +145,19 @@ def station_plot(date_range):
     flask generated image/jpg
         The generated plot
     """
+
+    if date_range == 'default':
+        return send_file(f"../{CACHE_PATH}/plot_cache/default.jpg", mimetype="image/jpg")
+        
     date_range = date_range.split("-")
     plot_name = per_station_time.generate_plot(
-        datetime.strptime(date_range[0], "%d-%m-%y_%H_%M"),
-        datetime.strptime(date_range[1], "%d-%m-%y_%H_%M"),
+        datetime.strptime(date_range[0], "%d.%m.%Y %H:%M"),
+        datetime.strptime(date_range[1], "%d.%m.%Y %H:%M"),
     )
 
     current_app.logger.info(
-        "Genderated plot named cache/plot_cache/" + plot_name + ".jpg"
+        "Generated plot named cache/plot_cache/" + plot_name + ".jpg"
     )
-
-    current_app.logger.info(os.path.isfile("cache/plot_cache/" + plot_name + ".jpg"))
     # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
     # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.jpg') works
-    return send_file(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", mimetype="image/jpg")
+    return send_file(f"../{CACHE_PATH}/plot_cache/{plot_name}.jpg", mimetype="image/jpg")
