@@ -86,12 +86,18 @@ class Predictor:
             # Encode categoricals
             for cat in self.cat_encoders:
                 try:
-                    ar_data.at[i, cat] = self.cat_encoders[cat][segment['ar_' + cat]]
+                    if cat == 'pp':
+                        ar_data.at[i, cat] = self.cat_encoders[cat][segment['ar_' + 'cp']]
+                    else:
+                        ar_data.at[i, cat] = self.cat_encoders[cat][segment['ar_' + cat]]
                 except KeyError:
                     ar_data.at[i, cat] = -1
                     print('unknown {cat}: {value}'.format(cat=cat, value=segment['ar_' + cat]))
                 try:
-                    dp_data.at[i, cat] = self.cat_encoders[cat][segment['dp_' + cat]]
+                    if cat == 'pp':
+                        dp_data.at[i, cat] = self.cat_encoders[cat][segment['dp_' + 'cp']]
+                    else:
+                        dp_data.at[i, cat] = self.cat_encoders[cat][segment['dp_' + cat]]
                 except KeyError:
                     dp_data.at[i, cat] = -1
                     print('unknown {cat}: {value}'.format(cat=cat, value=segment['dp_' + cat]))
