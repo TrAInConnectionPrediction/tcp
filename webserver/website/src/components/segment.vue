@@ -3,7 +3,8 @@
     <div class="station" v-bind:style="dp_station_style">
       {{ segment.dp_station }}
     </div>
-    <div class="time">ab {{ segment.dp_pt }}</div>
+    <div class="time" v-if="segment.dp_pt == segment.dp_ct">ab {{ segment.dp_ct }}</div>
+    <div class="time" v-else>ab {{ segment.dp_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
     <div class="platform">von Gl. {{ segment.dp_pp }}</div>
 
     <div class="train" style="grid-column-start: span 3;">
@@ -18,7 +19,8 @@
     <div class="station" v-bind:style="ar_station_style">
       {{ segment.ar_station }}
     </div>
-    <div class="time">an {{ segment.ar_pt }}</div>
+    <div class="time" v-if="segment.ar_pt == segment.ar_ct">ab {{ segment.ar_ct }}</div>
+    <div class="time" v-else>ab {{ segment.ar_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
     <div class="platform">an Gl. {{ segment.ar_pp }}</div>
 
     <div v-if="'transfer_time' in segment" style="display: contents">
