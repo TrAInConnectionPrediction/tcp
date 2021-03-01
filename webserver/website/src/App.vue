@@ -81,8 +81,9 @@
       </div>
     </div>
     <main id="main" style="margin-top: 0px; max-width: 100%; width: 100%">
-      <div id="prg_bar_anchor"></div>
-      <section id="pgr_bar" class="m-5" v-show="show_progress"></section>
+      <div id="prg_bar_anchor">
+        <section id="pgr_bar" class="p-5"></section>
+      </div>
       <div
         class="m-5 custom_card"
         id="error_box"
@@ -136,7 +137,6 @@ export default {
   name: 'App',
   data: function () {
     return {
-      show_progress: false,
       connections: [],
       progress: null,
       error: null
@@ -148,17 +148,15 @@ export default {
   mounted () {
     // Progressbar init
     this.progress = new ProgressBar.Line('#pgr_bar', {
-      strokeWidth: 4,
-      easing: 'easeInOut',
-      duration: 1400,
-      color: '#FFEA82',
-      trailColor: '#eee',
-      trailWidth: 1,
-      svgStyle: { width: '100%', height: '100%' }
+      strokeWidth: 0.5,
+      color: '#3f51b5',
+      trailColor: 'transparent',
+      trailWidth: 0
     })
   },
   methods: {
     display_fetch_error: function (response) {
+      this.stop_progress()
       if (!response.ok) {
         this.error = Error(response.statusText)
         console.log(response.url)
@@ -169,13 +167,28 @@ export default {
       }
       return response
     },
+    display_img_load_error: function (event) {
+      this.stop_progress()
+      this.error = Error('Failed to load image')
+      console.log(event)
+      console.log(this.error)
+      document
+        .getElementById('error_box')
+        .scrollIntoView({ behavior: 'smooth' })
+    },
+    start_progress () {
+      // start progress animation
+      this.progress.animate(60, { duration: 30000, easing: 'linear' })
+    },
+    stop_progress () {
+      // stop animation
+      this.progress.animate(0, { duration: 10, easing: 'linear' })
+    },
 
     get_connections: function (search_data) {
       // remove current connections
       this.$store.commit('set_connections', [])
-      // start progress animation
-      this.show_progress = true
-      this.progress.animate(60, { duration: 30000, easing: 'linear' })
+      this.start_progress()
       document
         .getElementById('prg_bar_anchor')
         .scrollIntoView({ behavior: 'smooth' })
@@ -193,10 +206,8 @@ export default {
         .then((response) => this.display_fetch_error(response))
         .then((response) => response.json())
         .then((connections) => {
-          // stop animation
-          this.progress.animate(0, { duration: 10, easing: 'linear' })
           this.$store.commit('set_connections', connections)
-          this.show_progress = false
+          this.stop_progress()
           this.$router.push('/')
         })
     }
@@ -276,13 +287,9 @@ header,
   height: 100%;
 }
 
-/* Desing for mobile pages */
-
-/* @media (max-width: 740px) {
-  .full-page-intro {
-    height: 1000px;
-  }
-} */
+#pgr_bar {
+  padding-top: 5rem !important;
+}
 
 @media (max-width: 740px) {
   h2 {
@@ -316,14 +323,7 @@ footer > div {
   color: white;
 }
 
-#pgr_bar {
-  margin: 5px;
-  height: 8px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.autocomplete-suggestions {
+/* .autocomplete-suggestions {
   background: #212529;
   overflow: auto;
   color: #fff;
@@ -352,7 +352,7 @@ footer > div {
 .autocomplete-group strong {
   display: block;
   border-bottom: 1px solid #fff;
-}
+} */
 
 .shadow {
   -webkit-box-shadow: 0 -140px 70px -70px black inset !important;
@@ -393,7 +393,7 @@ footer > div {
   --shadow-bg-color1: #125163;
 }
 
-@media (max-width: 400px) {
+/* @media (max-width: 400px) {
   #brand_button {
     font-size: 4.6vw;
     margin: 0;
@@ -467,13 +467,13 @@ footer > div {
     -ms-flex-preferred-size: auto;
     flex-basis: auto;
   }
-}
+} */
 
-@media (min-width: 600px) {
+/* @media (min-width: 600px) {
   .navbar-expand-lg .navbar-toggler {
     display: none;
   }
-}
+} */
 
 .col {
   width: 40vw;
@@ -482,9 +482,9 @@ footer > div {
   margin: 30px;
 }
 
-#midheader {
+/* #midheader {
   font-weight: bold;
   font-size: calc(12px + 1.5vw);
   white-space: nowrap;
-}
+} */
 </style>
