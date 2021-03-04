@@ -130,6 +130,7 @@ def api():
 
 
 @bp.route("/stationplot/<string:date_range>.png")
+@log_activity
 def station_plot(date_range):
     """
     Generates a plot that visualizes all the delays
@@ -145,18 +146,20 @@ def station_plot(date_range):
     flask generated image/png
         The generated plot
     """
-    if date_range == 'default':
-        return send_file(f"{CACHE_PATH}/plot_cache/default.png", mimetype="image/png")
-        
-    date_range = date_range.split("-")
-    plot_name = per_station_time.generate_plot(
-        datetime.strptime(date_range[0], "%d.%m.%Y %H:%M"),
-        datetime.strptime(date_range[1], "%d.%m.%Y %H:%M"),
-    )
 
-    current_app.logger.info(
-        "Generated plot named cache/plot_cache/" + plot_name + ".png"
-    )
+    if date_range in per_station_time.DEFAULT_PLOTS:
+        plot_name = date_range
+    else:
+        date_range = date_range.split("-")
+        plot_name = per_station_time.generate_plot(
+            datetime.strptime(date_range[0], "%d.%m.%Y %H:%M"),
+            datetime.strptime(date_range[1], "%d.%m.%Y %H:%M"),
+            use_cached_images=True,
+        )
+
+    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.png")
     # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
-    # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.jpg') works
-    return send_file(f"{CACHE_PATH}/plot_cache/{plot_name}.png", mimetype="image/png")
+    # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.png') works
+    return send_file(
+        f"{CACHE_PATH}/plot_cache/{plot_name}.png", mimetype="image/png"
+    )
