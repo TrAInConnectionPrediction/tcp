@@ -129,7 +129,7 @@ def api():
     return resp
 
 
-@bp.route("/stationplot/<string:date_range>.jpg")
+@bp.route("/stationplot/<string:date_range>.png")
 @log_activity
 def station_plot(date_range):
     """
@@ -143,7 +143,7 @@ def station_plot(date_range):
 
     Returns
     -------
-    flask generated image/jpg
+    flask generated image/png
         The generated plot
     """
 
@@ -157,9 +157,9 @@ def station_plot(date_range):
             use_cached_images=True,
         )
 
-    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.jpg")
+    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.png")
     # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
-    # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.jpg') works
+    # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.png') works
     return send_file(
-        f"../{CACHE_PATH}/plot_cache/{plot_name}.jpg", mimetype="image/jpg"
+        f"{CACHE_PATH}/plot_cache/{plot_name}.png", mimetype="image/png"
     )

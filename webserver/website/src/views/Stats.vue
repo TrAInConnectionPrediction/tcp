@@ -1,5 +1,6 @@
 <template>
   <div id="stats" class="stats">
+    <h1 class="text-center"> Verspätungen in Deutschland </h1>
     <div class="stats-picker">
       <vue-slider
         v-model="value"
@@ -8,7 +9,6 @@
         :maxRange="168"
         :lazy="true"
         :tooltip="'always'"
-        style="margin: 20px; width: 100%"
       ></vue-slider>
       <input
         class="pretty_button"
@@ -19,9 +19,11 @@
     </div>
     <img
       class="stats-image"
+      id="stats_image"
       v-if="plotURL"
       :src="plotURL"
-      @error="replaceByDefault"
+      @error="$parent.display_img_load_error"
+      @load="loaded_img()"
     />
   </div>
 </template>
@@ -75,12 +77,12 @@ export default {
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/default.jpg'
+        '/api/stationplot/default.png'
     }
   },
   methods: {
     updatePlot () {
-      this.plotURL =
+      const new_url =
         window.location.protocol +
         '//' +
         window.location.host +
@@ -88,14 +90,28 @@ export default {
         this.value[0].replace(/,/g, '') +
         '-' +
         this.value[1].replace(/,/g, '') +
-        '.jpg'
+        '.png'
+      if (new_url !== this.plotURL) {
+        this.$parent.start_progress()
+        document
+          .getElementById('prg_bar_anchor')
+          .scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+        // this.progress.animate(60, { duration: 30000, easing: 'linear' })
+        this.plotURL = new_url
+      }
+    },
+    loaded_img () {
+      this.$parent.stop_progress()
+      document
+        .getElementById('stats_image')
+        .scrollIntoView({ behavior: 'smooth' })
     },
     replaceByDefault () {
       this.plotURL =
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/default.jpg'
+        '/api/stationplot/default.png'
     }
   }
 }
@@ -105,21 +121,33 @@ export default {
 .stats {
   height: 100%;
   margin: 20px;
-  display: flex;
+  /* display: flex; */
   flex-direction: row;
   flex-wrap: wrap;
+  color: #cacaca;
 }
 
 .stats-picker {
   display: flex;
+  justify-content: space-around;
   margin: auto;
   width: 100%;
+  gap: 20px;
   align-items: center;
 }
 
 .stats-image {
-  margin: auto;
-  max-height: 80vh;
+    width: 100%;
+    max-width: 50em;
+    margin: auto;
+    display: block;
+}
+
+@media (max-width: 1000px)  {
+  .stats-picker {
+    flex-wrap: wrap;
+  }
+
 }
 
 .vue-slider-process {
@@ -129,5 +157,10 @@ export default {
 .vue-slider-dot-tooltip-inner {
   border-color: #3f51b5;
   background-color: #3f51b5;
+}
+
+.vue-slider {
+  margin: 50px 0;
+  width: 100% !important;
 }
 </style>

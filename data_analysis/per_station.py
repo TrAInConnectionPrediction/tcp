@@ -1,15 +1,13 @@
+# Install Basemap on Linux: https://stackoverflow.com/questions/46560591/how-can-i-install-basemap-in-python-3-matplotlib-2-on-ubuntu-16-04
+
 import os
 import sys
+from matplotlib.pyplot import plot
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
 import datetime
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits.basemap import Basemap
-
-# Install Basemap on Linux: https://stackoverflow.com/questions/46560591/how-can-i-install-basemap-in-python-3-matplotlib-2-on-ubuntu-16-04
 from helpers.StationPhillip import StationPhillip
 from config import CACHE_PATH
 
@@ -30,6 +28,10 @@ class PerStationAnalysis(StationPhillip):
     DATA_CACHE_PATH = CACHE_PATH + "/per_station_data.csv"
 
     def __init__(self, rtd_df, use_cache=True):
+        import matplotlib
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.basemap import Basemap
+
         super().__init__()
         try:
             if not use_cache:
@@ -100,7 +102,7 @@ class PerStationAnalysis(StationPhillip):
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
             "", ["red", "yellow", "green"]
         )
-        m.scatter(x, y, c=c, cmap=cmap, s=s, alpha=0.2, latlon=True)
+        m.scatter(x, y, c=c, cmap=cmap, s=s, alpha=0.5, latlon=True)
         plt.show()
 
 
@@ -109,14 +111,22 @@ class PerStationOverTime(StationPhillip):
     FREQ = "1H"
     DEFAULT_PLOTS = ["error", "no data available", "default"]
 
-    def __init__(self, rtd, use_cache=True, logger=None):
+    def __init__(self, rtd, use_cache=True, logger=None, server=False):
+        import matplotlib
+        if server:
+            matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from mpl_toolkits.basemap import Basemap
+
+        plt.style.use('dark_background')
+
         super().__init__()
 
         try:
             if not use_cache:
                 raise FileNotFoundError
-            if logger:
-                self.logger = logger
+            self.logger = logger
+            if self.logger is not None:
                 self.logger.info("Reading data...")
             self.data = (
                 pd.read_csv(
@@ -135,7 +145,7 @@ class PerStationOverTime(StationPhillip):
                 },
                 inplace=True,
             )
-            if self.logger:
+            if self.logger is not None:
                 self.logger.info("Done")
             else:
                 print("Using cache")
@@ -159,30 +169,6 @@ class PerStationOverTime(StationPhillip):
             ].astype("str")
 
             rtd = rtd.set_index("stop_time")
-
-            def per_group(rtd):
-                return rtd.resample("1H").agg(
-                    {
-                        "ar_delay": ["count", "mean"],
-                        "ar_cancellations": ["sum", "mean"],
-                        "dp_delay": ["count", "mean"],
-                        "dp_cancellations": ["sum", "mean"],
-                    }
-                )
-
-            def resample_rolling(rtd):
-                return rtd.resample("1H").agg(
-                    {
-                        "ar_delay": ["count", "mean"],
-                        "ar_cancellations": ["sum", "mean"],
-                        "dp_delay": ["count", "mean"],
-                        "dp_cancellations": ["sum", "mean"],
-                        "stop_hour": ["first"],
-                        "station": ["first"],
-                    }
-                )
-
-            # self.data = rtd_df.groupby('station').apply(per_group).compute()
 
             self.data = (
                 rtd.groupby("single_index_for_groupby", sort=False)
@@ -227,8 +213,8 @@ class PerStationOverTime(StationPhillip):
             lon_0=10,
         )
 
-        self.m.drawcoastlines(linewidth=0.72, color="black")
-        self.m.drawcountries(zorder=0, color="black")
+        self.m.drawcoastlines(linewidth=0.72, color="grey")
+        self.m.drawcountries(zorder=0, color="grey")
         self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
             "", ["green", "yellow", "red"]
         )
@@ -241,22 +227,23 @@ class PerStationOverTime(StationPhillip):
             cmap=self.cmap,
             vmin=0,
             vmax=7,
-            alpha=0.2,
+            alpha=0.5,
             latlon=True,
         )
 
         self.cbar = self.fig.colorbar(self.sc)
         self.cbar.ax.get_yaxis().labelpad = 15
-        self.cbar.ax.set_ylabel("min Verspätung", rotation=270)
+        self.cbar.ax.set_ylabel("Ø Verspätung in Minuten", rotation=270)
 
         if self.logger:
             self.logger.info("Done")
             for plot_name in self.DEFAULT_PLOTS:
-                if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg"):
-                    self.ax.set_title(plot_name, fontsize=16)
-                    self.fig.savefig(
-                        f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300
-                    )
+                if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.png"):
+                    if plot_name == 'default':
+                        self.ax.set_title('', fontsize=16)
+                    else:
+                        self.ax.set_title(plot_name, fontsize=16)
+                    self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
                     self.logger.info(f"Generating {plot_name} plot")
 
     def animate(self):
@@ -289,7 +276,7 @@ class PerStationOverTime(StationPhillip):
                 )
                 c[:] = current_data.loc[:, [("ar_delay", "mean")]].to_numpy()[:, 0]
 
-                s = s / 2
+                s = (s / s.max()) * 200
                 # c = (c - min(c)) / max(c - min(c))
                 # norm = mpl.colors.Normalize(vmin=0, vmax=7)
                 # c[c > 5] = 7
@@ -313,7 +300,7 @@ class PerStationOverTime(StationPhillip):
     def generate_plot(self, start_time, end_time, use_cached_images=False):
         """
         Generates a plot that visualizes all the delays on a Germany map between `start_time` and `end_time`
-        The file is generated relative to this execution path inside of  `cache/plot_cache/{plot_name}.jpg`
+        The file is generated relative to this execution path inside of  `cache/plot_cache/{plot_name}.png`
 
         Parameters
         ----------
@@ -325,7 +312,7 @@ class PerStationOverTime(StationPhillip):
         Returns
         -------
         string
-            The `plot_name` of the file that is generated without `.jpg`
+            The `plot_name` of the file that is generated without `.png`
         """
 
         if start_time == end_time:
@@ -350,61 +337,56 @@ class PerStationOverTime(StationPhillip):
         ]
 
         if not current_data.empty:
-            try:
-                current_data = current_data.groupby("station").agg(
-                    {
-                        ("ar_delay", "count"): "sum",
-                        ("ar_delay", "mean"): "mean",
-                        ("ar_cancellations", "sum"): "sum",
-                        ("ar_cancellations", "mean"): "mean",
-                        ("dp_delay", "count"): "sum",
-                        ("dp_delay", "mean"): "mean",
-                        ("dp_cancellations", "sum"): "sum",
-                        ("dp_cancellations", "mean"): "mean",
-                    }
-                )
+            current_data = current_data.groupby("station").agg(
+                {
+                    ("ar_delay", "count"): "sum",
+                    ("ar_delay", "mean"): "mean",
+                    ("ar_cancellations", "sum"): "sum",
+                    ("ar_cancellations", "mean"): "mean",
+                    ("dp_delay", "count"): "sum",
+                    ("dp_delay", "mean"): "mean",
+                    ("dp_cancellations", "sum"): "sum",
+                    ("dp_cancellations", "mean"): "mean",
+                }
+            )
 
-                x = np.zeros(len(current_data.index))
-                y = np.zeros(len(current_data.index))
-                s = np.zeros(len(current_data.index))
-                c = np.zeros(len(current_data.index))
+            x = np.zeros(len(current_data.index))
+            y = np.zeros(len(current_data.index))
+            s = np.zeros(len(current_data.index))
+            c = np.zeros(len(current_data.index))
 
-                for i, station in enumerate(current_data.index):
-                    x[i], y[i] = self.get_location(name=station)
+            for i, station in enumerate(current_data.index):
+                x[i], y[i] = self.get_location(name=station)
 
-                s[:] = (
-                    current_data.loc[:, [("ar_cancellations", "sum")]].to_numpy()[:, 0]
-                    + current_data.loc[:, [("dp_cancellations", "sum")]].to_numpy()[
-                        :, 0
-                    ]
-                )
-                c[:] = current_data.loc[:, [("ar_delay", "mean")]].to_numpy()[:, 0]
+            s[:] = (
+                current_data.loc[:, [("ar_cancellations", "sum")]].to_numpy()[:, 0]
+                + current_data.loc[:, [("dp_cancellations", "sum")]].to_numpy()[:, 0]
+            )
+            c[:] = current_data.loc[:, [("ar_delay", "mean")]].to_numpy()[:, 0]
 
-                s = s / current_data[("ar_delay", "count")].mean()
+            s = (s / s.max()) * 100
 
-                # change the positions
-                # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
-                self.sc.set_offsets(np.c_[self.m(x, y)])
-                # change the sizes
-                self.sc.set_sizes(s)
-                # change the color
-                self.sc.set_array(c)
-                # update colorbar
-                self.cbar.update_normal(self.sc)
-                self.cbar.ax.get_yaxis().labelpad = 15
-                self.cbar.ax.set_ylabel("min Verspätung", rotation=270)
+            # change the positions 
+            # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
+            self.sc.set_offsets(np.c_[self.m(x, y)])
+            # change the sizes
+            self.sc.set_sizes(s)
+            # change the color
+            self.sc.set_array(c)
+            # update colorbar
+            # self.cbar.update_normal(self.sc)
 
-                self.ax.set_title(plot_name.replace("_", ":"), fontsize=12)
-                self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300)
-            except:
-                if self.logger:
-                    self.logger.warning(sys.exc_info()[0])
-                else:
-                    raise sys.exc_info()[0]
-                plot_name = "error"
+            plot_name = (
+                start_time.strftime("%d.%m.%Y %H_%M")
+                + "-"
+                + end_time.strftime("%d.%m.%Y %H_%M")
+            )
+
+            self.ax.set_title(plot_name.replace("_", ":").replace('-', ' - '), fontsize=12)
+            self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
         else:
             # This file and the error file must exist
-            # Or one could just gerate them using plt.title(plot_name) plt.savefig(f'cache/plot_cache/{plot_name}.jpg')
+            # Or one could just gerate them using plt.title(plot_name) plt.savefig(f'cache/plot_cache/{plot_name}.png')
             plot_name = "no data available"
 
         return plot_name
@@ -430,7 +412,7 @@ if __name__ == "__main__":
     # per_station = PerStationAnalysis(rtd_df, use_cache=False)
     # per_station.plot(per_station.ALL_ON_TIME_PLOT)
 
-    per_station_time = PerStationOverTime(None, use_cache=True)
+    per_station_time = PerStationOverTime(None, use_cache=True, server=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 2, 1, hour=0), datetime.datetime(2021, 2, 2, hour=0)
     )

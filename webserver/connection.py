@@ -98,7 +98,7 @@ def parse_connection(connection):
             'ar_pp': segment['stops'][-1]['arrival']['scheduledPlatform'] if 'scheduledPlatform' in segment['stops'][-1]['arrival'] else None,
             'ar_cp': segment['stops'][-1]['arrival']['platform'] if 'platform' in segment['stops'][-1]['arrival'] else None,
             'train_name': segment['train']['name'],
-            'train_destination': segment['finalDestination'],
+            'train_destination': segment['finalDestination'] if 'finalDestination' in segment else streckennetz.get_name(eva=int(segment['stops'][-1]['station']['id'])),
             'ar_c': segment['train']['type'],
             'ar_n': segment['train']['number'],
             'ar_o': segment['train']['admin'].replace('_', ''),
