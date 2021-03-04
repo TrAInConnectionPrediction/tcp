@@ -77,7 +77,7 @@ export default {
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/default.jpg'
+        '/api/stationplot/default.png'
     }
   },
   methods: {
@@ -90,7 +90,7 @@ export default {
         this.value[0].replace(/,/g, '') +
         '-' +
         this.value[1].replace(/,/g, '') +
-        '.jpg'
+        '.png'
       if (new_url !== this.plotURL) {
         this.$parent.start_progress()
         document
@@ -111,7 +111,7 @@ export default {
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/default.jpg'
+        '/api/stationplot/default.png'
     }
   }
 }
