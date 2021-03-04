@@ -12,10 +12,18 @@ spec:
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: webserver-ingress
+  name: webserver-ingress-https
+  annotations:
+    # Add the following line (staging first for testing, then apply the prod issuer)
+    cert-manager.io/cluster-issuer: letsencrypt-prod # letsencrypt-staging
 spec:
+  tls:
+  - hosts:
+    - qkhrecvu4nfgijjt.myfritz.net
+    secretName: default-tls-secret
   rules:
-  - http:
+  - host: "qkhrecvu4nfgijjt.myfritz.net"
+    http:
       paths:
         - path: /
           backend:
