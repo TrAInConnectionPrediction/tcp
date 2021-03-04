@@ -102,13 +102,14 @@ class PerStationAnalysis(StationPhillip):
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
             "", ["red", "yellow", "green"]
         )
-        m.scatter(x, y, c=c, cmap=cmap, s=s, alpha=0.2, latlon=True)
+        m.scatter(x, y, c=c, cmap=cmap, s=s, alpha=0.5, latlon=True)
         plt.show()
 
 
 class PerStationOverTime(StationPhillip):
     DATA_CACHE_PATH = CACHE_PATH + "/per_station_over_time.csv"
     FREQ = "1H"
+    DEFAULT_PLOTS = ["error", "no data available", "default"]
 
     def __init__(self, rtd, use_cache=True, logger=None, server=False):
         import matplotlib
@@ -156,7 +157,7 @@ class PerStationOverTime(StationPhillip):
 
             rtd["stop_time"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"])
             rtd = rtd.loc[
-                rtd["stop_time"] > datetime.datetime(2021, 2, 1)
+                rtd["stop_time"] > datetime.datetime(2021, 1, 1)
             ].persist()  # .compute()
             rtd["stop_hour"] = rtd["stop_time"].dt.round(self.FREQ)
             rtd["str_stop_hour"] = rtd["stop_hour"].astype(
@@ -194,7 +195,7 @@ class PerStationOverTime(StationPhillip):
             print("Using cache")
 
         # Setup Plot https://stackoverflow.com/questions/9401658/how-to-animate-a-scatter-plot
-    
+
         # Bounding Box of Germany
         left = 5.67
         right = 15.64
@@ -219,7 +220,15 @@ class PerStationOverTime(StationPhillip):
         )
 
         self.sc = self.m.scatter(
-            np.zeros(1),np.zeros(1), c=np.zeros(1), s=np.zeros(1), cmap=self.cmap, vmin=0, vmax=7, alpha=0.5, latlon=True
+            np.zeros(1),
+            np.zeros(1),
+            c=np.zeros(1),
+            s=np.zeros(1),
+            cmap=self.cmap,
+            vmin=0,
+            vmax=7,
+            alpha=0.5,
+            latlon=True,
         )
 
         self.cbar = self.fig.colorbar(self.sc)
@@ -228,8 +237,7 @@ class PerStationOverTime(StationPhillip):
 
         if self.logger:
             self.logger.info("Done")
-            plot_names = ["error", "no data available", "default"]
-            for plot_name in plot_names:
+            for plot_name in self.DEFAULT_PLOTS:
                 if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.png"):
                     if plot_name == 'default':
                         self.ax.set_title('', fontsize=16)
@@ -274,7 +282,7 @@ class PerStationOverTime(StationPhillip):
                 # c[c > 5] = 7
                 # c[c < 0] = 0
 
-                # change the positions 
+                # change the positions
                 # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
                 self.sc.set_offsets(np.c_[self.m(x, y)])
                 # change the sizes
@@ -289,7 +297,7 @@ class PerStationOverTime(StationPhillip):
             plt.title(str_date)
             plt.savefig(f"{CACHE_PATH}/animation/{str_date}.jpg")
 
-    def generate_plot(self, start_time, end_time):
+    def generate_plot(self, start_time, end_time, use_cached_images=False):
         """
         Generates a plot that visualizes all the delays on a Germany map between `start_time` and `end_time`
         The file is generated relative to this execution path inside of  `cache/plot_cache/{plot_name}.png`
@@ -306,9 +314,22 @@ class PerStationOverTime(StationPhillip):
         string
             The `plot_name` of the file that is generated without `.png`
         """
+
         if start_time == end_time:
             # Sometimes if they are equal, we just want the first hour...
             end_time = end_time + datetime.timedelta(hours=1)
+
+        plot_name = (
+            start_time.strftime("%d.%m.%Y %H_%M")
+            + "-"
+            + end_time.strftime("%d.%m.%Y %H_%M")
+        )
+
+        if use_cached_images and os.path.isfile(
+            f"{CACHE_PATH}/plot_cache/{plot_name}.jpg"
+        ):
+            # Return cached images, after the start-, end-time change
+            return plot_name
 
         current_data = self.data.loc[
             (start_time <= self.data[("stop_hour", "first")])
@@ -369,7 +390,6 @@ class PerStationOverTime(StationPhillip):
             plot_name = "no data available"
 
         return plot_name
-
 
 
 if __name__ == "__main__":
