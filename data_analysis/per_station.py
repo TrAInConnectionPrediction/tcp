@@ -230,12 +230,12 @@ class PerStationOverTime(StationPhillip):
             self.logger.info("Done")
             plot_names = ["error", "no data available", "default"]
             for plot_name in plot_names:
-                if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg"):
+                if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.png"):
                     if plot_name == 'default':
                         self.ax.set_title('', fontsize=16)
                     else:
                         self.ax.set_title(plot_name, fontsize=16)
-                    self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.jpg", dpi=300)
+                    self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
                     self.logger.info(f"Generating {plot_name} plot")
 
     def animate(self):
@@ -292,7 +292,7 @@ class PerStationOverTime(StationPhillip):
     def generate_plot(self, start_time, end_time):
         """
         Generates a plot that visualizes all the delays on a Germany map between `start_time` and `end_time`
-        The file is generated relative to this execution path inside of  `cache/plot_cache/{plot_name}.jpg`
+        The file is generated relative to this execution path inside of  `cache/plot_cache/{plot_name}.png`
 
         Parameters
         ----------
@@ -304,7 +304,7 @@ class PerStationOverTime(StationPhillip):
         Returns
         -------
         string
-            The `plot_name` of the file that is generated without `.jpg`
+            The `plot_name` of the file that is generated without `.png`
         """
         if start_time == end_time:
             # Sometimes if they are equal, we just want the first hour...
@@ -343,7 +343,7 @@ class PerStationOverTime(StationPhillip):
             )
             c[:] = current_data.loc[:, [("ar_delay", "mean")]].to_numpy()[:, 0]
 
-            s = (s / s.max()) * 200
+            s = (s / s.max()) * 100
 
             # change the positions 
             # (THIS TOOK SO FUCKING LONG, YOU HAVE TO CONVERT THE COORDINATES FIST!!!)
@@ -361,11 +361,11 @@ class PerStationOverTime(StationPhillip):
                 + end_time.strftime("%d.%m.%Y %H_%M")
             )
 
-            self.ax.set_title(plot_name.replace("_", ":"), fontsize=12)
-            self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=False)
+            self.ax.set_title(plot_name.replace("_", ":").replace('-', ' - '), fontsize=12)
+            self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
         else:
             # This file and the error file must exist
-            # Or one could just gerate them using plt.title(plot_name) plt.savefig(f'cache/plot_cache/{plot_name}.jpg')
+            # Or one could just gerate them using plt.title(plot_name) plt.savefig(f'cache/plot_cache/{plot_name}.png')
             plot_name = "no data available"
 
         return plot_name
