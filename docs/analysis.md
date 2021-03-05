@@ -13,8 +13,13 @@ Diagramme zur Datenanalyse in unserer Projektdokumentation für Jugend Forscht 2
 ![alt](overyear.png)
 ## Verspätungsverteilung
 ![alt](delay_distrib.png)
-## Verspätungskarte
-![alt](mapplot.png)
+## Verspätungskarte 06.02.2021
+![alt](DelayInGermany_06_02.jpg)
+## Verspätungskarte 07.02.2021
+![alt](DelayInGermany_07_02.jpg)
+## Verspätungskarte animiert
+Das Aktuelle Datum und die Uhrzeit steht im Diagrammtitel
+![alt](delay_over_germany_and_time.webp)
 ## Verspätungen
 ![alt](delay_per_train_type.png)
 ## Ausfälle
