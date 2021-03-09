@@ -260,18 +260,11 @@ def parse_station(station, start_date, end_date):
 
     return True
 
-
-if __name__ == "__main__":
-    import helpers.fancy_print_tcp
-
-    if input('Do you wish to only parse new data? ([y]/n)') == 'n':
-        start_date = datetime.datetime(2020, 10, 1, 0, 0)
-    else:
+def parse(only_new=True):
+    if only_new:
         start_date = rtd.max_date() - datetime.timedelta(days=2)
-
-    end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-
-    # parse_station('Tübingen Hbf', start_date, end_date)
+    else:
+        start_date = datetime.datetime(2020, 10, 1, 0, 0)
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {executor.submit(parse_station, station, start_date, end_date): station
@@ -279,3 +272,25 @@ if __name__ == "__main__":
                    in streckennetz}
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
             future.result()
+
+
+if __name__ == "__main__":
+    import helpers.fancy_print_tcp
+
+    # parse_station('Tübingen Hbf', start_date, end_date)
+
+    parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
+
+    # if input('Do you wish to only parse new data? ([y]/n)') == 'n':
+    #     start_date = datetime.datetime(2020, 10, 1, 0, 0)
+    # else:
+    #     start_date = rtd.max_date() - datetime.timedelta(days=2)
+
+    # end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
+
+    # with concurrent.futures.ProcessPoolExecutor() as executor:
+    #     futures = {executor.submit(parse_station, station, start_date, end_date): station
+    #                for station
+    #                in streckennetz}
+    #     for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
+    #         future.result()

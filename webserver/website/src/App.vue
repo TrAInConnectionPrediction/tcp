@@ -115,9 +115,8 @@
         ></a>
       </div>
       <div class="footer-copyright py-3">
-        <a class="pretty_link" href="http://sfz-bw.de/eningen/">Impressum</a><br>
-        © 2021
-        <a class="pretty_link" href="mailto:marius@kepi.de">TrAIn_Connection_Prediction<br /></a>
+        <router-link class="pretty_link" to="/impressum">Impressum</router-link> <br>
+        © 2021 TrAIn_Connection_Prediction <br>
         <span style="color: gray"
           >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser
           steht in keiner Verbindung mit der Deutschen Bahn und ihren
@@ -129,7 +128,6 @@
 </template>
 
 <script>
-// import connectionDisplay from './components/connectionDisplay.vue'
 import searchform from './components/searchform.vue'
 const ProgressBar = require('progressbar.js')
 
