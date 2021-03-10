@@ -1,17 +1,8 @@
 #Ignore everything
-**
+*
 
 #Except
-!cache/models
-!cache/recent_change_rtd_ar_ps_encoder_dict.pkl
-!cache/recent_change_rtd_c_encoder_dict.pkl
-!cache/recent_change_rtd_dp_ps_encoder_dict.pkl
-!cache/recent_change_rtd_f_encoder_dict.pkl
-!cache/recent_change_rtd_n_encoder_dict.pkl
-!cache/recent_change_rtd_o_encoder_dict.pkl
-!cache/recent_change_rtd_pp_encoder_dict.pkl
-!cache/recent_change_rtd_station_encoder_dict.pkl
-!cache/recent_change_rtd_t_encoder_dict.pkl
+
 !webserver/
 !ml_models/
 !database/

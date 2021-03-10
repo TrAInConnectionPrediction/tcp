@@ -193,7 +193,7 @@ class OverDay:
             client = Client()
             rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
             rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'].dt.time)
-            rtd_df['daytime'] = rtd_df.map_partitions(self.daytime, meta=rtd_df['date_id'])
+            rtd_df['daytime'] = rtd_df.map_partitions(self.daytime, meta=rtd_df['daytime'])
             rtd_df = rtd_df.loc[~rtd_df['daytime'].isna(), :]
             self.data = rtd_df.groupby('daytime').agg({
                         'ar_delay': ['count', 'mean'],
@@ -267,7 +267,7 @@ class OverWeek:
                                                  ('ar_cancellations', 'mean'),
                                                  ('dp_delay', 'mean'),
                                                  ('dp_delay', 'count'),
-                                                 ('dp_cancellations', 'mean')], window=21)
+                                                 ('dp_cancellations', 'mean')], window=41)
             self.data.to_csv(self.CACHE_PATH)
         self.plot = lambda: plot(self.data,
                                  title='Delay within one week',
@@ -375,18 +375,22 @@ if __name__ == '__main__':
                                         'dp_delay',
                                         'dp_cancellations'])
 
-    # lagecy code to plot older data
+    # legacy code to plot older data
     # from data_analysis.delay import load_with_delay
     # rtd_df = load_with_delay(columns=['station', 'c', 'f'])
+    
+    print('grouping over hour')
+    time = OverHour(rtd_df, use_cache=True)
+    time.plot()
 
-    # time = OverHour(rtd_df, use_cache=False)
-    # time.plot()
+    print('grouping over day')
+    time = OverDay(rtd_df, use_cache=True)
+    time.plot()
 
-    # time = OverDay(rtd_df, use_cache=True)
-    # time.plot()
+    print('grouping over week')
+    time = OverWeek(rtd_df, use_cache=True)
+    time.plot()
 
-    # time = OverWeek(rtd_df, use_cache=True)
-    # time.plot()
-
+    print('grouping over year')
     time = OverYear(rtd_df, use_cache=True)
-    time.plot(kind='cancellations')
+    time.plot(kind='delay')

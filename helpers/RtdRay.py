@@ -89,13 +89,13 @@ class RtdRay(Rtd):
         'ar_ct': pd.Series([], dtype='datetime64[ns]'),
         'ar_ps': pd.Series([], dtype='str'),
         'ar_cs': pd.Series([], dtype='str'),
-        'ar_hi': pd.Series([], dtype='Int64'),
+        'ar_hi': pd.Series([], dtype='Int16'),
         'ar_clt': pd.Series([], dtype='datetime64[ns]'),
         'ar_wings': pd.Series([], dtype='str'),
         'ar_tra': pd.Series([], dtype='str'),
         'ar_pde': pd.Series([], dtype='str'),
         'ar_cde': pd.Series([], dtype='str'),
-        'ar_dc': pd.Series([], dtype='Int64'),
+        'ar_dc': pd.Series([], dtype='Int16'),
         'ar_l': pd.Series([], dtype='str'),
 
         'dp_pp': pd.Series([], dtype='str'),
@@ -104,13 +104,13 @@ class RtdRay(Rtd):
         'dp_ct': pd.Series([], dtype='datetime64[ns]'),
         'dp_ps': pd.Series([], dtype='str'),
         'dp_cs': pd.Series([], dtype='str'),
-        'dp_hi': pd.Series([], dtype='Int64'),
+        'dp_hi': pd.Series([], dtype='Int16'),
         'dp_clt': pd.Series([], dtype='datetime64[ns]'),
         'dp_wings': pd.Series([], dtype='str'),
         'dp_tra': pd.Series([], dtype='str'),
         'dp_pde': pd.Series([], dtype='str'),
         'dp_cde': pd.Series([], dtype='str'),
-        'dp_dc': pd.Series([], dtype='Int64'),
+        'dp_dc': pd.Series([], dtype='Int16'),
         'dp_l': pd.Series([], dtype='str'),
 
         'f': pd.Series([], dtype='str'),
@@ -119,16 +119,16 @@ class RtdRay(Rtd):
         'c': pd.Series([], dtype='str'),
         'n': pd.Series([], dtype='str'),
 
-        'distance_to_start': pd.Series([], dtype='float'),
-        'distance_to_end': pd.Series([], dtype='float'),
-        'distance_to_last': pd.Series([], dtype='float'),
-        'distance_to_next': pd.Series([], dtype='float'),
+        'distance_to_start': pd.Series([], dtype='float32'),
+        'distance_to_end': pd.Series([], dtype='float32'),
+        'distance_to_last': pd.Series([], dtype='float32'),
+        'distance_to_next': pd.Series([], dtype='float32'),
 
         'station': pd.Series([], dtype='str'),
         'id': pd.Series([], dtype='str'),
         'dayly_id': pd.Series([], dtype='int'),
         'date_id': pd.Series([], dtype='datetime64[ns]'),
-        'stop_id': pd.Series([], dtype='int')
+        'stop_id': pd.Series([], dtype='Int8')
     }
 
     def __init__(self, notebook=False):
@@ -140,10 +140,18 @@ class RtdRay(Rtd):
             self.DATA_CACHE_PATH = RTD_CACHE_PATH
             self.ENCODER_PATH = ENCODER_PATH
 
-        self.categoricals = {'f': 'category', 't': 'category', 'o': 'category',
-                            'c': 'category', 'n': 'category', 'ar_ps': 'category',
-                            'dp_ps': 'category', 'pp': 'category',
-                            'station': 'category'}
+        self.categoricals = {
+            'f': 'category',
+            't': 'category',
+            'o': 'category',
+            'c': 'category',
+            'n': 'category',
+            'ar_ps': 'category',
+            'dp_ps': 'category',
+            'ar_cs': 'category',
+            'dp_cs': 'category',
+            'pp': 'category',
+            'station': 'category'}
 
     @staticmethod
     def _get_delays(rtd):
@@ -162,16 +170,16 @@ class RtdRay(Rtd):
             rtd with additional columns
         """
         rtd['ar_cancellations'] = rtd['ar_cs'] != 'c'
-        rtd['ar_cancellation_time_delta'] = (rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)
-        rtd['ar_delay'] = ((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1))
-        ar_mask = (rtd['ar_cs'] != 'c') & (rtd['ar_delay'].notnull())
-        rtd['ar_on_time_5'] = rtd.loc[ar_mask, 'ar_delay'] < 6
+        rtd['ar_cancellation_time_delta'] = (((rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        rtd['ar_delay'] = (((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        # ar_mask = (rtd['ar_cs'] != 'c') & (rtd['ar_delay'].notnull())
+        # rtd['ar_on_time_5'] = rtd.loc[ar_mask, 'ar_delay'] < 6
 
         rtd['dp_cancellations'] = rtd['dp_cs'] != 'c'
-        rtd['dp_cancellation_time_delta'] = (rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)
-        rtd['dp_delay'] = ((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1))
-        dp_mask = (rtd['dp_cs'] != 'c') & (rtd['dp_delay'].notnull())
-        rtd['dp_on_time_5'] = rtd.loc[dp_mask, 'dp_delay'] < 6
+        rtd['dp_cancellation_time_delta'] = (((rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        rtd['dp_delay'] = (((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        # dp_mask = (rtd['dp_cs'] != 'c') & (rtd['dp_delay'].notnull())
+        # rtd['dp_on_time_5'] = rtd.loc[dp_mask, 'dp_delay'] < 6
 
         return rtd
 
@@ -271,7 +279,7 @@ class RtdRay(Rtd):
         print('Rows befor update:', len_beginning)
         max_date = rtd['ar_pt'].max().compute() - datetime.timedelta(days=2)
         max_date = max_date.to_pydatetime()
-        print('getting date added since', max_date)
+        print('getting data added since', max_date)
 
         from sqlalchemy import Column, DateTime
         from sqlalchemy import sql
@@ -389,7 +397,7 @@ class RtdRay(Rtd):
 
         return rtd
 
-    def load_for_ml_model(self, return_date_id=False, label_encode=True, return_times=False, **kwargs):
+    def load_for_ml_model(self, return_date_id=False, label_encode=True, return_times=False, return_status=False, **kwargs):
         """
         Load columns that are used in machine learning
 
@@ -407,57 +415,57 @@ class RtdRay(Rtd):
         Dask.DataFrame
             DataFrame with loaded data
         """
-        rtd = self.load_data(columns=['station',
-                                      'lat',
-                                      'lon',
-                                      'o',
-                                      'c',
-                                      'n',
-                                      'distance_to_start',
-                                      'distance_to_end',
-                                      'ar_delay',
-                                      'dp_delay',
-                                      'date_id',
-                                      'ar_ct',
-                                      'ar_pt',
-                                      'dp_ct',
-                                      'dp_pt',
-                                      'pp',
-                                      'stop_id'], **kwargs)
+        columns = [
+            'station',
+            'lat',
+            'lon',
+            'o',
+            'c',
+            'n',
+            'distance_to_start',
+            'distance_to_end',
+            'ar_delay',
+            'dp_delay',
+            'ar_ct',
+            'ar_pt',
+            'dp_ct',
+            'dp_pt',
+            'pp',
+            'stop_id'
+        ]
+        if return_date_id:
+            columns.append('date_id')
+        if return_status:
+            columns.extend(['ar_cs', 'dp_cs'])
+
+        rtd = self.load_data(columns=columns, **kwargs)
 
         rtd['minute'] = rtd['ar_pt'].fillna(value=rtd['dp_pt'])
-        rtd['minute'] = rtd['minute'].dt.minute + rtd['minute'].dt.hour * 60
-        rtd['day'] = rtd['ar_pt'].fillna(value=rtd['dp_pt']).dt.dayofweek
-        rtd['stay_time'] = ((rtd['dp_pt'] - rtd['ar_pt']).dt.seconds // 60)
+        rtd['minute'] = (rtd['minute'].dt.minute + rtd['minute'].dt.hour * 60).astype('int16')
+        rtd['day'] = rtd['ar_pt'].fillna(value=rtd['dp_pt']).dt.dayofweek.astype('int8')
+        rtd['stay_time'] = ((rtd['dp_pt'] - rtd['ar_pt']).dt.seconds // 60) #.astype('Int16')
 
         # Label encode categorical columns
-        for key in ['o', 'c', 'n', 'station', 'pp']:
+        categoricals = ['o', 'c', 'n', 'station', 'pp']
+        if return_status:
+            categoricals.extend(['ar_cs', 'dp_cs'])
+        for key in categoricals:
             # dd.read_parquet reads categoricals as unknown categories. All the categories howerver get
             # saved in each partition. So we read those and set them as categories for the whole column.
             # https://github.com/dask/dask/issues/2944 
             rtd[key] = rtd[key].cat.set_categories(rtd[key].head(1).cat.categories)
 
             if label_encode:
-                rtd[key] = rtd[key].cat.codes.astype('int')
-        rtd['stop_id'] = rtd['stop_id'].astype('int')
+                rtd[key] = rtd[key].cat.codes.astype('int16')
+        rtd['stop_id'] = rtd['stop_id'].astype('int16')
 
         if return_times:
-            if return_date_id:
-                return rtd
-            else:
-                return rtd.drop(columns=['date_id'], axis=0)
+            return rtd
         else:
-            if return_date_id:
-                return rtd.drop(columns=['ar_ct',
-                                        'ar_pt',
-                                        'dp_ct',
-                                        'dp_pt'], axis=0)
-            else:
-                return rtd.drop(columns=['date_id',
-                                        'ar_ct',
-                                        'ar_pt',
-                                        'dp_ct',
-                                        'dp_pt'], axis=0)
+            return rtd.drop(columns=['ar_ct',
+                                     'ar_pt',
+                                     'dp_ct',
+                                     'dp_pt'], axis=0)
 
 
 if __name__ == "__main__":
@@ -466,9 +474,27 @@ if __name__ == "__main__":
     # client = Client()
 
     rtd_ray = RtdRay()
+    # rtd = rtd_ray.load_data()
+    # rtd = rtd_ray._get_delays(rtd)
+    # rtd = rtd_ray._categorize(rtd)
+    # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH, engine='pyarrow') # , schema='infer')
+    # rtd_ray._save_encoders(rtd)
+
     # rtd_ray.refresh_local_buffer()
     # rtd_ray.update_local_buffer()
 
     # rtd = rtd_ray.load_for_ml_model()
-    rtd = rtd_ray.load_data(columns=['ar_pt'])
-    print('len rtd:', len(rtd))
+    # rtd = rtd_ray.load_data(columns=['ar_pt'])
+    # print('max pt:', rtd['ar_pt'].max())
+    # print('len rtd:', len(rtd))
+
+
+    # create trimmed version of rtd to upload to dockerhub
+    rtd = rtd_ray.load_for_ml_model(
+            min_date=datetime.datetime(2021, 1, 1),
+            max_date=datetime.datetime(2021, 3, 6),
+            return_status=True,
+            label_encode=True,
+            return_times=True,
+        )
+    rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_hyper_dataset', engine='pyarrow', schema='infer')

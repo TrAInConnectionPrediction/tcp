@@ -1,0 +1,11 @@
+#Ignore everything
+*
+config.py
+
+#Except
+!database/
+!helpers/
+!rtd_crawler/
+!cache/recent_change_rtd_hyper_dataset
+!cache/recent_change_rtd_ar_cs_encoder_dict.pkl
+!cache/recent_change_rtd_dp_cs_encoder_dict.pkl
