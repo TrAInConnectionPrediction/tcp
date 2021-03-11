@@ -4,8 +4,8 @@
     <div v-on:click="show_details = !show_details" class="card_header">
       <div class="card_header_item">
         <div class="card_header_item_header">Bahnhof</div>
-        <div class="card_header_item_item">{{ summary.dp_station }}</div>
-        <div class="card_header_item_item">{{ summary.ar_station }}</div>
+        <div class="card_header_item_item">{{ summary.dp_station_display_name }}</div>
+        <div class="card_header_item_item">{{ summary.ar_station_display_name }}</div>
       </div>
       <div class="card_header_item">
         <div class="card_header_item_header">Zeit</div>
@@ -32,6 +32,11 @@
         >
           {{ cat }}
         </div>
+      </div>
+      <div class="card_header_item">
+        <div class="card_header_item_header">Preis</div>
+        <div class="card_header_item_item" v-if="summary.price === -1">-</div>
+        <div class="card_header_item_item" v-else>{{ summary.price / 100 }}€</div>
       </div>
       <div class="card_header_item">
         <div class="card_header_item_header">Verbindungs-Score</div>
