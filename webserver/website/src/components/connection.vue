@@ -36,7 +36,7 @@
       <div class="card_header_item">
         <div class="card_header_item_header">Preis</div>
         <div class="card_header_item_item" v-if="summary.price === -1">-</div>
-        <div class="card_header_item_item" v-else>{{ summary.price / 100 }}€</div>
+        <div class="card_header_item_item" v-else>{{ (summary.price / 100).toFixed(2) }}€</div>
       </div>
       <div class="card_header_item">
         <div class="card_header_item_header">Verbindungs-Score</div>
