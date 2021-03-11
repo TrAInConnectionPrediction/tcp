@@ -37,6 +37,8 @@ def get_connections(start, destination, time, max_changes=-1, transfer_time=0, h
         "transferTime": transfer_time,
         "hafasProfile": hafas_profile,
     }
+    json['tarif'] = {'class': 2,'traveler':{"type": "E"}}
+
     r = requests.post(
         "https://marudor.de/api/hafas/v3/tripSearch?profile=db", json=json
     )
@@ -64,14 +66,17 @@ def parse_connection(connection):
     summary = {}
     segments = []
     summary['dp_station'] = streckennetz.get_name(eva=int(connection['segments'][0]['stops'][0]['station']['id']))
+    summary['dp_station_display_name'] = connection['segments'][0]['stops'][0]['station']['title']
     summary['dp_pt'] = from_utc(connection['segments'][0]['stops'][0]['departure']['scheduledTime'])
     summary['dp_ct'] = from_utc(connection['segments'][0]['stops'][0]['departure']['time'])
     summary['ar_station'] = streckennetz.get_name(eva=int(connection['segments'][-1]['stops'][-1]['station']['id']))
+    summary['ar_station_display_name'] = connection['segments'][-1]['stops'][-1]['station']['title']
     summary['ar_pt'] = from_utc(connection['segments'][-1]['stops'][-1]['arrival']['scheduledTime'])
     summary['ar_ct'] = from_utc(connection['segments'][-1]['stops'][-1]['arrival']['time'])
     summary['transfers'] = len(connection['segments']) - 1
     summary['train_categories'] = list(set(connection['segmentTypes'])) # get unique categories
     summary['duration'] = str(summary['ar_ct'] - summary['dp_ct'])[:-3]
+    summary['price'] = connection['tarifSet'][0]['fares'][0]['price'] if 'tarifSet' in connection else -1
     segments = []
     for segment in connection['segments']:
         if segment['type'] == 'WALK':
@@ -84,6 +89,7 @@ def parse_connection(connection):
             continue
         parsed_segment = {
             'dp_station': streckennetz.get_name(eva=int(segment['stops'][0]['station']['id'])),
+            'dp_station_display_name': segment['stops'][0]['station']['title'],
             'dp_lat': segment['stops'][0]['station']['coordinates']['lat'],
             'dp_lon': segment['stops'][0]['station']['coordinates']['lng'],
             'dp_pt': from_utc(segment['stops'][0]['departure']['scheduledTime']),
@@ -91,6 +97,7 @@ def parse_connection(connection):
             'dp_pp': segment['stops'][0]['departure']['scheduledPlatform'] if 'scheduledPlatform' in segment['stops'][0]['departure'] else None,
             'dp_cp': segment['stops'][0]['departure']['platform'] if 'platform' in segment['stops'][0]['departure'] else None,
             'ar_station': streckennetz.get_name(eva=int(segment['stops'][-1]['station']['id'])),
+            'ar_station_display_name': segment['stops'][-1]['station']['title'],
             'ar_lat': segment['stops'][-1]['station']['coordinates']['lat'],
             'ar_lon': segment['stops'][-1]['station']['coordinates']['lng'],
             'ar_pt': from_utc(segment['stops'][-1]['arrival']['scheduledTime']),
