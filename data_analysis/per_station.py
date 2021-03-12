@@ -111,9 +111,10 @@ class PerStationOverTime(StationPhillip):
     FREQ = "1H"
     DEFAULT_PLOTS = ["error", "no data available", "default"]
 
-    def __init__(self, rtd, use_cache=True, logger=None, server=False):
+    def __init__(self, rtd, use_cache=True, logger=None):
+        self.logger = logger
         import matplotlib
-        if server:
+        if self.logger:
             matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from mpl_toolkits.basemap import Basemap
@@ -125,8 +126,7 @@ class PerStationOverTime(StationPhillip):
         try:
             if not use_cache:
                 raise FileNotFoundError
-            self.logger = logger
-            if self.logger is not None:
+            if self.logger:
                 self.logger.info("Reading data...")
             self.data = (
                 pd.read_csv(
@@ -145,7 +145,7 @@ class PerStationOverTime(StationPhillip):
                 },
                 inplace=True,
             )
-            if self.logger is not None:
+            if self.logger:
                 self.logger.info("Done")
             else:
                 print("Using cache")
@@ -412,7 +412,7 @@ if __name__ == "__main__":
     # per_station = PerStationAnalysis(rtd_df, use_cache=False)
     # per_station.plot(per_station.ALL_ON_TIME_PLOT)
 
-    per_station_time = PerStationOverTime(None, use_cache=True, server=True)
+    per_station_time = PerStationOverTime(None, use_cache=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 2, 1, hour=0), datetime.datetime(2021, 2, 2, hour=0)
     )

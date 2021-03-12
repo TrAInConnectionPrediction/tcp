@@ -82,7 +82,7 @@ app.register_blueprint(index_blueprint)
 app.logger.info("Statistic init...")
 from data_analysis.per_station import PerStationOverTime
 
-per_station_time = PerStationOverTime(None, use_cache=True, logger=app.logger, server=True)
+per_station_time = PerStationOverTime(None, use_cache=True, logger=app.logger)
 app.logger.info("Done")
 
 app.logger.info("Initializing the api...")

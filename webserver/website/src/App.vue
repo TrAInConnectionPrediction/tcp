@@ -2,10 +2,7 @@
   <body class="body" style="background-color: #000000; overflow: auto">
     <nav
       class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top"
-      style="
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        backdrop-filter: blur(5px);
-      "
+      style="background-color: rgba(0, 0, 0, 0.5) !important; backdrop-filter: blur(5px)"
     >
       <div class="container-fluid">
         <router-link class="navbar-brand" to="/">TCP</router-link>
@@ -26,25 +23,18 @@
               <router-link class="nav-link" to="/">Home</router-link>
             </li>
             <li class="nav-item">
-              <router-link
-                class="nav-link"
-                :to="{ path: '/about', hash: '#about' }"
-                >Über TCP</router-link
-              >
+              <router-link class="nav-link" :to="{ path: '/about', hash: '#about' }">Über TCP</router-link>
             </li>
-            <li class="nav-item">
-              <router-link
-                class="nav-link"
-                :to="{ path: '/stats', hash: '#stats' }"
-                >Statistiken</router-link
-              >
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown"> Statistiken </a>
+              <ul class="dropdown-menu">
+                <li><router-link class="dropdown-item" :to="{ path: '/stats', hash: '#stats' }">Übersicht</router-link></li>
+                <li><router-link class="dropdown-item" :to="{ path: '/stats/stations', hash: '#stats' }">Stationen</router-link></li>
+              </ul>
             </li>
           </ul>
           <div class="d-flex">
-            <a
-              class="btn btn-outline-success"
-              href="https://github.com/TrAInConnectionPrediction/tcp"
-              target="_blank"
+            <a class="btn btn-outline-success" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank"
               ><i class="tcp-github"></i>TCP auf GitHub</a
             >
           </div>
@@ -53,18 +43,10 @@
     </nav>
 
     <div id="intro" class="view shadow" style="">
-      <div
-        class="d-flex justify-content-center align-items-center mask"
-        style="height: 100%"
-      >
-        <div
-          class="row"
-          style="justify-content: center; min-width: 0; width: 100%"
-        >
+      <div class="d-flex justify-content-center align-items-center mask" style="height: 100%">
+        <div class="row" style="justify-content: center; min-width: 0; width: 100%">
           <div class="col white-text text-center">
-            <h2 id="midheader" class="shadowheader">
-              TrAIn_Connection_Prediction: TCP<br />
-            </h2>
+            <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br /></h2>
             <hr class="hr-light" />
             <p>
               <strong> Ihr Verbindungsvorhersage </strong>
@@ -84,27 +66,18 @@
       <div id="prg_bar_anchor">
         <section id="pgr_bar" class="p-5"></section>
       </div>
-      <div
-        class="m-5 custom_card"
-        id="error_box"
-        style="background-color: rgb(255, 69, 69)"
-      >
+      <div class="m-5 custom_card" id="error_box" style="background-color: rgb(255, 69, 69)">
         <div v-if="error" @click="error = null" class="card_header">
           <b>Holy Guacamole</b>! Something went wrong: {{ error.toString() }}
         </div>
       </div>
       <router-view class="m-5" />
     </main>
-    <footer
-      class="text-center page-footer mt-4"
-    >
+    <footer class="text-center page-footer mt-4">
       <hr style="margin-top: 0px" />
       <div class="d-flex justify-content-center align-items-xl-center pb-4">
         <a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px"
-          ><img
-            src="https://www.meteoblue.com/favicon.ico"
-            width="24"
-            height="24"
+          ><img src="https://www.meteoblue.com/favicon.ico" width="24" height="24"
         /></a>
         <div style="margin: 5px">Wetterdaten von Meteoblue</div>
         <a
@@ -115,12 +88,11 @@
         ></a>
       </div>
       <div class="footer-copyright py-3">
-        <router-link class="pretty_link" to="/impressum">Impressum</router-link> <br>
-        © 2021 TrAIn_Connection_Prediction <br>
+        <router-link class="pretty_link" to="/impressum">Impressum</router-link> <br />
+        © 2021 TrAIn_Connection_Prediction <br />
         <span style="color: gray"
-          >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser
-          steht in keiner Verbindung mit der Deutschen Bahn und ihren
-          Tochter-Unternehmen.
+          >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der Deutschen
+          Bahn und ihren Tochter-Unternehmen.
         </span>
       </div>
     </footer>
@@ -159,9 +131,7 @@ export default {
         this.error = Error(response.statusText)
         console.log(response.url)
         console.log(this.error)
-        document
-          .getElementById('error_box')
-          .scrollIntoView({ behavior: 'smooth' })
+        document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
       }
       return response
     },
@@ -170,9 +140,7 @@ export default {
       this.error = Error('Failed to load image')
       console.log(event)
       console.log(this.error)
-      document
-        .getElementById('error_box')
-        .scrollIntoView({ behavior: 'smooth' })
+      document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
     },
     start_progress () {
       // start progress animation
@@ -187,20 +155,15 @@ export default {
       // remove current connections
       this.$store.commit('set_connections', [])
       this.start_progress()
-      document
-        .getElementById('prg_bar_anchor')
-        .scrollIntoView({ behavior: 'smooth' })
+      document.getElementById('prg_bar_anchor').scrollIntoView({ behavior: 'smooth' })
 
-      fetch(
-        window.location.protocol + '//' + window.location.host + '/api/trip',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(search_data)
-        }
-      )
+      fetch(window.location.protocol + '//' + window.location.host + '/api/trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(search_data)
+      })
         .then((response) => this.display_fetch_error(response))
         .then((response) => response.json())
         .then((connections) => {
@@ -321,6 +284,40 @@ footer > div {
   color: white;
 }
 
+.navbar .nav-item .dropdown-item {
+  color: rgba(255,255,255,.55);
+}
+
+.navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
+    color: #fff;
+    background-color: transparent;
+}
+
+.navbar .dropdown-menu {
+  display: block;
+  background-color: transparent;
+}
+
+@media all and (min-width: 992px) {
+  .navbar .nav-item .dropdown-menu {
+    display: none;
+  }
+  .navbar .nav-item:hover .nav-link {
+    color: #fff;
+  }
+  .navbar .nav-item:hover .dropdown-menu {
+    display: block;
+  }
+  .navbar .nav-item .dropdown-menu {
+    margin-top: 0;
+    background-color: #212529 !important;
+  }
+  .navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
+    background-color: #262626;
+}
+
+}
+
 /* .autocomplete-suggestions {
   background: #212529;
   overflow: auto;
@@ -371,15 +368,13 @@ footer > div {
   position: relative;
   top: -3px;
   left: -3px;
-  text-shadow: 0px 1px var(--shadow-bg-color1), 2px 2px var(--shadow-bg-color1),
-    3px 3px var(--shadow-bg-color1), 4px 4px var(--shadow-bg-color1),
-    5px 5px var(--shadow-bg-color1), 6px 6px var(--shadow-bg-color1),
+  text-shadow: 0px 1px var(--shadow-bg-color1), 2px 2px var(--shadow-bg-color1), 3px 3px var(--shadow-bg-color1),
+    4px 4px var(--shadow-bg-color1), 5px 5px var(--shadow-bg-color1), 6px 6px var(--shadow-bg-color1),
     7px 7px var(--shadow-bg-color1), 8px 8px var(--shadow-bg-color1) !important;
 }
 
 .backshadow:hover {
-  box-shadow: 1px 1px #2b387c, 2px 2px #2b387c, 3px 3px #2b387c, 4px 4px #2b387c,
-    5px 5px #2b387c, 6px 6px #2b387c;
+  box-shadow: 1px 1px #2b387c, 2px 2px #2b387c, 3px 3px #2b387c, 4px 4px #2b387c, 5px 5px #2b387c, 6px 6px #2b387c;
 }
 
 .shadowheader {
