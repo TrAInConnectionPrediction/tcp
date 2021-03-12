@@ -73,10 +73,27 @@
       </div>
       <router-view class="m-5" />
     </main>
-    <footer class="text-center p-3">
-      <div class="fw-bold">
-        <router-link class="pretty_link" to="/imprint">Impressum</router-link> /
-        <router-link class="pretty_link" to="/privacy">Datenschutz</router-link>
+    <footer class="text-center page-footer mt-4">
+      <hr style="margin-top: 0px" />
+      <div class="d-flex justify-content-center align-items-xl-center pb-4">
+        <a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px"
+          ><img src="https://www.meteoblue.com/favicon.ico" width="24" height="24"
+        /></a>
+        <div style="margin: 5px">Wetterdaten von Meteoblue</div>
+        <a
+          href="https://github.com/TrAInConnectionPrediction/tcp"
+          target="_blank"
+          style="margin: 5px; color: inherit; text-decoration: none"
+          ><i class="tcp-github"></i
+        ></a>
+      </div>
+      <div class="footer-copyright py-3">
+        <router-link class="pretty_link" to="/impressum">Impressum</router-link> <br />
+        © 2021 TrAIn_Connection_Prediction <br />
+        <span style="color: gray"
+          >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der Deutschen
+          Bahn und ihren Tochter-Unternehmen.
+        </span>
       </div>
       <br>
       <span
@@ -268,8 +285,49 @@ footer {
   color: gray;
 }
 
+footer > div {
+  color: white;
+}
+
 .navbar .nav-item .dropdown-item {
   color: rgba(255,255,255,.55);
+}
+
+.navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
+    color: #fff;
+    background-color: transparent;
+}
+
+.navbar .dropdown-menu {
+  display: block;
+  background-color: transparent;
+}
+
+@media all and (min-width: 992px) {
+  .navbar .nav-item .dropdown-menu {
+    display: none;
+  }
+  .navbar .nav-item:hover .nav-link {
+    color: #fff;
+  }
+  .navbar .nav-item:hover .dropdown-menu {
+    display: block;
+  }
+  .navbar .nav-item .dropdown-menu {
+    margin-top: 0;
+    background-color: #212529 !important;
+  }
+  .navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
+    background-color: #262626;
+}
+
+}
+
+/* .autocomplete-suggestions {
+  background: #212529;
+  overflow: auto;
+  color: #fff;
+  box-shadow: 0px 0px 10px 4px black !important;
 }
 
 .navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
