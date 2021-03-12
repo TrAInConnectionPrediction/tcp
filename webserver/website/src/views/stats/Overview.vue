@@ -30,13 +30,13 @@
         </tr>
         <tr>
           <th scope="row">Prozent an Verspätungen</th>
-          <td>{{ stats.all.perc_ar_delay.toFixed(2) }}%</td>
-          <td>{{ stats.all.perc_dp_delay.toFixed(2) }}%</td>
+          <td>{{ ((1 - stats.all.perc_ar_delay) * 100).toFixed(2) }}%</td>
+          <td>{{ ((1 - stats.all.perc_dp_delay) * 100).toFixed(2) }}%</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Ausfällen</th>
-          <td>{{ stats.all.perc_ar_cancel.toFixed(2) }}%</td>
-          <td>{{ stats.all.perc_dp_cancel.toFixed(2) }}%</td>
+          <td>{{ (stats.all.perc_ar_cancel * 100).toFixed(2) }}%</td>
+          <td>{{ (stats.all.perc_dp_cancel * 100).toFixed(2) }}%</td>
         </tr>
         <tr>
           <th class="text-center" colspan="3">Daten der letzten 24h</th>
@@ -58,13 +58,13 @@
         </tr>
         <tr>
           <th scope="row">Prozent an Verspätungen</th>
-          <td>{{ stats.new.perc_ar_delay.toFixed(2) }}%</td>
-          <td>{{ stats.new.perc_dp_delay.toFixed(2) }}%</td>
+          <td>{{ ((1 - stats.new.perc_ar_delay) * 100).toFixed(2) }}%</td>
+          <td>{{ ((1 - stats.new.perc_dp_delay) * 100).toFixed(2) }}%</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Ausfällen</th>
-          <td>{{ stats.new.perc_ar_cancel.toFixed(2) }}%</td>
-          <td>{{ stats.new.perc_dp_cancel.toFixed(2) }}%</td>
+          <td>{{ (stats.new.perc_ar_cancel * 100).toFixed(2) }}%</td>
+          <td>{{ (stats.new.perc_dp_cancel * 100).toFixed(2) }}%</td>
         </tr>
       </tbody>
     </table>
@@ -79,7 +79,7 @@ export default {
     }
   },
   created () {
-    fetch('http://localhost:5000/api/stats', {
+    fetch(window.location.protocol + '//' + window.location.host + '/api/stats', {
       type: 'GET',
       data: null,
       dataType: 'json'
