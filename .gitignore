@@ -300,6 +300,7 @@ data/rtd_buffer
 
 #ignore secret config
 config.py
+config_docker.py
 
 #don't leak our data
 streckendaten/

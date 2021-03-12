@@ -23,7 +23,12 @@ const routes = [
   {
     path: '/stats',
     name: 'Statistiken',
-    component: () => import('../views/Stats.vue')
+    component: () => import('../views/stats/Overview.vue')
+  },
+  {
+    path: '/stats/stations',
+    name: 'Stations Statistiken',
+    component: () => import('../views/stats/Stations.vue')
   }
 ]
 
@@ -39,7 +44,6 @@ const router = new VueRouter({
       return { selector: to.hash }
     }
   }
-
 })
 
 export default router
