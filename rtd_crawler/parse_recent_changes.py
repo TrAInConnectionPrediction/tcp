@@ -14,6 +14,7 @@ import re
 import concurrent.futures
 import numpy as np
 from database.db_manager import DBManager
+import networkx as nx
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
@@ -195,11 +196,46 @@ def add_distance(rtd):
             rtd[col] = rtd[col].astype('str').replace('nan', np.nan)
             rtd[col] = rtd[col].str.split('|')
 
+    rtd['category_sum'] = 0
+    rtd['category_avg'] = 0
+    rtd['priority_sum'] = 0
+    rtd['priority_avg'] = 0
+    rtd['total_length'] = 0
+    rtd['obstacle_no'] = 0
+
+    prev_dp_ct = None
+    print(len(rtd))
     for i, row in rtd.iterrows():
         ar_cpth = row['ar_cpth']
         if isinstance(ar_cpth, list):
             rtd.at[i, 'distance_to_last'] = streckennetz.route_length([ar_cpth[-1]] + [row['station']])
             rtd.at[i, 'distance_to_start'] = streckennetz.route_length(ar_cpth + [row['station']])
+            waypoints = []
+            prev_bhf = None
+            if prev_dp_ct:
+                for bhf in ar_cpth:
+                    if prev_bhf:
+                        try:
+                            new_waypoints = nx.shortest_path(streckennetz.streckennetz, prev_bhf, bhf, weight='length')
+                            # waypoints = [*waypoints, *new_waypoints]
+                            prev_waypoint = None
+                            for waypoint in new_waypoints:
+                                if waypoint == "Berlin-Charlottenburg":
+                                    print(waypoint)
+                                if prev_waypoint and prev_waypoint in obstacle['from_edge']:
+                                    ob = obstacle.loc[obstacle['from_edge'] == prev_waypoint & obstacle['to_edge'] == waypoint & obstacle['from_time'] < prev_dp_ct  & obstacle['to_time'] > row['ar_ct']]
+                                    if ob:
+                                        rtd.at[i, 'category_sum'] += ob['category']
+                                        rtd.at[i, 'priority_sum'] += ob['priority']
+                                        rtd.at[i, 'total_length'] += ob['length']
+                                        rtd.at[i, 'obstacle_no'] += 1
+                                prev_waypoint = waypoint        
+                        except (nx.exception.NodeNotFound, nx.exception.NetworkXNoPath) as e:
+                            print(str(type(e)) + " due to " + str(e))
+                        
+                    prev_bhf = bhf
+            prev_dp_ct = row['dp_ct']
+            
         else:
             rtd.at[i, 'distance_to_last'] = 0
             rtd.at[i, 'distance_to_start'] = 0
@@ -254,9 +290,9 @@ def parse_station(station, start_date, end_date):
         # used after parsing, so we currently don't store them in the database
         # rtd_arrays_df = parsed.loc[:, current_array_cols]
         # rtd.upsert_arrays(rtd_arrays_df)
-        rtd_df = parsed.drop(current_array_cols, axis=1)
-        db = DBManager()
-        db.upsert_rtd(rtd_df)
+        # rtd_df = parsed.drop(current_array_cols, axis=1)
+        # db = DBManager()
+        # db.upsert_rtd(rtd_df)
 
     return True
 
@@ -277,9 +313,14 @@ def parse(only_new=True):
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    # parse_station('Tübingen Hbf', start_date, end_date)
+    obstacle = pd.read_csv('cache/obstacle.csv', sep='\t')
 
-    parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
+    start_date = datetime.datetime(2021, 3, 2, 0, 0)
+    end_date = datetime.datetime(2021, 3, 6, 0, 0)
+
+    parse_station('Berlin-Charlottenburg', start_date, end_date)
+
+    # parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
 
     # if input('Do you wish to only parse new data? ([y]/n)') == 'n':
     #     start_date = datetime.datetime(2020, 10, 1, 0, 0)
