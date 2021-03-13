@@ -2,9 +2,6 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
-import sqlalchemy
-
-from config import db_database, db_password, db_server, db_username
 
 
 class NoLocationError(Exception):
@@ -15,29 +12,44 @@ class BetriebsstellenBill:
     def __init__(self):
         cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
         if not os.path.isdir(cache_dir):
-            os.mkdir(cache_dir)
+            try:
+                os.mkdir(cache_dir)
+            except OSError:
+                pass
 
-        self.CACHE_PATH = cache_dir + 'betriebsstellen.pkl'
-
+        self.CACHE_PATH = cache_dir + 'betriebsstellen_cache'
         try:
-            self.engine = sqlalchemy.create_engine(
-                'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
-            self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
+            from database.engine import engine
+            self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=engine)
+            engine.dispose()
             self.betriebsstellen.to_pickle(self.CACHE_PATH)
-            self.engine.dispose()
-        except:
+        except Exception as e:
+            print(e)
             try:
                 self.betriebsstellen = pd.read_pickle(self.CACHE_PATH)
-                print('Using Betriebstellen cache')
+                print('Using offline station buffer')
             except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local cache')
+                raise FileNotFoundError('There is no connection to the database and no local buffer')
 
         self.name_index_betriebsstellen = self.betriebsstellen.set_index('name')
         self.ds100_index_betriebsstellen = self.betriebsstellen.set_index('ds100')
+        self.betriebsstellen_list = self.betriebsstellen.dropna(subset=['lat', 'lon'])['name'].tolist()
         self.NoLocationError = NoLocationError
 
     def __len__(self):
         return len(self.betriebsstellen)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n < len(self.betriebsstellen_list):
+            self.n += 1
+            return self.betriebsstellen_list[self.n - 1]
+        else:
+            raise StopIteration
+
 
     def get_name(self, ds100):
         return self.ds100_index_betriebsstellen.at[ds100, 'name']
@@ -64,3 +76,5 @@ class BetriebsstellenBill:
 if __name__ == "__main__":
     betriebsstellen = BetriebsstellenBill()
     print('len:', len(betriebsstellen))
+    for be in betriebsstellen:
+        print(be)
