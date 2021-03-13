@@ -50,6 +50,17 @@ class BetriebsstellenBill:
         else:
             raise StopIteration
 
+    def get_geopandas(self):
+        """
+        Convert stations to geopandas DataFrame.
+
+        Returns
+        -------
+        geopandas.DateFrame
+            Stations with coordinates as geometry for geopandas.DataFrame.
+        """
+        import geopandas as gpd
+        return gpd.GeoDataFrame(self.name_index_betriebsstellen, geometry=gpd.points_from_xy(self.name_index_betriebsstellen.lon, self.name_index_betriebsstellen.lat))
 
     def get_name(self, ds100):
         return self.ds100_index_betriebsstellen.at[ds100, 'name']
