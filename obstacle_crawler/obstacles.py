@@ -5,6 +5,7 @@ import pandas as pd
 from database.engine import DB_CONNECT_STRING
 import json
 from helpers.StreckennetzSteffi import StreckennetzSteffi
+from helpers.BetriebsstellenBill import BetriebsstellenBill
 import networkx as nx
 
 # obstacles = pd.read_sql_table('obstacle', DB_CONNECT_STRING)
@@ -54,10 +55,14 @@ import networkx as nx
 # simpler_obstacles = pd.DataFrame(simpler_obstacles)
 # simpler_obstacles.to_sql('simpler_obstacles', DB_CONNECT_STRING, if_exists='replace')
 
+import re
 
 class ObstacleOlly(StreckennetzSteffi):
     def __init__(self, prefer_cache):
         super().__init__(prefer_cache=prefer_cache)
+
+        self.ds100_regex = r".*\(([A-Z\s]+)\)"
+        self.betriebsstellen = BetriebsstellenBill()
         
         self.obstacles = pd.read_sql_table('simpler_obstacles', DB_CONNECT_STRING)
         self.edge_obstacles = {
@@ -74,9 +79,19 @@ class ObstacleOlly(StreckennetzSteffi):
             'priority': [],
         }
         for i, obstacle in self.obstacles.iterrows():
-            source = self.get_name(eva=int(obstacle['from_id']))
-            target = self.get_name(eva=int(obstacle['to_id']))
+            try: 
+                source = self.betriebsstellen.get_name(ds100=self.find_ds100(obstacle['from_station']))
+            except KeyError:
+                source = self.get_name(eva=int(obstacle['from_id']))
+            try:
+                target = self.betriebsstellen.get_name(ds100=self.find_ds100(obstacle['to_station']))
+            except KeyError:
+                target = self.get_name(eva=int(obstacle['to_id']))
+            if source == 'unknown':
+                print(obstacle['from_station'], int(obstacle['from_id']))
+                # print(self.search_station(obstacle['from_station']))
             if source == 'unknown' or target == 'unknown':
+                print('unknown')
                 continue
             if source == target:
                 self.edge_obstacles['from_edge'].append(source)
@@ -92,10 +107,24 @@ class ObstacleOlly(StreckennetzSteffi):
                 self.edge_obstacles['modified'].append(obstacle['modified'])
                 self.edge_obstacles['priority'].append(obstacle['priority'])
             else:
-                path = nx.shortest_path(self.streckennetz, source, target, weight='length')
+                try:
+                    path = nx.shortest_path(self.streckennetz, source, target, weight='length')
+                except nx.exception.NetworkXNoPath:
+                    print('no path from', source, 'to', target)
+                    continue
+                except nx.exception.NodeNotFound:
+                    print(source, 'or', target, 'not found in streckennetz')
+                    continue
                 for node_id in range(len(path) - 1):
-                    self.edge_obstacles['from_edge'].append(path[node_id])
-                    self.edge_obstacles['to_edge'].append(path[node_id + 1])
+                    # The obstacle information is directional. We don't know thought which direction
+                    # is which, but this seems resonable to us
+                    if obstacle['dir'] == 1:
+                        self.edge_obstacles['from_edge'].append(path[node_id])
+                        self.edge_obstacles['to_edge'].append(path[node_id + 1])
+                    else:
+                        self.edge_obstacles['from_edge'].append(path[node_id + 1])
+                        self.edge_obstacles['to_edge'].append(path[node_id])
+
                     self.edge_obstacles['length'].append(self.streckennetz[path[node_id]][path[node_id + 1]]['length'])
                     self.edge_obstacles['from_time'].append(obstacle['from_time'])
                     self.edge_obstacles['to_time'].append(obstacle['to_time'])
@@ -106,6 +135,9 @@ class ObstacleOlly(StreckennetzSteffi):
                     self.edge_obstacles['category'].append(obstacle['category'])
                     self.edge_obstacles['modified'].append(obstacle['modified'])
                     self.edge_obstacles['priority'].append(obstacle['priority'])
+
+    def find_ds100(self, name):
+        return re.search(self.ds100_regex, name).group(1)
 
     def obstacles_of_trip(self, start_time, end_time, path):
         pass
