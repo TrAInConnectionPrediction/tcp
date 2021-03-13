@@ -16,9 +16,14 @@ const routes = [
     component: () => import('../views/About.vue')
   },
   {
-    path: '/impressum',
+    path: '/imprint',
     name: 'Impressum',
-    component: () => import('../views/Impressum.vue')
+    component: () => import('../views/imprint.vue')
+  },
+  {
+    path: '/privacy',
+    name: 'Datenschutz',
+    component: () => import('../views/privacy.vue')
   },
   {
     path: '/stats',

@@ -58,10 +58,10 @@ const crawlerClient = createClient('db-netz-hafas client')
 setInterval(function() {
     // I promise you I didn't understand this at first https://www.youtube.com/watch?v=s6SH72uAn3Q
     crawlerClient.remarks({
-        north: 52.643063,
-        west: 12.943267,
-        south: 52.354634,
-        east: 13.822174
+        north: 55.06,
+        west: 5.67,
+        south: 47.06,
+        east: 15.64
     }).then((data) => {
         var obstacle;
         for (obstacle of data) {
