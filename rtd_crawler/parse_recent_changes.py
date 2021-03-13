@@ -15,6 +15,7 @@ import concurrent.futures
 import numpy as np
 from database.db_manager import DBManager
 import networkx as nx
+from pytz import timezone
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
@@ -209,7 +210,8 @@ def add_distance(rtd):
         ar_cpth = row['ar_cpth']
         if isinstance(ar_cpth, list):
             rtd.at[i, 'distance_to_last'] = streckennetz.route_length([ar_cpth[-1]] + [row['station']])
-            rtd.at[i, 'distance_to_start'] = streckennetz.route_length(ar_cpth + [row['station']])
+            # rtd.at[i, 'distance_to_start'] = streckennetz.route_length(ar_cpth + [row['station']])
+            rtd.at[i, 'distance_to_start'] = 0
             waypoints = []
             prev_bhf = None
             if prev_dp_ct:
@@ -219,22 +221,23 @@ def add_distance(rtd):
                             new_waypoints = nx.shortest_path(streckennetz.streckennetz, prev_bhf, bhf, weight='length')
                             # waypoints = [*waypoints, *new_waypoints]
                             prev_waypoint = None
-                            for waypoint in new_waypoints:
-                                if waypoint == "Berlin-Charlottenburg":
-                                    print(waypoint)
-                                if prev_waypoint and prev_waypoint in obstacle['from_edge']:
-                                    ob = obstacle.loc[obstacle['from_edge'] == prev_waypoint & obstacle['to_edge'] == waypoint & obstacle['from_time'] < prev_dp_ct  & obstacle['to_time'] > row['ar_ct']]
-                                    if ob:
-                                        rtd.at[i, 'category_sum'] += ob['category']
-                                        rtd.at[i, 'priority_sum'] += ob['priority']
-                                        rtd.at[i, 'total_length'] += ob['length']
+                            for waypoint in new_waypoints + [row['station']]:
+                                rtd.at[i, 'distance_to_start'] += streckennetz.distance(prev_waypoint, waypoint)
+                                if prev_waypoint and (prev_waypoint == obstacle['from_edge']).any():
+                                    ob = obstacle.loc[(obstacle['from_edge'] == prev_waypoint) & (obstacle['to_edge'] == waypoint) & (obstacle['from_time'] < row['ar_ct'].tz_localize(timezone("Europe/Berlin")) - datetime.timedelta(hours=2)) & (obstacle['to_time'] > row['ar_ct'].tz_localize(timezone("Europe/Berlin")))]
+                                    if not ob.empty:
+                                        rtd.at[i, 'category_sum'] += ob['category'].sum()
+                                        rtd.at[i, 'priority_sum'] += ob['priority'].sum()
+                                        rtd.at[i, 'total_length'] += ob['length'].sum()
                                         rtd.at[i, 'obstacle_no'] += 1
                                 prev_waypoint = waypoint        
                         except (nx.exception.NodeNotFound, nx.exception.NetworkXNoPath) as e:
-                            print(str(type(e)) + " due to " + str(e))
+                            pass
+                            # print(str(type(e)) + " due to " + str(e))
                         
                     prev_bhf = bhf
             prev_dp_ct = row['dp_ct']
+            print('.', end='')
             
         else:
             rtd.at[i, 'distance_to_last'] = 0
@@ -290,7 +293,8 @@ def parse_station(station, start_date, end_date):
         # used after parsing, so we currently don't store them in the database
         # rtd_arrays_df = parsed.loc[:, current_array_cols]
         # rtd.upsert_arrays(rtd_arrays_df)
-        # rtd_df = parsed.drop(current_array_cols, axis=1)
+        rtd_df = parsed.drop(current_array_cols, axis=1)
+        rtd_df.to_csv(f"cache/{station}.csv")
         # db = DBManager()
         # db.upsert_rtd(rtd_df)
 
@@ -313,12 +317,14 @@ def parse(only_new=True):
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    obstacle = pd.read_csv('cache/obstacle.csv', sep='\t')
+    # dateparse = lambda x: datetime.datetime.fromisoformat(x) #.astimezone(timezone("Europe/Berlin"))
+    obstacle = pd.read_csv('cache/obstacle.csv', sep='\t') #, parse_dates=['from_time','to_time'], date_parser=dateparse)
+    obstacle['from_time']= pd.to_datetime(obstacle['from_time'])
+    obstacle['to_time']= pd.to_datetime(obstacle['to_time'])
+    start_date = datetime.datetime(2021, 3, 1, 0, 0)
+    end_date = datetime.datetime(2021, 3, 10, 0, 0)
 
-    start_date = datetime.datetime(2021, 3, 2, 0, 0)
-    end_date = datetime.datetime(2021, 3, 6, 0, 0)
-
-    parse_station('Berlin-Charlottenburg', start_date, end_date)
+    parse_station('Berlin Hbf', start_date, end_date)
 
     # parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
 
