@@ -171,6 +171,11 @@ class StationPhillip:
             return (self.eva_index_stations.at[eva, 'lon'],
                     self.eva_index_stations.at[eva, 'lat'])
 
+    def search_station(self, search_term):
+        import requests
+        matches = requests.get(f'https://marudor.de/api/hafas/v1/station/{search_term}').json()
+        return matches
+
     def random_iter(self):
         """
         Random order iterator over station names.
