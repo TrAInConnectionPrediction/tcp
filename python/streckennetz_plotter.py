@@ -27,15 +27,15 @@ plt.style.use('dark_background')
 
 stations = StationPhillip()
 station_gdf = stations.get_geopandas()
-station_gdf = station_gdf.set_index('name')
+# station_gdf = station_gdf.set_index('name')
 betriebsstellen = BetriebsstellenBill()
 betriebsstellen_gdf = betriebsstellen.get_geopandas()
 
-obstacles = pd.read_csv('cache/obstacle.csv', sep='\t')
+obstacles = pd.read_csv('cache/obstacles2.csv')
 obstacles['from_time'] = pd.to_datetime(obstacles['from_time'])
 obstacles['to_time'] = pd.to_datetime(obstacles['to_time'])
 
-start = datetime.datetime(2021, 3, 20)
+start = datetime.datetime(2021, 2, 20)
 end = datetime.datetime(2021, 3, 29)
 obstacles = obstacles.loc[(obstacles['from_time'] > start.replace(tzinfo=pytz.timezone("Europe/Berlin"))) & (obstacles['to_time'] < end.replace(tzinfo=pytz.timezone("Europe/Berlin")))]
 
@@ -56,7 +56,7 @@ streckennetz = gpd.GeoDataFrame(streckennetz, geometry='geometry')
 # streckennetz_nodes = gpd.GeoDataFrame(streckennetz_nodes, geometry='geometry')
 # streckennetz_graph = ox.graph_from_gdfs(streckennetz_nodes, streckennetz)
 
-streckennetz = streckennetz.cx[12.943267:13.822174, 52.354634:52.643063]
+# streckennetz = streckennetz.cx[12.943267:13.822174, 52.354634:52.643063]
 
 # strecke = streckennetz.plot(color='black')
 # station_gdf = station_gdf.loc[[ 'Niederschlag', 'Kretscham-Rothensehma'], :]
@@ -74,11 +74,12 @@ for i, obstacle in obstacles.iterrows():
     else:
         station_obsacles.append(obstacle['from_edge'])
 
-strecke = streckennetz.loc[~streckennetz.index.isin(rows)].plot(color='white')
+strecke = streckennetz.loc[~streckennetz.index.isin(rows)].plot(color='lightgrey', linewidth=0.2)
 obstacle_edges = streckennetz.loc[streckennetz.index.isin(rows)]
 obstacle_edges.plot(color='red', ax=strecke)
 betriebsstellen_gdf = betriebsstellen_gdf.loc[betriebsstellen_gdf.index.isin(station_obsacles)]
-betriebsstellen_gdf.plot(ax=strecke, color='red', markersize=30)
+betriebsstellen_gdf.plot(ax=strecke, color='red', markersize=10, zorder=2)
+strecke.set_aspect(10/8)
 plt.show()
 
 
