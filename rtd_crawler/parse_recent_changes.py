@@ -321,10 +321,28 @@ if __name__ == "__main__":
     obstacle = pd.read_csv('cache/obstacle.csv', sep='\t') #, parse_dates=['from_time','to_time'], date_parser=dateparse)
     obstacle['from_time']= pd.to_datetime(obstacle['from_time'])
     obstacle['to_time']= pd.to_datetime(obstacle['to_time'])
+
     start_date = datetime.datetime(2021, 3, 1, 0, 0)
     end_date = datetime.datetime(2021, 3, 10, 0, 0)
 
-    parse_station('Berlin Hbf', start_date, end_date)
+    bhfs = ['Berlin Ostbahnhof', 'Berlin Potsdamer Platz', 'Berlin Friedrichstraße', 'Berlin Hbf', 'Mannheim Hbf', 'Hamburg Hbf', 'Stuttgart Hbf']
+    
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = {executor.submit(parse_station, station, start_date, end_date): station
+                    for station
+                    in bhfs}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
+            future.result()
+
+
+    bhfs = ['Berlin Ostbahnhof', 'Berlin Potsdamer Platz', 'Berlin Friedrichstraße', 'Berlin Hbf', 'Mannheim Hbf', 'Hamburg Hbf', 'Stuttgart Hbf']
+    obstacles = pd.DataFrame()
+    for bhf in bhfs:
+        df = pd.read_csv(f"cache/{bhf}.csv")
+        obstacles = obstacles.append(df)
+        print(len(df[df['obstacle_no'] != 0]))
+    print(len(obstacles[obstacles['obstacle_no'] != 0]))
+    obstacles.to_csv('cache/parsed_obstacles2.csv')
 
     # parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
 
@@ -341,3 +359,10 @@ if __name__ == "__main__":
     #                in streckennetz}
     #     for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
     #         future.result()
+    
+    # obstacles = pd.DataFrame()
+    # for bhf in bhfs:
+    #     df = pd.read_csv(f"cache/{bhf}.csv")
+    #     obstacles.append(df)
+    # print(len(obstacles[obstacle['obstacle_no'] != 0]))
+    # obstacles.to_csv('cache/parsed_obstacles.csv')
