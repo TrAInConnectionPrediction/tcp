@@ -59,7 +59,10 @@ class StationPhillip:
             Stations with coordinates as geometry for geopandas.DataFrame.
         """
         import geopandas as gpd
-        return gpd.GeoDataFrame(self.station_df, geometry=gpd.points_from_xy(self.station_df.lon, self.station_df.lat))
+        return gpd.GeoDataFrame(
+            self.name_index_stations,
+            geometry=gpd.points_from_xy(self.name_index_stations.lon, self.name_index_stations.lat)
+        ).set_crs("EPSG:4326")
 
     def get_eva(self, name=None, ds100=None):
         """
