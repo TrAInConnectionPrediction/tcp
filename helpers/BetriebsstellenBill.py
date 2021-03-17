@@ -60,7 +60,13 @@ class BetriebsstellenBill:
             Stations with coordinates as geometry for geopandas.DataFrame.
         """
         import geopandas as gpd
-        return gpd.GeoDataFrame(self.name_index_betriebsstellen, geometry=gpd.points_from_xy(self.name_index_betriebsstellen.lon, self.name_index_betriebsstellen.lat))
+        # Not all of the betriebsstellen have geo information. A GeoDataFrame without geo
+        # is kind of useless
+        betriebsstellen_with_location = self.name_index_betriebsstellen.dropna(subset=['lon', 'lat'])
+        return gpd.GeoDataFrame(
+            betriebsstellen_with_location, 
+            geometry=gpd.points_from_xy(betriebsstellen_with_location.lon, betriebsstellen_with_location.lat)
+        ).set_crs("EPSG:4326")
 
     def get_name(self, ds100):
         return self.ds100_index_betriebsstellen.at[ds100, 'name']
