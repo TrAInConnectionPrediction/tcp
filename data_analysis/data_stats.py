@@ -22,15 +22,13 @@ class Stats:
     # Graph?
     stats = {'all': {}, 'new': {}}
 
-    def __init__(self, old_stats={}, min_date=datetime.now() - timedelta(1)):
+    def __init__(self, min_date=datetime.now() - timedelta(1)):
         from helpers.RtdRay import RtdRay
 
         self._rtd_d = RtdRay().load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs"])
         self._rtd_d_new = self._rtd_d.loc[
             (self._rtd_d["ar_pt"] >= min_date) | (self._rtd_d["dp_pt"] >= min_date)
         ]
-
-        self._old_stats = old_stats
 
     def generate_stats(self):
         self.stats["time"] = datetime.now().strftime("%d.%m.%Y %H:%M")
@@ -63,12 +61,15 @@ class Stats:
 
         return self.stats
 
+    def save_stats(self, name = "stats.json"):
+        import json
+        from config import CACHE_PATH
+        with open(f"{CACHE_PATH}/{name}", "w") as file:
+            json.dump(self.stats, file, indent=4)
+
 
 if __name__ == '__main__':
     stats = Stats(min_date=datetime(2021,2,15))
     data = stats.generate_stats()
     print(data)
-    import json
-    from config import CACHE_PATH
-    with open(f"{CACHE_PATH}/stats.json", "w") as file:
-        json.dump(data, file, indent=4)
+    stats.save_stats()

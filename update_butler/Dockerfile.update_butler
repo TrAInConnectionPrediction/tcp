@@ -1,0 +1,69 @@
+# In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
+# To test the container locally you can run:
+# docker build -f update_butler/Dockerfile.update_butler . -t update_butler
+# docker run -v $(pwd)/config_docker.py:/mnt/config/config.py -v $(pwd)/cache:/usr/src/app/cache update_butler
+# Though I would suggest that you have a seperate config for docker
+# If not so replace -v $(pwd)/config_docker.py:/mnt/config/config.py with -v $(pwd)/config.py:/mnt/config/config.py
+
+# This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
+
+## base image
+FROM python:3.8.1 AS compile-image
+
+## install dependencies (libgeos in order for basemap to work)
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libgeos-dev
+
+## virtualenv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+## add and install requirements
+RUN pip install --upgrade pip && pip install pip-tools
+COPY ./update_butler/requirements.txt requirements.in
+RUN pip-compile requirements.in > requirements.txt && pip-sync
+RUN pip install -r requirements.txt
+
+# He needs special treatment
+RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
+
+## build-image
+FROM python:3.8.1-slim-buster AS runtime-image
+
+## copy Python dependencies from build image
+COPY --from=compile-image /opt/venv /opt/venv
+
+## Install libgeos
+# TODO: Copy libgeos from build image
+RUN apt-get update && apt-get install -y --no-install-recommends libgeos-dev
+## set working directory
+WORKDIR /usr/src/app
+
+## If this turns out to be usefull on can use this
+## add user
+RUN addgroup --system user && adduser --system --no-create-home --group user
+
+## add webserver and librays
+COPY ./helpers/ /usr/src/app/helpers/
+COPY ./database/ /usr/src/app/database/
+COPY ./data_analysis/ /usr/src/app/data_analysis/
+COPY ./update_butler/ /usr/src/app/update_butler/
+# Don't leak our secrets, pls
+# COPY ./config.py /usr/src/server/config.py
+# Cache should already be mounted
+# COPY ./cache/ /usr/src/app/cache/
+
+
+## switch to non-root user
+## for some reason doing this before the copy results in weird permissions
+RUN chown -R user:user /usr/src/app/ && chmod -R 777 /usr/src/app/
+USER user
+
+## set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PATH="/opt/venv/bin:$PATH"
+
+EXPOSE 5000
+
+CMD ["python", "update_butler"]
