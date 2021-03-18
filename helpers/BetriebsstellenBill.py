@@ -2,6 +2,7 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
+from database.cached_table_fetch import cached_table_fetch
 
 
 class NoLocationError(Exception):
@@ -9,27 +10,8 @@ class NoLocationError(Exception):
 
 
 class BetriebsstellenBill:
-    def __init__(self):
-        cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
-        if not os.path.isdir(cache_dir):
-            try:
-                os.mkdir(cache_dir)
-            except OSError:
-                pass
-
-        self.CACHE_PATH = cache_dir + 'betriebsstellen_cache'
-        try:
-            from database.engine import engine
-            self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=engine)
-            engine.dispose()
-            self.betriebsstellen.to_pickle(self.CACHE_PATH)
-        except Exception as e:
-            print(e)
-            try:
-                self.betriebsstellen = pd.read_pickle(self.CACHE_PATH)
-                print('Using offline station buffer')
-            except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local buffer')
+    def __init__(self, **kwargs):
+        self.betriebsstellen = cached_table_fetch('betriebstellen', **kwargs)
 
         self.name_index_betriebsstellen = self.betriebsstellen.set_index('name')
         self.ds100_index_betriebsstellen = self.betriebsstellen.set_index('ds100')
@@ -61,7 +43,7 @@ class BetriebsstellenBill:
         """
         import geopandas as gpd
         # Not all of the betriebsstellen have geo information. A GeoDataFrame without geo
-        # is kind of useless
+        # is kind of useless, so we drop these betriebsstellen
         betriebsstellen_with_location = self.name_index_betriebsstellen.dropna(subset=['lon', 'lat'])
         return gpd.GeoDataFrame(
             betriebsstellen_with_location, 

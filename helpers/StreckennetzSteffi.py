@@ -5,38 +5,16 @@ import networkx as nx
 import functools
 import geopy.distance
 from helpers.StationPhillip import StationPhillip
+from database.cached_table_fetch import cached_table_fetch
 import logging
 
 logger = logging.getLogger("webserver." + __name__)
 
 class StreckennetzSteffi(StationPhillip):
-    def __init__(self, prefer_cache=False):
+    def __init__(self, **kwargs):
         super().__init__()
 
-        logger.info("Getting streckennetz...")
-
-        self._CACHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
-                            + '/cache/streckennetz_cache'
-        self.using_cache = False
-        if prefer_cache:
-            try:
-                streckennetz_df = pd.read_pickle(self._CACHE_PATH)
-                self.using_cache = True
-                logger.info('Using streckennetz cache')
-            except FileNotFoundError:
-                pass
-
-        if not self.using_cache:
-            try:
-                from database.engine import engine
-                streckennetz_df = pd.read_sql('SELECT u, v, length FROM minimal_streckennetz', con=engine)
-                streckennetz_df.to_pickle(self._CACHE_PATH)
-            except:
-                try:
-                    streckennetz_df = pd.read_pickle(self._CACHE_PATH)
-                    logger.waring('Using streckennetz cache')
-                except FileNotFoundError:
-                    raise FileNotFoundError('There is no connection to the database and no cache of it')
+        streckennetz_df = cached_table_fetch('minimal_streckennetz', **kwargs)
 
         self.streckennetz = nx.from_pandas_edgelist(streckennetz_df, source='u', target='v', edge_attr=True)
 

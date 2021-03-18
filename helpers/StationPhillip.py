@@ -1,32 +1,13 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from database.cached_table_fetch import cached_table_fetch
 import pandas as pd
 import random
 
 class StationPhillip:
-    def __init__(self):
-        cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
-        if not os.path.isdir(cache_dir):
-            try:
-                os.mkdir(cache_dir)
-            except OSError:
-                pass
-
-        self.CACHE_PATH = cache_dir + 'station_cache'
-        try:
-            from database.engine import engine
-            self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
-            engine.dispose()
-            self.station_df.to_pickle(self.CACHE_PATH)
-        except Exception as e:
-            print(e)
-            try:
-                self.station_df = pd.read_pickle(self.CACHE_PATH)
-                print('Using offline station buffer')
-            except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local buffer')
-        
+    def __init__(self, **kwargs):
+        self.station_df = cached_table_fetch('stations', **kwargs)
 
         self.station_df['eva'] = self.station_df['eva'].astype(int)
         self.name_index_stations = self.station_df.set_index('name')
