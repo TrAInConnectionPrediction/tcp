@@ -7,18 +7,18 @@
 
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
-## base image
+## Base image
 FROM python:3.8.1 AS compile-image
 
-## install dependencies (libgeos in order for basemap to work)
+## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libgeos-dev
 
-## virtualenv
+## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-## add and install requirements
+## Add and install requirements
 RUN pip install --upgrade pip && pip install pip-tools
 COPY ./webserver/requirements.txt requirements.in
 RUN pip-compile requirements.in > requirements.txt && pip-sync
@@ -27,7 +27,7 @@ RUN pip install -r requirements.txt
 # He needs special treatment
 RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
 
-#Complie website
+# Complie website
 FROM node:14-alpine as node-image
 WORKDIR /app
 COPY ./webserver/website/package*.json ./
@@ -35,10 +35,10 @@ RUN npm install
 COPY ./webserver/website/ .
 RUN npm run build
 
-## build-image
+## Build-image
 FROM python:3.8.1-slim-buster AS runtime-image
 
-## copy Python dependencies from build image
+## Copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv
 
 ## Install libgeos
@@ -47,29 +47,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgeos-dev
 ## set working directory
 WORKDIR /usr/src/app
 
-## If this turns out to be usefull on can use this
-## add user
-RUN addgroup --system user && adduser --system --no-create-home --group user
+## Add User (a security measure)
+# We have to set a static user id, so that the user can read the files in virtual volumes
+# We use system accounts, but it's just symbolic
+RUN addgroup --system --gid 420 tcp && adduser --system --no-create-home --uid 420 --gid 420 tcp
 
-## add webserver and librays
+## Add webserver and librays
 COPY ./webserver/ /usr/src/app/webserver/
 COPY ./helpers/ /usr/src/app/helpers/
 COPY ./database/ /usr/src/app/database/
 COPY ./data_analysis/ /usr/src/app/data_analysis
+# Cache should be mounted seperatly
+# COPY ./cache/ /usr/src/app/cache/
 # Don't leak our secrets, pls
 # COPY ./config.py /usr/src/server/config.py
-# Cache should be mounted
-# COPY ./cache/ /usr/src/app/cache/
 
-# copy website
+## Copy website
 COPY --from=node-image /app/dist /usr/src/app/webserver/website/dist/
 
-## switch to non-root user
-## for some reason doing this before the copy results in weird permissions
-RUN chown -R user:user /usr/src/app/ && chmod -R 777 /usr/src/app/
-USER user
+## Switch to non-root user
+# for some reason doing this before the copy results in weird permissions # && chmod -R 775 /usr/src/app/
+RUN chown -R tcp:tcp /usr/src/app/
+USER tcp
 
-## set environment variables
+## Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PATH="/opt/venv/bin:$PATH"
