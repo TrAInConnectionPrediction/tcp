@@ -39,9 +39,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgeos-dev
 ## set working directory
 WORKDIR /usr/src/app
 
-## If this turns out to be usefull on can use this
-## add user
-RUN addgroup --system user && adduser --system --no-create-home --group user
+## Add User (a security measure)
+# We have to set a static user id, so that the user can read the files in virtual volumes
+# We use system accounts, but it's just symbolic
+RUN addgroup --system --gid 420 tcp && adduser --system --no-create-home --uid 420 --gid 420 tcp
 
 ## add webserver and librays
 COPY ./helpers/ /usr/src/app/helpers/
@@ -55,9 +56,9 @@ COPY ./update_butler/ /usr/src/app/update_butler/
 
 
 ## switch to non-root user
-## for some reason doing this before the copy results in weird permissions
-RUN chown -R user:user /usr/src/app/ && chmod -R 777 /usr/src/app/
-USER user
+## for some reason doing this before the copy results in weird permissions # && chmod -R 775 /usr/src/app/
+RUN chown -R tcp:tcp /usr/src/app/
+USER tcp
 
 ## set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
