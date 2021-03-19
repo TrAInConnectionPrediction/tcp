@@ -19,7 +19,7 @@ print("Done")
 print("Refreshing local Cache")
 # If this doesn't work properly switch to 
 # TODO that funktion wokrs switch to rtd_ray.update_local_buffer()
-# rtd_ray.refresh_local_buffer()
+rtd_ray.refresh_local_buffer()
 
 print("Done")
 
