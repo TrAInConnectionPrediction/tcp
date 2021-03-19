@@ -1,7 +1,7 @@
 <template>
   <div style="display: contents">
     <div class="station" v-bind:style="dp_station_style">
-      {{ segment.dp_station }}
+      {{ segment.dp_station_display_name }}
     </div>
     <div class="time" v-if="segment.dp_pt == segment.dp_ct">ab {{ segment.dp_ct }}</div>
     <div class="time" v-else>ab {{ segment.dp_ct }}  <del class="pt">{{ segment.dp_pt }}</del></div>
@@ -18,7 +18,7 @@
     </div>
 
     <div class="station" v-bind:style="ar_station_style">
-      {{ segment.ar_station }}
+      {{ segment.ar_station_display_name }}
     </div>
     <div class="time" v-if="segment.ar_pt == segment.ar_ct">an {{ segment.ar_ct }}</div>
     <div class="time" v-else>an {{ segment.ar_ct }}  <del class="pt">{{ segment.ar_pt }}</del></div>
