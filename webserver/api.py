@@ -3,6 +3,7 @@ import sys
 
 from datetime import datetime
 import numpy as np
+import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -125,6 +126,29 @@ def api():
         request.json["start"], request.json["destination"], request.json["date"]
     )
     resp = jsonify(data)
+    resp.headers.add("Access-Control-Allow-Origin", "*")
+    return resp
+
+
+@bp.route("/stats")
+@log_activity
+def stats():
+    """
+    Generates a plot that visualizes all the delays
+    between the two dates specified in the url.
+
+    Parameters
+    ----------
+    date_range : string
+        The date range to generate the plot of in format `%d.%m.%Y, %H:%M-%d.%m.%Y, %H:%M`
+
+    Returns
+    -------
+    flask generated image/png
+        The generated plot
+    """
+    with open(f"{CACHE_PATH}/stats.json") as file:
+        resp = jsonify(json.load(file))
     resp.headers.add("Access-Control-Allow-Origin", "*")
     return resp
 
