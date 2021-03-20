@@ -7,17 +7,17 @@ import random
 
 class StationPhillip:
     def __init__(self, **kwargs):
-        self.station_df = cached_table_fetch('stations', **kwargs)
+        self.stations_df = cached_table_fetch('stations', **kwargs)
 
-        self.station_df['eva'] = self.station_df['eva'].astype(int)
-        self.name_index_stations = self.station_df.set_index('name')
-        self.eva_index_stations = self.station_df.set_index('eva')
-        self.ds100_index_stations = self.station_df.set_index('ds100')
-        self.sta_list = self.station_df['name'].tolist()
-        self.random_sta_list = self.station_df['name'].tolist()
+        self.stations_df['eva'] = self.stations_df['eva'].astype(int)
+        self.name_index_stations = self.stations_df.set_index('name')
+        self.eva_index_stations = self.stations_df.set_index('eva')
+        self.ds100_index_stations = self.stations_df.set_index('ds100')
+        self.sta_list = self.stations_df['name'].tolist()
+        self.random_sta_list = self.stations_df['name'].tolist()
 
     def __len__(self):
-        return len(self.station_df)
+        return len(self.stations_df)
 
     def __iter__(self):
         self.n = 0
@@ -157,7 +157,18 @@ class StationPhillip:
 
     def search_station(self, search_term):
         import requests
+        search_term = search_term.replace('/', ' ')
         matches = requests.get(f'https://marudor.de/api/hafas/v1/station/{search_term}').json()
+        return matches
+
+    def search_iris(self, search_term):
+        import requests
+        from rtd_crawler.xml_parser import xml_to_json
+        import lxml.etree as etree
+
+        matches = requests.get(f'http://iris.noncd.db.de/iris-tts/timetable/station/{search_term}').text
+        matches = etree.fromstring(matches.encode())
+        matches = list(xml_to_json(match) for match in matches)
         return matches
 
     def random_iter(self):
