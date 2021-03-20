@@ -169,7 +169,15 @@ sql_types = {
     'distance_to_start': Float,
     'distance_to_end': Float,
     'distance_to_last': Float,
-    'distance_to_next': Float
+    'distance_to_next': Float,
+
+    'category_sum': Float,
+    'category_mean': Float,
+    'priority_sum': Float,
+    'priority_mean': Float,
+    'length_sum': Float,
+    'length_mean': Float,
+    'length_count': Float,
 }
 
 try:
