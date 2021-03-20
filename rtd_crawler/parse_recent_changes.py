@@ -5,24 +5,18 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
-# from database.plan import PlanManager
-# from database.change import ChangeManager
 from database.rtd import RtdManager, sql_types, RtdArrays
-from helpers.StreckennetzSteffi import StreckennetzSteffi
+from helpers.obstacles import ObstacleOlly
 import json
 import re
 import concurrent.futures
 import numpy as np
 from database.db_manager import DBManager
-import networkx as nx
-from pytz import timezone
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
-# plan_db = PlanManager()
-# change_db = ChangeManager()
 rtd = RtdManager()
-streckennetz = StreckennetzSteffi(prefer_cache=False)
+obstacles = ObstacleOlly(prefer_cache=False)
 
 
 # These are the names of columns that contain time information and should be parsed into a datetime
@@ -164,8 +158,7 @@ def add_distance(rtd):
     for prefix in ('ar', 'dp'):
         if prefix + '_ct' in rtd.columns:
             rtd[prefix + '_ct'] = rtd[prefix + '_ct'].fillna(value=rtd[prefix + '_pt'])
-            # no_ct = rtd[prefix + '_ct'].isna()
-            # rtd.loc[no_ct, prefix + '_ct'] = rtd.loc[no_ct, prefix + '_pt']
+
         elif prefix + '_pt' in rtd.columns:
             rtd[prefix + '_ct'] = rtd[prefix + '_pt']
         else:
@@ -174,8 +167,7 @@ def add_distance(rtd):
 
         if prefix + '_cpth' in rtd.columns:
             rtd[prefix + '_cpth'] = rtd[prefix + '_cpth'].fillna(value=rtd[prefix + '_ppth'])
-            # no_cpth = rtd[prefix + '_cpth'].isna()
-            # rtd.loc[no_cpth, prefix + '_cpth'] = rtd.loc[no_cpth, prefix + '_ppth']
+
         elif prefix + '_ppth' in rtd.columns:
             rtd[prefix + '_cpth'] = rtd[prefix + '_ppth']
         else:
@@ -184,8 +176,7 @@ def add_distance(rtd):
 
         if prefix + '_cp' in rtd.columns:
             rtd[prefix + '_cp'] = rtd[prefix + '_cp'].fillna(value=rtd[prefix + '_pp'])
-            # no_cp = rtd[prefix + '_cp'].isna()
-            # rtd.loc[no_cp, prefix + '_cp'] = rtd.loc[no_cp, prefix + '_pp']
+
         elif prefix + '_pp' in rtd.columns:
             rtd[prefix + '_cp'] = rtd[prefix + '_pp']
         else:
@@ -194,59 +185,41 @@ def add_distance(rtd):
 
     for col in ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']:
         if col in rtd.columns:
-            rtd[col] = rtd[col].astype('str').replace('nan', np.nan)
+            rtd[col] = rtd[col].astype('str').replace('nan', np.nan).replace('', np.nan)
             rtd[col] = rtd[col].str.split('|')
 
-    rtd['category_sum'] = 0
-    rtd['category_avg'] = 0
-    rtd['priority_sum'] = 0
-    rtd['priority_avg'] = 0
-    rtd['total_length'] = 0
-    rtd['obstacle_no'] = 0
+    rtd['category_sum'] = ''
+    rtd['category_mean'] = ''
+    rtd['priority_sum'] = ''
+    rtd['priority_mean'] = ''
+    rtd['length_sum'] = ''
+    rtd['length_mean'] = ''
+    rtd['length_count'] = ''
 
-    prev_dp_ct = None
-    print(len(rtd))
-    for i, row in rtd.iterrows():
-        ar_cpth = row['ar_cpth']
+    for i in rtd.index:
+        ar_cpth = rtd.at[i, 'ar_cpth']
         if isinstance(ar_cpth, list):
-            rtd.at[i, 'distance_to_last'] = streckennetz.route_length([ar_cpth[-1]] + [row['station']])
-            # rtd.at[i, 'distance_to_start'] = streckennetz.route_length(ar_cpth + [row['station']])
-            rtd.at[i, 'distance_to_start'] = 0
-            waypoints = []
-            prev_bhf = None
-            if prev_dp_ct:
-                for bhf in ar_cpth:
-                    if prev_bhf:
-                        try:
-                            new_waypoints = nx.shortest_path(streckennetz.streckennetz, prev_bhf, bhf, weight='length')
-                            # waypoints = [*waypoints, *new_waypoints]
-                            prev_waypoint = None
-                            for waypoint in new_waypoints + [row['station']]:
-                                rtd.at[i, 'distance_to_start'] += streckennetz.distance(prev_waypoint, waypoint)
-                                if prev_waypoint and (prev_waypoint == obstacle['from_edge']).any():
-                                    ob = obstacle.loc[(obstacle['from_edge'] == prev_waypoint) & (obstacle['to_edge'] == waypoint) & (obstacle['from_time'] < row['ar_ct'].tz_localize(timezone("Europe/Berlin")) - datetime.timedelta(hours=2)) & (obstacle['to_time'] > row['ar_ct'].tz_localize(timezone("Europe/Berlin")))]
-                                    if not ob.empty:
-                                        rtd.at[i, 'category_sum'] += ob['category'].sum()
-                                        rtd.at[i, 'priority_sum'] += ob['priority'].sum()
-                                        rtd.at[i, 'total_length'] += ob['length'].sum()
-                                        rtd.at[i, 'obstacle_no'] += 1
-                                prev_waypoint = waypoint        
-                        except (nx.exception.NodeNotFound, nx.exception.NetworkXNoPath) as e:
-                            pass
-                            # print(str(type(e)) + " due to " + str(e))
-                        
-                    prev_bhf = bhf
-            prev_dp_ct = row['dp_ct']
-            print('.', end='')
+            rtd.at[i, 'distance_to_last'] = obstacles.route_length([ar_cpth[-1]] + [rtd.at[i, 'station']])
+            rtd.at[i, 'distance_to_start'] = obstacles.route_length(ar_cpth + [rtd.at[i, 'station']])
+
+            path_obstacles = obstacles.obstacles_of_path(ar_cpth + [rtd.at[i, 'station']], rtd.at[i, 'ar_pt'])
+            if path_obstacles is not None:
+                rtd.at[i, 'category_sum'] = path_obstacles['category_sum']
+                rtd.at[i, 'category_mean'] = path_obstacles['category_mean']
+                rtd.at[i, 'priority_sum'] = path_obstacles['priority_sum']
+                rtd.at[i, 'priority_mean'] = path_obstacles['priority_mean']
+                rtd.at[i, 'length_sum'] = path_obstacles['length_sum']
+                rtd.at[i, 'length_mean'] = path_obstacles['length_mean']
+                rtd.at[i, 'length_count'] = path_obstacles['length_count']
             
         else:
             rtd.at[i, 'distance_to_last'] = 0
             rtd.at[i, 'distance_to_start'] = 0
 
-        dp_cpth = row['dp_cpth']
+        dp_cpth = rtd.at[i, 'dp_cpth']
         if isinstance(dp_cpth, list):
-            rtd.at[i, 'distance_to_next'] = streckennetz.route_length([row['station']] + [dp_cpth[0]])
-            rtd.at[i, 'distance_to_end'] = streckennetz.route_length([row['station']] + dp_cpth)
+            rtd.at[i, 'distance_to_next'] = obstacles.route_length([rtd.at[i, 'station']] + [dp_cpth[0]])
+            rtd.at[i, 'distance_to_end'] = obstacles.route_length([rtd.at[i, 'station']] + dp_cpth)
         else:
             rtd.at[i, 'distance_to_next'] = 0
             rtd.at[i, 'distance_to_end'] = 0
@@ -294,9 +267,8 @@ def parse_station(station, start_date, end_date):
         # rtd_arrays_df = parsed.loc[:, current_array_cols]
         # rtd.upsert_arrays(rtd_arrays_df)
         rtd_df = parsed.drop(current_array_cols, axis=1)
-        rtd_df.to_csv(f"cache/{station}.csv")
-        # db = DBManager()
-        # db.upsert_rtd(rtd_df)
+        db = DBManager()
+        db.upsert_rtd(rtd_df)
 
     return True
 
@@ -305,64 +277,19 @@ def parse(only_new=True):
         start_date = rtd.max_date() - datetime.timedelta(days=2)
     else:
         start_date = datetime.datetime(2020, 10, 1, 0, 0)
-
+    end_date = datetime.datetime.now()
+    # parse_station('Tübingen Hbf', start_date, end_date)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = {executor.submit(parse_station, station, start_date, end_date): station
                    for station
-                   in streckennetz}
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
+                   in obstacles}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(obstacles)):
             future.result()
+
 
 
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    # dateparse = lambda x: datetime.datetime.fromisoformat(x) #.astimezone(timezone("Europe/Berlin"))
-    obstacle = pd.read_csv('cache/obstacle.csv', sep='\t') #, parse_dates=['from_time','to_time'], date_parser=dateparse)
-    obstacle['from_time']= pd.to_datetime(obstacle['from_time'])
-    obstacle['to_time']= pd.to_datetime(obstacle['to_time'])
-
-    start_date = datetime.datetime(2021, 3, 1, 0, 0)
-    end_date = datetime.datetime(2021, 3, 10, 0, 0)
-
-    bhfs = ['Berlin Ostbahnhof', 'Berlin Potsdamer Platz', 'Berlin Friedrichstraße', 'Berlin Hbf', 'Mannheim Hbf', 'Hamburg Hbf', 'Stuttgart Hbf']
-    
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = {executor.submit(parse_station, station, start_date, end_date): station
-                    for station
-                    in bhfs}
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
-            future.result()
-
-
-    bhfs = ['Berlin Ostbahnhof', 'Berlin Potsdamer Platz', 'Berlin Friedrichstraße', 'Berlin Hbf', 'Mannheim Hbf', 'Hamburg Hbf', 'Stuttgart Hbf']
-    obstacles = pd.DataFrame()
-    for bhf in bhfs:
-        df = pd.read_csv(f"cache/{bhf}.csv")
-        obstacles = obstacles.append(df)
-        print(len(df[df['obstacle_no'] != 0]))
-    print(len(obstacles[obstacles['obstacle_no'] != 0]))
-    obstacles.to_csv('cache/parsed_obstacles2.csv')
-
-    # parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
-
-    # if input('Do you wish to only parse new data? ([y]/n)') == 'n':
-    #     start_date = datetime.datetime(2020, 10, 1, 0, 0)
-    # else:
-    #     start_date = rtd.max_date() - datetime.timedelta(days=2)
-
-    # end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-
-    # with concurrent.futures.ProcessPoolExecutor() as executor:
-    #     futures = {executor.submit(parse_station, station, start_date, end_date): station
-    #                for station
-    #                in streckennetz}
-    #     for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
-    #         future.result()
-    
-    # obstacles = pd.DataFrame()
-    # for bhf in bhfs:
-    #     df = pd.read_csv(f"cache/{bhf}.csv")
-    #     obstacles.append(df)
-    # print(len(obstacles[obstacle['obstacle_no'] != 0]))
-    # obstacles.to_csv('cache/parsed_obstacles.csv')
+    # parse(only_new=False)
+    parse(only_new=input('Do you wish to only parse new data? ([y]/n)') != 'n')
