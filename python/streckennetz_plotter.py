@@ -19,6 +19,7 @@ from database.engine import engine
 import matplotlib.pyplot as plt
 import pytz
 from helpers.BetriebsstellenBill import BetriebsstellenBill
+from database.cached_table_fetch import cached_table_fetch
 
 def wkb_reverse_hexer(wbk_hex):
     return shapely.wkb.loads(wbk_hex, hex=True)
@@ -27,7 +28,7 @@ plt.style.use('dark_background')
 
 stations = StationPhillip()
 station_gdf = stations.get_geopandas()
-# station_gdf = station_gdf.set_index('name')
+
 betriebsstellen = BetriebsstellenBill()
 betriebsstellen_gdf = betriebsstellen.get_geopandas()
 
@@ -39,6 +40,12 @@ start = datetime.datetime(2021, 2, 20)
 end = datetime.datetime(2021, 3, 29)
 obstacles = obstacles.loc[(obstacles['from_time'] > start.replace(tzinfo=pytz.timezone("Europe/Berlin"))) & (obstacles['to_time'] < end.replace(tzinfo=pytz.timezone("Europe/Berlin")))]
 
+streckennetz = cached_table_fetch('full_streckennetz', prefer_cache=True).set_index(['u', 'v', 'key'])
+streckennetz['geometry'] = streckennetz['geometry'].apply(wkb_reverse_hexer)
+
+nodes = cached_table_fetch('full_streckennetz_nodes', prefer_cache=True)
+nodes['geometry'] = nodes['geometry'].apply(wkb_reverse_hexer)
+
 # streckennetz = pd.read_sql_table('full_streckennetz', con=engine).set_index(['u', 'v', 'key'])
 # streckennetz_nodes = pd.read_sql_table('full_streckennetz_nodes', con=engine)
 
@@ -49,11 +56,11 @@ obstacles = obstacles.loc[(obstacles['from_time'] > start.replace(tzinfo=pytz.ti
 # streckennetz_nodes.to_pickle('cache/full_streckennetz_nodes.pkl')
 # print('saved cache')
 
-streckennetz = pd.read_pickle('cache/full_streckennetz.pkl')
+# streckennetz = pd.read_pickle('cache/full_streckennetz.pkl')
 streckennetz = gpd.GeoDataFrame(streckennetz, geometry='geometry')
 
-# streckennetz_nodes = pd.read_pickle('cache/full_streckennetz_nodes.pkl')
-# streckennetz_nodes = gpd.GeoDataFrame(streckennetz_nodes, geometry='geometry')
+nodes = gpd.GeoDataFrame(nodes, geometry='geometry')
+station_nodes = nodes.loc[~nodes['type'].isna()]
 # streckennetz_graph = ox.graph_from_gdfs(streckennetz_nodes, streckennetz)
 
 # streckennetz = streckennetz.cx[12.943267:13.822174, 52.354634:52.643063]
@@ -61,10 +68,6 @@ streckennetz = gpd.GeoDataFrame(streckennetz, geometry='geometry')
 # strecke = streckennetz.plot(color='black')
 # station_gdf = station_gdf.loc[[ 'Niederschlag', 'Kretscham-Rothensehma'], :]
 # station_gdf.plot(ax=strecke, marker='o', color='red', markersize=5)
-
-# for name, row in station_gdf.iterrows():
-#     plt.annotate(text=name, xy=row['geometry'].coords[0])
-# plt.show()
 
 rows = []
 station_obsacles = []
@@ -75,11 +78,16 @@ for i, obstacle in obstacles.iterrows():
         station_obsacles.append(obstacle['from_edge'])
 
 strecke = streckennetz.loc[~streckennetz.index.isin(rows)].plot(color='lightgrey', linewidth=0.2)
+# station_nodes.plot(color='green', ax=strecke)
 obstacle_edges = streckennetz.loc[streckennetz.index.isin(rows)]
-obstacle_edges.plot(color='red', ax=strecke)
+# obstacle_edges.plot(color='red', ax=strecke)
 betriebsstellen_gdf = betriebsstellen_gdf.loc[betriebsstellen_gdf.index.isin(station_obsacles)]
-betriebsstellen_gdf.plot(ax=strecke, color='red', markersize=10, zorder=2)
-strecke.set_aspect(10/8)
+# betriebsstellen_gdf.plot(ax=strecke, color='red', markersize=10, zorder=2)
+# for name, row in station_gdf.iterrows():
+#     if name in ['Kaisersesch']:
+#         strecke.annotate(text=name, xy=row['geometry'].coords[0])
+# plt.show()
+strecke.set_aspect('equal', 'datalim')
 plt.show()
 
 
