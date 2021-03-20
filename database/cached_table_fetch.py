@@ -27,7 +27,7 @@ def cached_table_fetch(tablename, use_cache=True, prefer_cache=False):
     FileNotFoundError
         The Database is not reachable and there was no local cache found
     """
-    cache_path = CACHE_PATH + tablename + '.pkl'
+    cache_path = CACHE_PATH + '/' + tablename + '.pkl'
     if prefer_cache:
         try:
             return pd.read_pickle(cache_path)
@@ -38,8 +38,9 @@ def cached_table_fetch(tablename, use_cache=True, prefer_cache=False):
         table_df = pd.read_sql_table(tablename, DB_CONNECT_STRING)
         table_df.to_pickle(cache_path)
         return table_df
-    except:
+    except Exception as ex:
         try:
             return pd.read_pickle(cache_path)
         except FileNotFoundError:
+            print(ex)
             raise FileNotFoundError(f'There is no connection to the database and no cache of {tablename}')
