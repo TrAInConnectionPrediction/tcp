@@ -268,7 +268,6 @@ footer {
   color: gray;
 }
 
-
 .navbar .nav-item .dropdown-item {
   color: rgba(255,255,255,.55);
 }
