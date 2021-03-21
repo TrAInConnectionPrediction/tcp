@@ -159,41 +159,18 @@ from helpers.profiler import profile
 def add_distance(rtd):
     for prefix in ('ar', 'dp'):
         rtd[prefix + '_ct'] = rtd[prefix + '_ct'].fillna(value=rtd[prefix + '_pt'])
-        # if prefix + '_ct' in rtd.columns:
-        #     rtd[prefix + '_ct'] = rtd[prefix + '_ct'].fillna(value=rtd[prefix + '_pt'])
-
-        # elif prefix + '_pt' in rtd.columns:
-        #     rtd[prefix + '_ct'] = rtd[prefix + '_pt']
-        # else:
-        #     rtd[prefix + '_pt'] = pd.NaT
-        #     rtd[prefix + '_ct'] = pd.NaT
 
         rtd[prefix + '_cpth'] = rtd[prefix + '_cpth'].fillna(value=rtd[prefix + '_ppth'])
-        # if prefix + '_cpth' in rtd.columns:
-        #     rtd[prefix + '_cpth'] = rtd[prefix + '_cpth'].fillna(value=rtd[prefix + '_ppth'])
-
-        # elif prefix + '_ppth' in rtd.columns:
-        #     rtd[prefix + '_cpth'] = rtd[prefix + '_ppth']
-        # else:
-        #     rtd[prefix + '_ppth'] = ''
-        #     rtd[prefix + '_cpth'] = ''
 
         rtd[prefix + '_cp'] = rtd[prefix + '_cp'].fillna(value=rtd[prefix + '_pp'])
-        # if prefix + '_cp' in rtd.columns:
-        #     rtd[prefix + '_cp'] = rtd[prefix + '_cp'].fillna(value=rtd[prefix + '_pp'])
-
-        # elif prefix + '_pp' in rtd.columns:
-        #     rtd[prefix + '_cp'] = rtd[prefix + '_pp']
-        # else:
-        #     rtd[prefix + '_pp'] = ''
-        #     rtd[prefix + '_cp'] = ''
 
     for col in ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']:
         rtd[col] = rtd[col].astype('str').replace('nan', np.nan).replace('', np.nan)
-        rtd[col] = rtd[col].str.split('|')
-        # if col in rtd.columns:
-        #     rtd[col] = rtd[col].astype('str').replace('nan', np.nan).replace('', np.nan)
-        #     rtd[col] = rtd[col].str.split('|')
+        try:
+            rtd[col] = rtd[col].str.split('|')
+        except AttributeError:
+            # It might happen, that the column is empty and therefor not of type str
+            pass
 
 
     for i in rtd.index:
