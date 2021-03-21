@@ -26,10 +26,21 @@
               <router-link class="nav-link" :to="{ path: '/about', hash: '#about' }">Über TCP</router-link>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" data-toggle="dropdown"> Statistiken </a>
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
               <ul class="dropdown-menu">
-                <li><router-link class="dropdown-item" :to="{ path: '/stats', hash: '#stats' }">Übersicht</router-link></li>
-                <li><router-link class="dropdown-item" :to="{ path: '/stats/stations', hash: '#stats' }">Stationen</router-link></li>
+                <li>
+                  <router-link class="dropdown-item" :to="{ path: '/data', hash: '#stats' }">Übersicht</router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#stats' }"
+                    >Stationen</router-link
+                  >
+                </li>
+                <!-- <li>
+                  <router-link class="dropdown-item" :to="{ path: '/data/obstacles', hash: '#stats' }"
+                    >Zug-Hindernisse</router-link
+                  >
+                </li> -->
               </ul>
             </li>
           </ul>
@@ -78,11 +89,10 @@
         <router-link class="pretty_link" to="/imprint">Impressum</router-link> /
         <router-link class="pretty_link" to="/privacy">Datenschutz</router-link>
       </div>
-      <br>
+      <br />
       <span
-        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser
-        steht in keiner Verbindung mit der Deutschen Bahn und ihren
-        Tochter-Unternehmen.
+        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
+        Deutschen Bahn und ihren Tochter-Unternehmen.
       </span>
     </footer>
   </body>
@@ -247,6 +257,19 @@ header,
   }
 }
 
+:root {
+  --shadow-bg-color1: #125163;
+}
+
+.col {
+  width: 40vw;
+  min-width: 350px;
+  max-width: 75vw;
+  margin: 30px;
+}
+
+/* NAVBAR BEGIN */
+
 .navbar {
   background-color: rgba(0, 0, 0, 0.3);
 }
@@ -263,25 +286,19 @@ header,
   }
 }
 
-footer {
-  background-color: #212529;
-  color: gray;
-}
-
 .navbar .nav-item .dropdown-item {
-  color: rgba(255,255,255,.55);
+  color: rgba(255, 255, 255, 0.55);
 }
-
-.navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
-    color: #fff;
-    background-color: transparent;
+.navbar .nav-item .dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item:active {
+  color: #fff;
+  background-color: transparent;
 }
-
 .navbar .dropdown-menu {
   display: block;
   background-color: transparent;
 }
-
 @media all and (min-width: 992px) {
   .navbar .nav-item .dropdown-menu {
     display: none;
@@ -296,10 +313,29 @@ footer {
     margin-top: 0;
     background-color: #212529 !important;
   }
-  .navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
+  .navbar .nav-item .dropdown-item:hover,
+  .dropdown-item:focus,
+  .dropdown-item:active {
     background-color: #262626;
+  }
 }
 
+/* NAVBAR END */
+
+/* FOOTER BEGIN */
+
+footer {
+  background-color: #212529;
+  color: gray;
+}
+
+/* FOOTER END */
+
+/* SHADOW STUFF BEGIN */
+
+.hover:hover {
+  position: relative;
+  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
 }
 
 .shadow {
@@ -310,11 +346,6 @@ footer {
 .shadow .card {
   -webkit-box-shadow: 10px 10px 50px 5px black;
   box-shadow: 10px 10px 50px 5px black;
-}
-
-.hover:hover {
-  position: relative;
-  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
 }
 
 .shadowheader2:hover {
@@ -335,14 +366,5 @@ footer {
   text-shadow: 1px 1px #000, 2px 2px #000;
 }
 
-:root {
-  --shadow-bg-color1: #125163;
-}
-
-.col {
-  width: 40vw;
-  min-width: 350px;
-  max-width: 75vw;
-  margin: 30px;
-}
+/* SHADOW STUFF END */
 </style>

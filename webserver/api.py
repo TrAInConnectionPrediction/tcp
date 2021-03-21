@@ -134,6 +134,27 @@ def api():
 @log_activity
 def stats():
     """
+    Returns the stats stored in `{cache}/stats.json`
+    Usually the stats of our train data
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    flask generated json
+        The stats
+    """
+    with open(f"{CACHE_PATH}/stats.json") as file:
+        resp = jsonify(json.load(file))
+    resp.headers.add("Access-Control-Allow-Origin", "*")
+    return resp
+
+
+@bp.route("/stationplot/<string:date_range>.png")
+@log_activity
+def station_plot(date_range):
+    """
     Generates a plot that visualizes all the delays
     between the two dates specified in the url.
 
@@ -147,15 +168,27 @@ def stats():
     flask generated image/png
         The generated plot
     """
-    with open(f"{CACHE_PATH}/stats.json") as file:
-        resp = jsonify(json.load(file))
-    resp.headers.add("Access-Control-Allow-Origin", "*")
-    return resp
 
+    if date_range in per_station_time.DEFAULT_PLOTS:
+        plot_name = date_range
+    else:
+        date_range = date_range.split("-")
+        plot_name = per_station_time.generate_plot(
+            datetime.strptime(date_range[0], "%d.%m.%Y %H:%M"),
+            datetime.strptime(date_range[1], "%d.%m.%Y %H:%M"),
+            use_cached_images=True,
+        )
 
-@bp.route("/stationplot/<string:date_range>.png")
+    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.png")
+    # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
+    # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.png') works
+    return send_file(
+        f"{CACHE_PATH}/plot_cache/{plot_name}.png", mimetype="image/png"
+    )
+
+@bp.route("/obstacleplot/<string:date_range>.png")
 @log_activity
-def station_plot(date_range):
+def obstacle_plot(date_range):
     """
     Generates a plot that visualizes all the delays
     between the two dates specified in the url.
