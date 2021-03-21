@@ -20,23 +20,23 @@
         </tr>
         <tr>
           <th scope="row">Maximale Verspätung</th>
-          <td>{{ stats.all.max_ar_delay.toFixed(0) }} min</td>
-          <td>{{ stats.all.max_dp_delay.toFixed(0) }} min</td>
+          <td>{{ stats.all.max_ar_delay }} min</td>
+          <td>{{ stats.all.max_dp_delay }} min</td>
         </tr>
         <tr>
           <th scope="row">Durchschnittliche Verspätung</th>
-          <td>{{ stats.all.avg_ar_delay.toFixed(2) }} min</td>
-          <td>{{ stats.all.avg_dp_delay.toFixed(2) }} min</td>
+          <td>{{ stats.all.avg_ar_delay }} min</td>
+          <td>{{ stats.all.avg_dp_delay }} min</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Verspätungen</th>
-          <td>{{ ((1 - stats.all.perc_ar_delay) * 100).toFixed(2) }}%</td>
-          <td>{{ ((1 - stats.all.perc_dp_delay) * 100).toFixed(2) }}%</td>
+          <td>{{ stats.all.perc_ar_delay }}%</td>
+          <td>{{ tats.all.perc_dp_delay }}%</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Ausfällen</th>
-          <td>{{ (stats.all.perc_ar_cancel * 100).toFixed(2) }}%</td>
-          <td>{{ (stats.all.perc_dp_cancel * 100).toFixed(2) }}%</td>
+          <td>{{ stats.all.perc_ar_cancel }}%</td>
+          <td>{{ stats.all.perc_dp_cancel }}%</td>
         </tr>
         <tr>
           <th class="text-center" colspan="3">Daten der letzten 24h</th>
@@ -48,23 +48,23 @@
         </tr>
         <tr>
           <th scope="row">Maximale Verspätung</th>
-          <td>{{ stats.new.max_ar_delay.toFixed(0) }} min</td>
-          <td>{{ stats.new.max_dp_delay.toFixed(0) }} min</td>
+          <td>{{ stats.new.max_ar_delay }} min</td>
+          <td>{{ stats.new.max_dp_delay }} min</td>
         </tr>
         <tr>
           <th scope="row">Durchschnittliche Verspätung</th>
-          <td>{{ stats.new.avg_ar_delay.toFixed(2) }} min</td>
-          <td>{{ stats.new.avg_dp_delay.toFixed(2) }} min</td>
+          <td>{{ stats.new.avg_ar_delay }} min</td>
+          <td>{{ stats.new.avg_dp_delay }} min</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Verspätungen</th>
-          <td>{{ ((1 - stats.new.perc_ar_delay) * 100).toFixed(2) }}%</td>
-          <td>{{ ((1 - stats.new.perc_dp_delay) * 100).toFixed(2) }}%</td>
+          <td>{{ stats.new.perc_ar_delay }}%</td>
+          <td>{{ stats.new.perc_dp_delay }}%</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Ausfällen</th>
-          <td>{{ (stats.new.perc_ar_cancel * 100).toFixed(2) }}%</td>
-          <td>{{ (stats.new.perc_dp_cancel * 100).toFixed(2) }}%</td>
+          <td>{{ stats.new.perc_ar_cancel }}%</td>
+          <td>{{ stats.new.perc_dp_cancel }}%</td>
         </tr>
       </tbody>
     </table>

@@ -26,10 +26,21 @@
               <router-link class="nav-link" :to="{ path: '/about', hash: '#about' }">Über TCP</router-link>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" data-toggle="dropdown"> Statistiken </a>
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
               <ul class="dropdown-menu">
-                <li><router-link class="dropdown-item" :to="{ path: '/stats', hash: '#stats' }">Übersicht</router-link></li>
-                <li><router-link class="dropdown-item" :to="{ path: '/stats/stations', hash: '#stats' }">Stationen</router-link></li>
+                <li>
+                  <router-link class="dropdown-item" :to="{ path: '/data', hash: '#stats' }">Übersicht</router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#stats' }"
+                    >Stationen</router-link
+                  >
+                </li>
+                <!-- <li>
+                  <router-link class="dropdown-item" :to="{ path: '/data/obstacles', hash: '#stats' }"
+                    >Zug-Hindernisse</router-link
+                  >
+                </li> -->
               </ul>
             </li>
           </ul>
@@ -73,33 +84,15 @@
       </div>
       <router-view class="m-5" />
     </main>
-    <footer class="text-center page-footer mt-4">
-      <hr style="margin-top: 0px" />
-      <div class="d-flex justify-content-center align-items-xl-center pb-4">
-        <a href="https://www.meteoblue.com/" target="_blank" style="margin: 5px"
-          ><img src="https://www.meteoblue.com/favicon.ico" width="24" height="24"
-        /></a>
-        <div style="margin: 5px">Wetterdaten von Meteoblue</div>
-        <a
-          href="https://github.com/TrAInConnectionPrediction/tcp"
-          target="_blank"
-          style="margin: 5px; color: inherit; text-decoration: none"
-          ><i class="tcp-github"></i
-        ></a>
+    <footer class="text-center p-3">
+      <div class="fw-bold">
+        <router-link class="pretty_link" to="/imprint">Impressum</router-link> /
+        <router-link class="pretty_link" to="/privacy">Datenschutz</router-link>
       </div>
-      <div class="footer-copyright py-3">
-        <router-link class="pretty_link" to="/impressum">Impressum</router-link> <br />
-        © 2021 TrAIn_Connection_Prediction <br />
-        <span style="color: gray"
-          >TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der Deutschen
-          Bahn und ihren Tochter-Unternehmen.
-        </span>
-      </div>
-      <br>
+      <br />
       <span
-        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser
-        steht in keiner Verbindung mit der Deutschen Bahn und ihren
-        Tochter-Unternehmen.
+        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
+        Deutschen Bahn und ihren Tochter-Unternehmen.
       </span>
     </footer>
   </body>
@@ -264,6 +257,19 @@ header,
   }
 }
 
+:root {
+  --shadow-bg-color1: #125163;
+}
+
+.col {
+  width: 40vw;
+  min-width: 350px;
+  max-width: 75vw;
+  margin: 30px;
+}
+
+/* NAVBAR BEGIN */
+
 .navbar {
   background-color: rgba(0, 0, 0, 0.3);
 }
@@ -280,6 +286,44 @@ header,
   }
 }
 
+.navbar .nav-item .dropdown-item {
+  color: rgba(255, 255, 255, 0.55);
+}
+.navbar .nav-item .dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item:active {
+  color: #fff;
+  background-color: transparent;
+}
+.navbar .dropdown-menu {
+  display: block;
+  background-color: transparent;
+}
+@media all and (min-width: 992px) {
+  .navbar .nav-item .dropdown-menu {
+    display: none;
+  }
+  .navbar .nav-item:hover .nav-link {
+    color: #fff;
+  }
+  .navbar .nav-item:hover .dropdown-menu {
+    display: block;
+  }
+  .navbar .nav-item .dropdown-menu {
+    margin-top: 0;
+    background-color: #212529 !important;
+  }
+  .navbar .nav-item .dropdown-item:hover,
+  .dropdown-item:focus,
+  .dropdown-item:active {
+    background-color: #262626;
+  }
+}
+
+/* NAVBAR END */
+
+/* FOOTER BEGIN */
+
 footer {
   background-color: #212529;
   color: gray;
@@ -289,75 +333,13 @@ footer > div {
   color: white;
 }
 
-.navbar .nav-item .dropdown-item {
-  color: rgba(255,255,255,.55);
-}
+/* FOOTER END */
 
-.navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
-    color: #fff;
-    background-color: transparent;
-}
+/* SHADOW STUFF BEGIN */
 
-.navbar .dropdown-menu {
-  display: block;
-  background-color: transparent;
-}
-
-@media all and (min-width: 992px) {
-  .navbar .nav-item .dropdown-menu {
-    display: none;
-  }
-  .navbar .nav-item:hover .nav-link {
-    color: #fff;
-  }
-  .navbar .nav-item:hover .dropdown-menu {
-    display: block;
-  }
-  .navbar .nav-item .dropdown-menu {
-    margin-top: 0;
-    background-color: #212529 !important;
-  }
-  .navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
-    background-color: #262626;
-}
-
-}
-
-/* .autocomplete-suggestions {
-  background: #212529;
-  overflow: auto;
-  color: #fff;
-  box-shadow: 0px 0px 10px 4px black !important;
-}
-
-.navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
-    color: #fff;
-    background-color: transparent;
-}
-
-.navbar .dropdown-menu {
-  display: block;
-  background-color: transparent;
-}
-
-@media all and (min-width: 992px) {
-  .navbar .nav-item .dropdown-menu {
-    display: none;
-  }
-  .navbar .nav-item:hover .nav-link {
-    color: #fff;
-  }
-  .navbar .nav-item:hover .dropdown-menu {
-    display: block;
-  }
-  .navbar .nav-item .dropdown-menu {
-    margin-top: 0;
-    background-color: #212529 !important;
-  }
-  .navbar .nav-item .dropdown-item:hover, .dropdown-item:focus, .dropdown-item:active{
-    background-color: #262626;
-}
-
+.hover:hover {
+  position: relative;
+  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
 }
 
 .shadow {
@@ -368,11 +350,6 @@ footer > div {
 .shadow .card {
   -webkit-box-shadow: 10px 10px 50px 5px black;
   box-shadow: 10px 10px 50px 5px black;
-}
-
-.hover:hover {
-  position: relative;
-  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
 }
 
 .shadowheader2:hover {
@@ -393,14 +370,5 @@ footer > div {
   text-shadow: 1px 1px #000, 2px 2px #000;
 }
 
-:root {
-  --shadow-bg-color1: #125163;
-}
-
-.col {
-  width: 40vw;
-  min-width: 350px;
-  max-width: 75vw;
-  margin: 30px;
-}
+/* SHADOW STUFF END */
 </style>
