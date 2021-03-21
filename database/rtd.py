@@ -63,6 +63,14 @@ class Rtd(Base):
     distance_to_last = Column(Float)
     distance_to_next = Column(Float)
 
+    category_sum = Column(Float)
+    category_mean = Column(Float)
+    priority_sum = Column(Float)
+    priority_mean = Column(Float)
+    length_sum = Column(Float)
+    length_mean = Column(Float)
+    length_count = Column(Float)
+
     station = Column(Text)
     id = Column(Text)
     dayly_id = Column(BIGINT)
