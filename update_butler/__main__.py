@@ -16,25 +16,25 @@ print("Parsing new data...")
 
 print("Done")
 
-print("Refreshing local Cache")
+print("Refreshing local Cache...")
 # If this doesn't work properly switch to 
-# TODO that funktion wokrs switch to rtd_ray.update_local_buffer()
+# TODO switch to rtd_ray.update_local_buffer()
 rtd_ray.refresh_local_buffer()
 
 print("Done")
 
-print("Generate Statistics")
+print("Generating Statistics...")
 
-print("  Overview")
+print("--Overview")
 
 from data_analysis.data_stats import Stats
 stats = Stats()
 stats.generate_stats()
 stats.save_stats()
 
-print("  Done")
+print("--Done")
 
-print("  Per Station Data")
+print("--Per Station Data")
 
 rtd_df = rtd_ray.load_data(
     columns=[
@@ -52,9 +52,9 @@ from data_analysis.per_station import PerStationOverTime
 PerStationOverTime(rtd_df, use_cache=False)
 
 del rtd_df
-print("  Done")
+print("--Done")
 
-print("Train ML Models")
+print("Training ML Models...")
 
 # TODO
 
