@@ -188,13 +188,13 @@ def add_distance(rtd):
             rtd[col] = rtd[col].astype('str').replace('nan', np.nan).replace('', np.nan)
             rtd[col] = rtd[col].str.split('|')
 
-    rtd['category_sum'] = ''
-    rtd['category_mean'] = ''
-    rtd['priority_sum'] = ''
-    rtd['priority_mean'] = ''
-    rtd['length_sum'] = ''
-    rtd['length_mean'] = ''
-    rtd['length_count'] = ''
+    rtd['category_sum'] = np.nan
+    rtd['category_mean'] = np.nan
+    rtd['priority_sum'] = np.nan
+    rtd['priority_mean'] = np.nan
+    rtd['length_sum'] = np.nan
+    rtd['length_mean'] = np.nan
+    rtd['length_count'] = np.nan
 
     for i in rtd.index:
         ar_cpth = rtd.at[i, 'ar_cpth']

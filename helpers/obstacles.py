@@ -24,7 +24,6 @@ class ObstacleOlly(StreckennetzSteffi):
         self.betriebsstellen = BetriebsstellenBill(**kwargs)
 
         self.obstacles = cached_table_fetch('parsed_obstacles', **kwargs).set_index('edge_id')
-        self.np_index = self.obstacles.index.to_numpy()
         self.dict_index = {edge_id: index for index, edge_id in enumerate(self.obstacles.index)}
         self.np_obstacles = self.obstacles[['category', 'priority', 'length', 'from_time', 'to_time']].to_numpy()
         self.simpler_obstacles = cached_table_fetch('simpler_obstacles', **kwargs)
@@ -43,8 +42,6 @@ class ObstacleOlly(StreckennetzSteffi):
             'from_time': [],
             'to_time': [],
             'length': [],
-            # 'from_edge': [],
-            # 'to_edge': [],
             'edge_id': [],
             'dir': [],
             'type':[],
@@ -85,7 +82,6 @@ class ObstacleOlly(StreckennetzSteffi):
                 # edge_obstacles['modified'].append(obstacle['modified'])
                 # edge_obstacles['priority'].append(obstacle['priority'])
             else:
-                # path = self.get_path(source, target)
                 path = self.get_edge_path(source, target)
                 if path is None:
                     continue
@@ -102,33 +98,11 @@ class ObstacleOlly(StreckennetzSteffi):
                     edge_obstacles['modified'].append(obstacle['modified'])
                     edge_obstacles['priority'].append(obstacle['priority'])
 
-
-                # for node_id in range(len(path) - 1):
-                #     # The obstacle information is directional. We don't know thought which direction
-                #     # is which, but this seems resonable to us
-                #     if obstacle['dir'] == 1:
-                #         edge_obstacles['from_edge'].append(path[node_id])
-                #         edge_obstacles['to_edge'].append(path[node_id + 1])
-                #     else:
-                #         edge_obstacles['from_edge'].append(path[node_id + 1])
-                #         edge_obstacles['to_edge'].append(path[node_id])
-
-                #     edge_obstacles['length'].append(self.streckennetz[path[node_id]][path[node_id + 1]]['length'])
-                #     edge_obstacles['from_time'].append(obstacle['from_time'])
-                #     edge_obstacles['to_time'].append(obstacle['to_time'])
-                #     edge_obstacles['dir'].append(obstacle['dir'])
-                #     edge_obstacles['type'].append(obstacle['type'])
-
-                #     edge_obstacles['summary'].append(obstacle['summary'])
-                #     edge_obstacles['category'].append(obstacle['category'])
-                #     edge_obstacles['modified'].append(obstacle['modified'])
-                #     edge_obstacles['priority'].append(obstacle['priority'])
         self.obstacles = pd.DataFrame(edge_obstacles)
         self.obstacles = self.obstacles.set_index('edge_id')
 
     def hafas_obstacles_to_sql_table(self):
         obstacles = cached_table_fetch('obstacle', prefer_cache=True)
-        # obstacles = pd.read_sql_table('obstacle', DB_CONNECT_STRING)
         simpler_obstacles = {
             'from_time': [],
             'to_time': [],
