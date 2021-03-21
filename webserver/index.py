@@ -5,8 +5,8 @@ index_blueprint = Blueprint("index", __name__, url_prefix="")
 # This routes everything to vue,
 # but for nested stuff you have to add a seperate route
 @index_blueprint.route("/", defaults={"path": ""})
-@index_blueprint.route("/<path:path>")
-@index_blueprint.route("/data/<path:path>")
+@index_blueprint.route("/<string:path>")
+@index_blueprint.route("/data/<string:path>")
 def home(**kwargs):
     """
     Gets called when somebody requests the website

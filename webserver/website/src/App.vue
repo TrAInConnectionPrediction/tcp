@@ -329,10 +329,6 @@ footer {
   color: gray;
 }
 
-footer > div {
-  color: white;
-}
-
 /* FOOTER END */
 
 /* SHADOW STUFF BEGIN */

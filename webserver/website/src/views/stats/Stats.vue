@@ -31,7 +31,7 @@
         <tr>
           <th scope="row">Prozent an Verspätungen</th>
           <td>{{ stats.all.perc_ar_delay }}%</td>
-          <td>{{ tats.all.perc_dp_delay }}%</td>
+          <td>{{ stats.all.perc_dp_delay }}%</td>
         </tr>
         <tr>
           <th scope="row">Prozent an Ausfällen</th>
