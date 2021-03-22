@@ -13,7 +13,13 @@ zugfinder_cookie = ''
 tor_password = ''
 website_secret = ''
 
-
-meteoblue_apikey = ''
-
 station_to_monitor_per_thread = 256
+
+TD_TABLENAME = 'recent_change_rtd'
+## If not using docker
+# CACHE_PATH = 'cache'
+## With docker
+CACHE_PATH = '/usr/src/app/cache'
+RTD_CACHE_PATH = CACHE_PATH + '/{tablename}/'.format(tablename=RTD_TABLENAME)
+MODEL_PATH = CACHE_PATH + '/models/model_{}.pkl'
+ENCODER_PATH = CACHE_PATH + '/{tablename}_{{encoder}}_encoder_dict.pkl'.format(tablename=RTD_TABLENAME, encoder='encoder')
