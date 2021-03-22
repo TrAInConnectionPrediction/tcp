@@ -5,10 +5,8 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
-# from database.plan import PlanManager
-# from database.change import ChangeManager
 from database.rtd import RtdManager, sql_types, RtdArrays
-from helpers.StreckennetzSteffi import StreckennetzSteffi
+from helpers.obstacles import ObstacleOlly
 import json
 import re
 import concurrent.futures
@@ -17,10 +15,8 @@ from database.db_manager import DBManager
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
-# plan_db = PlanManager()
-# change_db = ChangeManager()
 rtd = RtdManager()
-streckennetz = StreckennetzSteffi(prefer_cache=False)
+obstacles = ObstacleOlly(prefer_cache=False)
 
 
 # These are the names of columns that contain time information and should be parsed into a datetime
@@ -157,57 +153,51 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
                         stop['m_' + msg_part].append(msg[msg_part])
     return stop    
 
+from helpers.profiler import profile
+
 
 def add_distance(rtd):
     for prefix in ('ar', 'dp'):
-        if prefix + '_ct' in rtd.columns:
-            rtd[prefix + '_ct'] = rtd[prefix + '_ct'].fillna(value=rtd[prefix + '_pt'])
-            # no_ct = rtd[prefix + '_ct'].isna()
-            # rtd.loc[no_ct, prefix + '_ct'] = rtd.loc[no_ct, prefix + '_pt']
-        elif prefix + '_pt' in rtd.columns:
-            rtd[prefix + '_ct'] = rtd[prefix + '_pt']
-        else:
-            rtd[prefix + '_pt'] = pd.NaT
-            rtd[prefix + '_ct'] = pd.NaT
+        rtd[prefix + '_ct'] = rtd[prefix + '_ct'].fillna(value=rtd[prefix + '_pt'])
 
-        if prefix + '_cpth' in rtd.columns:
-            rtd[prefix + '_cpth'] = rtd[prefix + '_cpth'].fillna(value=rtd[prefix + '_ppth'])
-            # no_cpth = rtd[prefix + '_cpth'].isna()
-            # rtd.loc[no_cpth, prefix + '_cpth'] = rtd.loc[no_cpth, prefix + '_ppth']
-        elif prefix + '_ppth' in rtd.columns:
-            rtd[prefix + '_cpth'] = rtd[prefix + '_ppth']
-        else:
-            rtd[prefix + '_ppth'] = ''
-            rtd[prefix + '_cpth'] = ''
+        rtd[prefix + '_cpth'] = rtd[prefix + '_cpth'].fillna(value=rtd[prefix + '_ppth'])
 
-        if prefix + '_cp' in rtd.columns:
-            rtd[prefix + '_cp'] = rtd[prefix + '_cp'].fillna(value=rtd[prefix + '_pp'])
-            # no_cp = rtd[prefix + '_cp'].isna()
-            # rtd.loc[no_cp, prefix + '_cp'] = rtd.loc[no_cp, prefix + '_pp']
-        elif prefix + '_pp' in rtd.columns:
-            rtd[prefix + '_cp'] = rtd[prefix + '_pp']
-        else:
-            rtd[prefix + '_pp'] = ''
-            rtd[prefix + '_cp'] = ''
+        rtd[prefix + '_cp'] = rtd[prefix + '_cp'].fillna(value=rtd[prefix + '_pp'])
 
     for col in ['ar_ppth', 'ar_cpth', 'dp_ppth', 'dp_cpth']:
-        if col in rtd.columns:
-            rtd[col] = rtd[col].astype('str').replace('nan', np.nan)
+        rtd[col] = rtd[col].astype('str').replace('nan', np.nan).replace('', np.nan)
+        try:
             rtd[col] = rtd[col].str.split('|')
+        except AttributeError:
+            # It might happen, that the column is empty and therefor not of type str
+            pass
 
-    for i, row in rtd.iterrows():
-        ar_cpth = row['ar_cpth']
+
+    for i in rtd.index:
+        ar_cpth = rtd.at[i, 'ar_cpth']
+        station = rtd.at[i, 'station']
         if isinstance(ar_cpth, list):
-            rtd.at[i, 'distance_to_last'] = streckennetz.route_length([ar_cpth[-1]] + [row['station']])
-            rtd.at[i, 'distance_to_start'] = streckennetz.route_length(ar_cpth + [row['station']])
+            rtd.at[i, 'distance_to_last'] = obstacles.route_length([ar_cpth[-1]] + [station])
+            rtd.at[i, 'distance_to_start'] = obstacles.route_length(ar_cpth + [station])
+
+            path_obstacles = obstacles.obstacles_of_path(ar_cpth + [station], rtd.at[i, 'ar_pt'])
+            if path_obstacles is not None:
+                rtd.at[i, 'category_sum'] = path_obstacles['category_sum']
+                rtd.at[i, 'category_mean'] = path_obstacles['category_mean']
+                rtd.at[i, 'priority_sum'] = path_obstacles['priority_sum']
+                rtd.at[i, 'priority_mean'] = path_obstacles['priority_mean']
+                rtd.at[i, 'length_sum'] = path_obstacles['length_sum']
+                rtd.at[i, 'length_mean'] = path_obstacles['length_mean']
+                rtd.at[i, 'length_count'] = path_obstacles['length_count']
+            
         else:
             rtd.at[i, 'distance_to_last'] = 0
             rtd.at[i, 'distance_to_start'] = 0
 
-        dp_cpth = row['dp_cpth']
+        dp_cpth = rtd.at[i, 'dp_cpth']
         if isinstance(dp_cpth, list):
-            rtd.at[i, 'distance_to_next'] = streckennetz.route_length([row['station']] + [dp_cpth[0]])
-            rtd.at[i, 'distance_to_end'] = streckennetz.route_length([row['station']] + dp_cpth)
+            rtd.at[i, 'distance_to_next'] = obstacles.route_length([station] + [dp_cpth[0]])
+            rtd.at[i, 'distance_to_end'] = obstacles.route_length([station] + dp_cpth)
         else:
             rtd.at[i, 'distance_to_next'] = 0
             rtd.at[i, 'distance_to_end'] = 0
@@ -235,14 +225,14 @@ def parse_timetable(timetables, db):
                 parsed.append(stop)
     return parsed
 
-
+# @profile
 def parse_station(station, start_date, end_date):
     with DBManager() as db:
         stations_timetables = db.plan_of_station(station, date1=start_date, date2=end_date)
         parsed = parse_timetable(stations_timetables, db)
 
     if parsed:
-        parsed = pd.DataFrame(parsed)
+        parsed = pd.DataFrame(parsed, columns=empty_rtd.keys())
         parsed = parsed.set_index('hash_id')
         # Remove duplicates. Duplicates may happen if a stop is shifted to the next hour due to delays.
         # It than reappears in the planned timetable of the next hour.
@@ -265,32 +255,19 @@ def parse(only_new=True):
         start_date = rtd.max_date() - datetime.timedelta(days=2)
     else:
         start_date = datetime.datetime(2020, 10, 1, 0, 0)
-
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    end_date = datetime.datetime.now()
+    # parse_station('Tübingen Hbf', start_date, end_date)
+    with concurrent.futures.ProcessPoolExecutor(min(32, os.cpu_count())) as executor:
         futures = {executor.submit(parse_station, station, start_date, end_date): station
                    for station
-                   in streckennetz}
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
+                   in obstacles}
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(obstacles)):
             future.result()
+
 
 
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    # parse_station('Tübingen Hbf', start_date, end_date)
-
-    parse(only_new=input('Do you wish to only parse new data? ([y]/n)') == 'n')
-
-    # if input('Do you wish to only parse new data? ([y]/n)') == 'n':
-    #     start_date = datetime.datetime(2020, 10, 1, 0, 0)
-    # else:
-    #     start_date = rtd.max_date() - datetime.timedelta(days=2)
-
-    # end_date = datetime.datetime.now() - datetime.timedelta(hours=10)
-
-    # with concurrent.futures.ProcessPoolExecutor() as executor:
-    #     futures = {executor.submit(parse_station, station, start_date, end_date): station
-    #                for station
-    #                in streckennetz}
-    #     for future in tqdm(concurrent.futures.as_completed(futures), total=len(streckennetz)):
-    #         future.result()
+    # parse(only_new=False)
+    parse(only_new=input('Do you wish to only parse new data? ([y]/n)') != 'n')

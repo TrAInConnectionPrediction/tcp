@@ -2,9 +2,7 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
-import sqlalchemy
-
-from config import db_database, db_password, db_server, db_username
+from database.cached_table_fetch import cached_table_fetch
 
 
 class NoLocationError(Exception):
@@ -12,32 +10,45 @@ class NoLocationError(Exception):
 
 
 class BetriebsstellenBill:
-    def __init__(self):
-        cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
-        if not os.path.isdir(cache_dir):
-            os.mkdir(cache_dir)
-
-        self.CACHE_PATH = cache_dir + 'betriebsstellen.pkl'
-
-        try:
-            self.engine = sqlalchemy.create_engine(
-                'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require')
-            self.betriebsstellen = pd.read_sql('SELECT * FROM betriebstellen', con=self.engine)
-            self.betriebsstellen.to_pickle(self.CACHE_PATH)
-            self.engine.dispose()
-        except:
-            try:
-                self.betriebsstellen = pd.read_pickle(self.CACHE_PATH)
-                print('Using Betriebstellen cache')
-            except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local cache')
+    def __init__(self, **kwargs):
+        self.betriebsstellen = cached_table_fetch('betriebstellen', **kwargs)
 
         self.name_index_betriebsstellen = self.betriebsstellen.set_index('name')
         self.ds100_index_betriebsstellen = self.betriebsstellen.set_index('ds100')
+        self.betriebsstellen_list = self.betriebsstellen.dropna(subset=['lat', 'lon'])['name'].tolist()
         self.NoLocationError = NoLocationError
 
     def __len__(self):
         return len(self.betriebsstellen)
+
+    def __iter__(self):
+        self.n = 0
+        return self
+
+    def __next__(self):
+        if self.n < len(self.betriebsstellen_list):
+            self.n += 1
+            return self.betriebsstellen_list[self.n - 1]
+        else:
+            raise StopIteration
+
+    def get_geopandas(self):
+        """
+        Convert stations to geopandas DataFrame.
+
+        Returns
+        -------
+        geopandas.DateFrame
+            Stations with coordinates as geometry for geopandas.DataFrame.
+        """
+        import geopandas as gpd
+        # Not all of the betriebsstellen have geo information. A GeoDataFrame without geo
+        # is kind of useless, so we drop these betriebsstellen
+        betriebsstellen_with_location = self.name_index_betriebsstellen.dropna(subset=['lon', 'lat'])
+        return gpd.GeoDataFrame(
+            betriebsstellen_with_location, 
+            geometry=gpd.points_from_xy(betriebsstellen_with_location.lon, betriebsstellen_with_location.lat)
+        ).set_crs("EPSG:4326")
 
     def get_name(self, ds100):
         return self.ds100_index_betriebsstellen.at[ds100, 'name']
@@ -64,3 +75,5 @@ class BetriebsstellenBill:
 if __name__ == "__main__":
     betriebsstellen = BetriebsstellenBill()
     print('len:', len(betriebsstellen))
+    for be in betriebsstellen:
+        print(be)

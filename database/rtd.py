@@ -63,6 +63,14 @@ class Rtd(Base):
     distance_to_last = Column(Float)
     distance_to_next = Column(Float)
 
+    category_sum = Column(Float)
+    category_mean = Column(Float)
+    priority_sum = Column(Float)
+    priority_mean = Column(Float)
+    length_sum = Column(Float)
+    length_mean = Column(Float)
+    length_count = Column(Float)
+
     station = Column(Text)
     id = Column(Text)
     dayly_id = Column(BIGINT)
@@ -169,7 +177,15 @@ sql_types = {
     'distance_to_start': Float,
     'distance_to_end': Float,
     'distance_to_last': Float,
-    'distance_to_next': Float
+    'distance_to_next': Float,
+
+    'category_sum': Float,
+    'category_mean': Float,
+    'priority_sum': Float,
+    'priority_mean': Float,
+    'length_sum': Float,
+    'length_mean': Float,
+    'length_count': Float,
 }
 
 try:

@@ -124,6 +124,14 @@ class RtdRay(Rtd):
         'distance_to_last': pd.Series([], dtype='float32'),
         'distance_to_next': pd.Series([], dtype='float32'),
 
+        'category_sum': pd.Series([], dtype='float32'),
+        'category_mean': pd.Series([], dtype='float32'),
+        'priority_sum': pd.Series([], dtype='float32'),
+        'priority_mean': pd.Series([], dtype='float32'),
+        'length_sum': pd.Series([], dtype='float32'),
+        'length_mean': pd.Series([], dtype='float32'),
+        'length_count': pd.Series([], dtype='float32'),
+
         'station': pd.Series([], dtype='str'),
         'id': pd.Series([], dtype='str'),
         'dayly_id': pd.Series([], dtype='int'),
@@ -480,7 +488,7 @@ if __name__ == "__main__":
     # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH, engine='pyarrow') # , schema='infer')
     # rtd_ray._save_encoders(rtd)
 
-    # rtd_ray.refresh_local_buffer()
+    rtd_ray.refresh_local_buffer()
     # rtd_ray.update_local_buffer()
 
     # rtd = rtd_ray.load_for_ml_model()

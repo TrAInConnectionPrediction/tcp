@@ -5,42 +5,22 @@ import networkx as nx
 import functools
 import geopy.distance
 from helpers.StationPhillip import StationPhillip
-import logging
+from database.cached_table_fetch import cached_table_fetch
+import igraph
 
-logger = logging.getLogger("webserver." + __name__)
 
 class StreckennetzSteffi(StationPhillip):
-    def __init__(self, prefer_cache=False):
+    def __init__(self, **kwargs):
         super().__init__()
 
-        logger.info("Getting streckennetz...")
+        streckennetz_df = cached_table_fetch('minimal_streckennetz', **kwargs)
 
-        self._CACHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) \
-                            + '/cache/streckennetz_cache'
-        self.using_cache = False
-        if prefer_cache:
-            try:
-                streckennetz_df = pd.read_pickle(self._CACHE_PATH)
-                self.using_cache = True
-                logger.info('Using streckennetz cache')
-            except FileNotFoundError:
-                pass
-
-        if not self.using_cache:
-            try:
-                from database.engine import engine
-                streckennetz_df = pd.read_sql('SELECT u, v, length FROM minimal_streckennetz', con=engine)
-                streckennetz_df.to_pickle(self._CACHE_PATH)
-            except:
-                try:
-                    streckennetz_df = pd.read_pickle(self._CACHE_PATH)
-                    logger.waring('Using streckennetz cache')
-                except FileNotFoundError:
-                    raise FileNotFoundError('There is no connection to the database and no cache of it')
+        tuples = [tuple(x) for x in streckennetz_df[['u', 'v', 'length']].values]
+        self.streckennetz_igraph = igraph.Graph.TupleList(tuples, directed=False, edge_attrs=['length'])
 
         self.streckennetz = nx.from_pandas_edgelist(streckennetz_df, source='u', target='v', edge_attr=True)
 
-        logger.info("Done")
+        self.get_length = lambda edge: self.streckennetz_igraph.es[edge]['length']
 
     def route_length(self, waypoints) -> float:
         """
@@ -89,7 +69,16 @@ class StreckennetzSteffi(StationPhillip):
                 pass
         return length
 
-    @functools.lru_cache(maxsize=8000)
+    @functools.lru_cache(maxsize=1000)
+    def get_edge_path(self, source, target):
+        try:
+            return self.streckennetz_igraph.get_shortest_paths(
+                source, target, weights='length', output='epath'
+            )[0]
+        except ValueError:
+            return None
+
+    @functools.lru_cache(maxsize=800)
     def distance(self, u: str, v: str) -> float:
         """
         Calculate approx distance between two stations. Uses the Streckennetz if u and v are part of it,
@@ -107,16 +96,9 @@ class StreckennetzSteffi(StationPhillip):
         float:
             Distance in meters between u and v.
         """
-        if u in self.streckennetz and v in self.streckennetz:
-            try:
-                return nx.shortest_path_length(self.streckennetz, u, v, weight='length')
-            except nx.exception.NetworkXNoPath:
-                try:
-                    u_coords = self.get_location(name=u)
-                    v_coords = self.get_location(name=v)
-                    return geopy.distance.distance(u_coords, v_coords).meters
-                except KeyError:
-                    return 0
+        path = self.get_edge_path(u, v)
+        if path is not None:
+            return sum(map(self.get_length, path))
         else:
             try:
                 u_coords = self.get_location(name=u)
@@ -126,7 +108,23 @@ class StreckennetzSteffi(StationPhillip):
                 return 0
 
 
+from helpers.profiler import profile
+from tqdm import tqdm
+
+@profile
+def speedtest(streckennetz_steffi):
+    errors = 0
+    for station in tqdm(streckennetz_steffi):
+        if station != 'Tübingen Hbf':
+            try:
+                streckennetz_steffi.distance('Tübingen Hbf', station)
+            except:
+                errors += 1
+    return errors
+
+
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
-    streckennetz_steffi = StreckennetzSteffi()
-    print(streckennetz_steffi.route_length(['Tübingen Hbf', 'Stuttgart Hbf', 'Paris Est']))
+    streckennetz_steffi = StreckennetzSteffi(prefer_cache=True)
+    print(speedtest(streckennetz_steffi) / len(streckennetz_steffi))
+    # print(streckennetz_steffi.route_length(['Tübingen Hbf', 'Stuttgart Hbf', 'Paris Est']))

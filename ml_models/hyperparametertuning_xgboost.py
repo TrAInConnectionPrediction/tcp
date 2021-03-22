@@ -66,14 +66,6 @@ class Datasets(RtdRay):
             (self.rtd["ar_pt"] >= current_date) | (self.rtd["dp_pt"] >= current_date)
         ) & ((self.rtd["ar_pt"] < max_test_date) | (self.rtd["dp_pt"] < max_test_date))
 
-        train_filter = train_filter & (
-            ~self.rtd["ar_delay"].isna()
-            | (self.rtd["ar_cs"] == self.status_encoder["ar"]["c"])
-        )
-        test_filter = test_filter & (
-            ~self.rtd["dp_delay"].isna()
-            | (self.rtd["dp_cs"] == self.status_encoder["dp"]["c"])
-        )
 
         if ar_or_dp == "ar":
             train_filter = train_filter & (
@@ -85,11 +77,11 @@ class Datasets(RtdRay):
                 | (self.rtd["ar_cs"] == self.status_encoder["ar"]["c"])
             )
             train_y = (self.rtd.loc[train_filter, "ar_delay"] <= threshhold_minutes) & (
-                self.rtd.loc[train_filter, "ar_delay"] != self.status_encoder["ar"]["c"]
+                self.rtd.loc[train_filter, "ar_cs"] != self.status_encoder["ar"]["c"]
             )
 
             test_y = (self.rtd.loc[test_filter, "ar_delay"] <= threshhold_minutes) & (
-                self.rtd.loc[test_filter, "ar_delay"] != self.status_encoder["ar"]["c"]
+                self.rtd.loc[test_filter, "ar_cs"] != self.status_encoder["ar"]["c"]
             )
 
         else:
@@ -102,11 +94,11 @@ class Datasets(RtdRay):
                 | (self.rtd["dp_cs"] == self.status_encoder["dp"]["c"])
             )
             train_y = (self.rtd.loc[train_filter, "dp_delay"] >= threshhold_minutes) & (
-                self.rtd.loc[train_filter, "dp_delay"] != self.status_encoder["dp"]["c"]
+                self.rtd.loc[train_filter, "dp_cs"] != self.status_encoder["dp"]["c"]
             )
 
             test_y = (self.rtd.loc[test_filter, "dp_delay"] >= threshhold_minutes) & (
-                self.rtd.loc[test_filter, "dp_delay"] != self.status_encoder["dp"]["c"]
+                self.rtd.loc[test_filter, "dp_cs"] != self.status_encoder["dp"]["c"]
             )
 
         train_x = self.rtd.loc[train_filter]
@@ -152,12 +144,12 @@ def objective(trial, threshhold_minutes, ar_or_dp):
         "random_state": 0,
         "tree_method": "gpu_hist",
         "use_label_encoder": False,
-        "n_estimators": trial.suggest_int("n_estimators", 10, 80),
+        "n_estimators": trial.suggest_int("n_estimators", 20, 100),
         "max_depth": trial.suggest_int("max_depth", 1, 20, log=True),
-        # "gamma": trial.suggest_float("gamma", 1e-8, 10, log=True),
-        # "learning_rate": trial.suggest_float("learning_rate", 1e-3, 1.0, log=True),
+        "gamma": trial.suggest_float("gamma", 1e-8, 10, log=True),
+        "learning_rate": trial.suggest_float("learning_rate", 1e-3, 1.0, log=True),
     }
-    days_for_training = trial.suggest_int("days_for_training", 2, 28)
+    days_for_training = 28 # trial.suggest_int("days_for_training", 2, 28)
     scores = []
     for current_date in pd.date_range(
         datetime.datetime(2021, 1, 28), datetime.datetime(2021, 2, 17), freq="4D"
@@ -181,6 +173,14 @@ if __name__ == "__main__":
     client = Client()
     datasets = Datasets()
     print("created datasets")
+
+    for ar_or_dp in ["ar", "dp"]:
+        for threshhold in CLASSES_TO_COMPUTE:
+            train_x, train_y, test_x, test_y = datasets.get_sets(
+                datetime.datetime(2021, 2, 17), 28, threshhold, ar_or_dp
+            )
+            baseline = train_y.sum() / len(train_y)
+            print(ar_or_dp, threshhold, '\t', baseline, '\t', 1 - baseline)
 
     for ar_or_dp in ["ar", "dp"]:
         for threshhold in CLASSES_TO_COMPUTE:

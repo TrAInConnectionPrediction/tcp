@@ -325,3 +325,8 @@ cache/*
 !cache/recent_change_rtd_pp_encoder_dict.pkl
 !cache/recent_change_rtd_station_encoder_dict.pkl
 !cache/recent_change_rtd_t_encoder_dict.pkl
+media/mctoel/DATA/dev/tcp/cache/station_cache
+media/mctoel/DATA/dev/tcp/cache/streckennetz_cache
+server_config.py
+helpers/igraph_test.py
+helpers/edgelist.pkl

@@ -1,42 +1,23 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from database.cached_table_fetch import cached_table_fetch
 import pandas as pd
 import random
 
 class StationPhillip:
-    def __init__(self):
-        cache_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/cache/'
-        if not os.path.isdir(cache_dir):
-            try:
-                os.mkdir(cache_dir)
-            except OSError:
-                pass
+    def __init__(self, **kwargs):
+        self.stations_df = cached_table_fetch('stations', **kwargs)
 
-        self.CACHE_PATH = cache_dir + 'station_cache'
-        try:
-            from database.engine import engine
-            self.station_df = pd.read_sql('SELECT * FROM stations', con=engine)
-            engine.dispose()
-            self.station_df.to_pickle(self.CACHE_PATH)
-        except Exception as e:
-            print(e)
-            try:
-                self.station_df = pd.read_pickle(self.CACHE_PATH)
-                print('Using offline station buffer')
-            except FileNotFoundError:
-                raise FileNotFoundError('There is no connection to the database and no local buffer')
-        
-
-        self.station_df['eva'] = self.station_df['eva'].astype(int)
-        self.name_index_stations = self.station_df.set_index('name')
-        self.eva_index_stations = self.station_df.set_index('eva')
-        self.ds100_index_stations = self.station_df.set_index('ds100')
-        self.sta_list = self.station_df['name'].tolist()
-        self.random_sta_list = self.station_df['name'].tolist()
+        self.stations_df['eva'] = self.stations_df['eva'].astype(int)
+        self.name_index_stations = self.stations_df.set_index('name')
+        self.eva_index_stations = self.stations_df.set_index('eva')
+        self.ds100_index_stations = self.stations_df.set_index('ds100')
+        self.sta_list = self.stations_df['name'].tolist()
+        self.random_sta_list = self.stations_df['name'].tolist()
 
     def __len__(self):
-        return len(self.station_df)
+        return len(self.stations_df)
 
     def __iter__(self):
         self.n = 0
@@ -59,7 +40,10 @@ class StationPhillip:
             Stations with coordinates as geometry for geopandas.DataFrame.
         """
         import geopandas as gpd
-        return gpd.GeoDataFrame(self.station_df, geometry=gpd.points_from_xy(self.station_df.lon, self.station_df.lat))
+        return gpd.GeoDataFrame(
+            self.name_index_stations,
+            geometry=gpd.points_from_xy(self.name_index_stations.lon, self.name_index_stations.lat)
+        ).set_crs("EPSG:4326")
 
     def get_eva(self, name=None, ds100=None):
         """
@@ -170,6 +154,22 @@ class StationPhillip:
         else:
             return (self.eva_index_stations.at[eva, 'lon'],
                     self.eva_index_stations.at[eva, 'lat'])
+
+    def search_station(self, search_term):
+        import requests
+        search_term = search_term.replace('/', ' ')
+        matches = requests.get(f'https://marudor.de/api/hafas/v1/station/{search_term}').json()
+        return matches
+
+    def search_iris(self, search_term):
+        import requests
+        from rtd_crawler.xml_parser import xml_to_json
+        import lxml.etree as etree
+
+        matches = requests.get(f'http://iris.noncd.db.de/iris-tts/timetable/station/{search_term}').text
+        matches = etree.fromstring(matches.encode())
+        matches = list(xml_to_json(match) for match in matches)
+        return matches
 
     def random_iter(self):
         """
