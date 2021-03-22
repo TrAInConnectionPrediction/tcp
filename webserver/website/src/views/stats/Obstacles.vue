@@ -1,6 +1,6 @@
 <template>
-  <div id="stats" class="stations">
-    <h1 class="text-center"> Verspätungen in Deutschland </h1>
+  <div id="stats" class="obstacles">
+    <h1 class="text-center"> Zug-Behinderungen in Deutschland </h1>
     <div class="stats-picker">
       <vue-slider
         v-model="value"
@@ -32,7 +32,7 @@
 import VueSlider from 'vue-slider-component'
 import 'vue-slider-component/theme/default.css'
 
-const date1 = new Date(2021, 0, 1)
+const date1 = new Date(2021, 3, 1)
 const date2 = new Date().setHours(0, 0, 0, 0)
 const diffDays = Math.ceil(Math.abs(date2 - date1) / (1000 * 60 * 60))
 const dates = []
@@ -65,7 +65,7 @@ export default {
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/default.png'
+        '/api/obstacleplot/default.png'
     }
   },
   methods: {
@@ -74,7 +74,7 @@ export default {
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/' +
+        '/api/obstacleplot/' +
         this.value[0].replace(/,/g, '') +
         '-' +
         this.value[1].replace(/,/g, '') +
@@ -99,7 +99,7 @@ export default {
         window.location.protocol +
         '//' +
         window.location.host +
-        '/api/stationplot/default.png'
+        '/api/obstacleplot/default.png'
     }
   }
 }

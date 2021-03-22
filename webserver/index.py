@@ -2,12 +2,12 @@ from flask import Blueprint, render_template
 
 index_blueprint = Blueprint("index", __name__, url_prefix="")
 
-
-@index_blueprint.route("/")
-@index_blueprint.route("/about")
-@index_blueprint.route("/stats")
-@index_blueprint.route("/imprint")
-def home(output=[]):
+# This routes everything to vue,
+# but for nested stuff you have to add a seperate route
+@index_blueprint.route("/", defaults={"path": ""})
+@index_blueprint.route("/<string:path>")
+@index_blueprint.route("/data/<string:path>")
+def home(**kwargs):
     """
     Gets called when somebody requests the website
 
@@ -17,7 +17,7 @@ def home(output=[]):
     Returns:
         webpage: the home-/landing page
     """
-    return render_template('index.html')
+    return render_template("index.html")
 
 @index_blueprint.app_errorhandler(404)
 def not_found(e):

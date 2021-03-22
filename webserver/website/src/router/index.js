@@ -26,15 +26,24 @@ const routes = [
     component: () => import('../views/privacy.vue')
   },
   {
-    path: '/stats',
-    name: 'Statistiken',
-    component: () => import('../views/stats/Overview.vue')
+    path: '/data',
+    redirect: { name: 'Statistiken' }
   },
   {
-    path: '/stats/stations',
+    path: '/data/stats',
+    name: 'Statistiken',
+    component: () => import('../views/stats/Stats.vue')
+  },
+  {
+    path: '/data/stations',
     name: 'Stations Statistiken',
     component: () => import('../views/stats/Stations.vue')
   }
+  // {
+  //   path: '/data/obstacles',
+  //   name: 'Zug-Behinderungen',
+  //   component: () => import('../views/stats/Obstacles.vue')
+  // }
 ]
 
 const router = new VueRouter({
