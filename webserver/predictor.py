@@ -41,10 +41,11 @@ class Predictor:
         for tra_time in range(40):
             mask = transfer_time == tra_time
             if mask.any():
-                con_score[mask] = ar_prediction[mask, tra_time - 2] * dp_prediction[mask, 0]
-                con_score[mask] = con_score[mask] \
-                                  + np.sum((ar_prediction[mask, tra_time-1:] - ar_prediction[mask, tra_time-2:-1])
-                                           * dp_prediction[mask, 1:2-tra_time or dp_prediction.shape[1]], axis=1)
+                con_score[mask] = ar_prediction[mask, max(tra_time - 2, 0)] * dp_prediction[mask, max(0, 2 - tra_time)]
+                con_score[mask] = con_score[mask] + np.sum((
+                    ar_prediction[mask, max(tra_time-2, 0)+1:dp_prediction.shape[1] - max(0, 2 - tra_time)]
+                    - ar_prediction[mask, max(tra_time-2, 0):dp_prediction.shape[1] - 1 - max(0, 2 - tra_time)])
+                    * dp_prediction[mask, max(0, 2 - tra_time)+1:dp_prediction.shape[1] + min(2-tra_time, 0)], axis=1)
         return np.minimum(con_score, np.ones(len(con_score)))
 
     def get_pred_data(self, segments: list):
