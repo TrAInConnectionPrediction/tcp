@@ -40,7 +40,7 @@
       </div>
       <div class="card_header_item">
         <div class="card_header_item_header">Verbindungs-Score</div>
-        <div class="card_header_item_item">{{ summary.score }}%</div>
+        <div class="card_header_item_item" v-bind:style="[text_color]">{{ summary.score }}%</div>
       </div>
     </div>
     <!-- segments -->
@@ -79,6 +79,9 @@ export default {
       },
       border_style: {
         'border-left': '10px solid ' + rdylgr_colormap(this.summary.score, 50, 100, 200)
+      },
+      text_color: {
+        color: rdylgr_colormap(this.summary.score, 50, 100, 200)
       }
     }
   }

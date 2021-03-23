@@ -30,7 +30,8 @@
         Umsteigezeit: {{ segment.transfer_time }} Min.
       </div>
       <div class="score" v-bind:style="transfer_style">
-        Verbindungs-Score: {{ segment.score }}%
+        Verbindungs-Score:
+        <span v-bind:style="text_color">{{ segment.score }}%<span>
       </div>
     </div>
 
@@ -57,6 +58,9 @@ export default {
       },
       transfer_style: {
         'background-color': '#212529'
+      },
+      text_color: {
+        color: rdylgr_colormap(this.segment.score, 50, 100, 200)
       },
       train_icons: {
         ICE: require('../assets/img/ICE.svg'),
