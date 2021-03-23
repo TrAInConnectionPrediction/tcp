@@ -12,6 +12,7 @@ import datetime
 from database.plan import PlanManager
 from rtd_crawler.xml_parser import xml_to_json
 from concurrent.futures import ThreadPoolExecutor
+import traceback
 
 
 def preparse_plan(plan):
@@ -52,7 +53,4 @@ if __name__ == '__main__':
                 print(datetime.datetime.now(), 'uploaded plan to db')
 
             except Exception as ex:
-                print(ex)
-
-
-
+                traceback.print_exc()

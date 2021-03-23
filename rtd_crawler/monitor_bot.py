@@ -1,5 +1,7 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if os.path.isfile("/mnt/config/config.py"):
+    sys.path.append("/mnt/config/")
 import discord
 from discord.ext import tasks, commands
 from config import discord_bot_token

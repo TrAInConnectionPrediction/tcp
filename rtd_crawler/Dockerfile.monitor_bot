@@ -14,17 +14,16 @@ RUN apt-get update -y && apt-get install -y gcc
 
 # install dependencies
 RUN pip install --upgrade pip
-COPY ./rtd_crawler/crawler_requirements.txt /usr/src/crawler/crawler_requirements.txt
-RUN pip install -r crawler_requirements.txt
+COPY ./rtd_crawler/monitor_requirements.txt /usr/src/crawler/monitor_requirements.txt
+RUN pip install -r monitor_requirements.txt
 
-COPY ./cache/ /usr/src/crawler/cache/
 COPY ./helpers/ /usr/src/crawler/helpers/
 COPY ./database/ /usr/src/crawler/database/
 COPY ./rtd_crawler/ /usr/src/crawler/rtd_crawler/
 
 # Switching to a non-root user, please refer to https://aka.ms/vscode-docker-python-user-rights
-RUN useradd appuser && chown -R appuser /usr/src/crawler
-USER appuser
+RUN addgroup --system --gid 420 tcp && adduser --system --no-create-home --uid 420 --gid 420 tcp
+USER tcp
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "rtd_crawler/plan_crawler.py"]
+CMD ["python", "rtd_crawler/monitor_bot.py"]

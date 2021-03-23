@@ -1,0 +1,8 @@
+#Ignore everything
+*
+
+#Except
+!database/
+!helpers/
+!rtd_crawler/
+!fancy_print_tcp.py
