@@ -1,6 +1,6 @@
 <template>
   <!-- summary -->
-  <div v-bind:style="background_color" class="custom_card">
+  <div v-bind:style="[background_color, border_style]" class="custom_card">
     <div v-on:click="show_details = !show_details" class="card_header">
       <div class="card_header_item">
         <div class="card_header_item_header">Bahnhof</div>
@@ -75,7 +75,10 @@ export default {
     return {
       show_details: false,
       background_color: {
-        'background-color': rdylgr_colormap(this.summary.score, 50, 100)
+        'background-color': '#212529'
+      },
+      border_style: {
+        'border-left': '10px solid ' + rdylgr_colormap(this.summary.score, 50, 100, 200)
       }
     }
   }

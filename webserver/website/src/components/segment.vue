@@ -35,7 +35,7 @@
     </div>
 
     <div v-if="segment.walk" class="walk" v-bind:style="transfer_style">
-      <img src="../assets/img/pedestrian.svg" height="20px" />
+      <img src="../assets/img/pedestrian.svg" height="20px" style="color: lightgray" />
       davon {{ segment.walk }} Min. Fußweg
     </div>
   </div>
@@ -50,14 +50,13 @@ export default {
     return {
       show_details: false,
       dp_station_style: {
-        'background-color': rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8)
+        border: '2px solid ' + rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8, 200)
       },
       ar_station_style: {
-        'background-color': rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8)
+        border: '2px solid ' + rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8, 200)
       },
       transfer_style: {
-        'background-color': rdylgr_colormap(this.con_score, 50, 100),
-        'border-color': rdylgr_colormap(this.con_score, 50, 100)
+        'background-color': '#212529'
       },
       train_icons: {
         ICE: require('../assets/img/ICE.svg'),

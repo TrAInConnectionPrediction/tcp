@@ -25,20 +25,6 @@ export default {
 </script>
 
 <style>
-/* connection style */
-/* .custom_card {
-  margin-bottom: 5px;
-}
-
-.card_header {
-  padding: 20px;
-  min-height: 60px;
-  height: max-content;
-  display: flex;
-  flex-wrap: wrap;
-  background-color: rgba(0, 0, 0, 0.03);
-} */
-
 .card_header_item {
   display: inline-grid;
   height: max-content;
@@ -48,7 +34,7 @@ export default {
 
 .card_header_item_header {
   padding: 10px 10px 0 10px;
-  border-bottom: 1.5px solid black;
+  border-bottom: 1.5px solid #4b4b4b;
   font-weight: bold;
 }
 
@@ -67,7 +53,7 @@ export default {
   grid-template-columns: repeat(3, max-content);
   grid-gap: 0px;
   width: max-content;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .open-enter-active,
@@ -104,16 +90,16 @@ export default {
 }
 
 .score {
-  border: solid 10px;
+  border: solid 10px transparent;
   grid-column-start: span 2;
 }
 
 .transfer {
-  border: solid 10px;
+  border: solid 10px transparent;
 }
 
 .walk {
-  border: solid 10px;
+  border: solid 10px transparent;
   grid-column-start: span 3;
 }
 

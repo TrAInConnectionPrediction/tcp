@@ -214,6 +214,7 @@ i {
 
 .custom_card {
   margin-bottom: 5px;
+  color: lightgray;
 }
 
 .card_header {
