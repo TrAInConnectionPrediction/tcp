@@ -2,8 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: recent-change-crawler
-  name: recent-change-crawler
+    app: monitor-bot
+  name: monitor-bot
   namespace: default
 spec:
   progressDeadlineSeconds: 600
@@ -11,14 +11,14 @@ spec:
   revisionHistoryLimit: 0
   selector:
     matchLabels:
-      app: recent-change-crawler
+      app: monitor-bot
   template:
     metadata:
       labels:
-        app: recent-change-crawler
+        app: monitor-bot
     spec:
       containers:
-      - image: trainconnectionprediction/tcp:recent_change_crawler
+      - image: trainconnectionprediction/tcp:monitor_bot
         imagePullPolicy: Always
         name: tcp
         resources: {}
