@@ -7,6 +7,7 @@
 !database/
 !helpers/
 !data_analysis/
+!rtd_crawler/
 !fancy_print_tcp.py
 
 # Ignore unnecessary files inside allowed directories

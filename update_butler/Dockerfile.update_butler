@@ -48,6 +48,7 @@ RUN addgroup --system --gid 420 tcp && adduser --system --no-create-home --uid 4
 COPY ./helpers/ /usr/src/app/helpers/
 COPY ./database/ /usr/src/app/database/
 COPY ./data_analysis/ /usr/src/app/data_analysis/
+COPY ./rtd_crawler/ /usr/src/app/rtd_crawler/
 COPY ./update_butler/ /usr/src/app/update_butler/
 # Cache should be mounted seperatly
 # COPY ./cache/ /usr/src/app/cache/

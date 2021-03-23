@@ -1,5 +1,6 @@
 alembic==1.5.7
 bokeh==2.3.0
+cityhash==0.2.3.post9
 click==7.1.2
 cloudpickle==1.6.0
 cycler==0.10.0
@@ -10,6 +11,7 @@ dask[distributed]==2021.3.0
 DateTime==4.3
 distributed==2021.3.0
 fsspec==0.8.7
+geopy==2.1.0
 greenlet==1.0.0
 HeapDict==1.0.1
 Jinja2==2.11.3
@@ -19,6 +21,7 @@ Mako==1.1.4
 MarkupSafe==1.1.1
 matplotlib==3.3.4
 msgpack==1.0.2
+networkx==2.5
 numpy==1.20.1
 packaging==20.9
 pandas==1.2.3
@@ -31,12 +34,14 @@ pyarrow==3.0.0
 pyparsing==2.4.7
 python-dateutil==2.8.1
 python-editor==1.0.4
+python-igraph==0.9.0 
 pytz==2021.1
 PyYAML==5.4.1
 six==1.15.0
 sortedcontainers==2.3.0
 SQLAlchemy==1.3.20
 tblib==1.7.0
+tqdm==4.59.0
 toolz==0.11.1
 tornado==6.1
 typing-extensions==3.7.4.3
