@@ -7,6 +7,7 @@ module.exports = {
     msTileColor: '#212121',
     manifestOptions: {
       background_color: '#212121'
-    }
+    },
+    assetsVersion: '0.0.1'
   }
 }
