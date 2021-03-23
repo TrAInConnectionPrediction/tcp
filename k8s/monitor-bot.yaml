@@ -27,7 +27,7 @@ spec:
         volumeMounts:
         - mountPath: /mnt/config
           name: config-pvc-storage
-        - mountPath: /mnt/cache
+        - mountPath: /usr/src/app/cache
           name: cache-pvc-storage
       dnsPolicy: ClusterFirst
       restartPolicy: Always
