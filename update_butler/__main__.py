@@ -5,6 +5,12 @@ import helpers.fancy_print_tcp
 
 print("Init")
 
+# load/import classes
+from dask.distributed import Client, LocalCluster
+
+# set up cluster and workers
+client = Client(n_workers=8, threads_per_worker=2, memory_limit='8GB')
+
 from helpers.RtdRay import RtdRay
 rtd_ray = RtdRay()
 
@@ -28,7 +34,8 @@ print("Generating Statistics...")
 print("--Overview")
 
 from data_analysis.data_stats import Stats
-stats = Stats()
+from datetime import datetime, timedelta
+stats = Stats(datetime.now() - timedelta(1))
 stats.generate_stats()
 stats.save_stats()
 

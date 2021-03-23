@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "26"
+  creationTimestamp: "2021-02-05T07:58:20Z"
+  generation: 27
+  labels:
+    app: webserver
+  name: webserver
+  namespace: default
+  resourceVersion: "6829748"
+  selfLink: /apis/apps/v1/namespaces/default/deployments/webserver
+  uid: 55f59e21-239f-41e2-859a-36a35c474016
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: webserver
+  strategy:
+    rollingUpdate:
+      maxSurge: 33%
+      maxUnavailable: 33%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2021-03-22T12:56:49Z"
+      creationTimestamp: null
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - image: trainconnectionprediction/webserver:latest
+        imagePullPolicy: Always
+        name: webserver
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /mnt/config
+          name: config-pvc-storage
+        - mountPath: /usr/src/app/cache
+          name: cache-pvc-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config-pvc-storage
+        persistentVolumeClaim:
+          claimName: config-pvc
+      - name: cache-pvc-storage
+        persistentVolumeClaim:
+          claimName: cache-pvc
