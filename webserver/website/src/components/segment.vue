@@ -1,10 +1,6 @@
 <template>
   <div style="display: contents">
-    <div>
-      <div class="line_hidden"></div>
-      <div class="line_solid"></div>
-      <div v-bind:style="dp_station_style" class="dot_on_line"></div>
-    </div>
+    <div v-bind:style="gradient_line" class="station_delay_line"></div>
     <div class="station">
       {{ segment.dp_station_display_name }}
     </div>
@@ -13,10 +9,6 @@
     <div class="platform" v-if="segment.dp_pp == segment.dp_cp">von Gl. {{ segment.dp_cp }}</div>
     <div class="platform" v-else>von Gl. {{ segment.dp_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 
-    <div>
-      <div class="line_solid"></div>
-      <div class="line_solid"></div>
-    </div>
     <div class="train" style="grid-column-start: span 3;">
       <img
         v-if="segment.dp_c in train_icons"
@@ -26,11 +18,6 @@
       {{ segment.train_name }} nach {{ segment.train_destination }}
     </div>
 
-    <div>
-      <div class="line_solid"></div>
-      <div class="line_hidden"></div>
-      <div v-bind:style="ar_station_style" class="dot_on_line"></div>
-    </div>
     <div class="station">
       {{ segment.ar_station_display_name }}
     </div>
@@ -40,10 +27,7 @@
     <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 
     <div v-if="'transfer_time' in segment" style="display: contents">
-      <div style="background-color: #212529">
-        <div style="border-left: 4px none lightgray;height: 50%;"></div>
-        <div style="border-left: 4px none lightgray;height: 50%;"></div>
-      </div>
+      <div style="background-color: #212529"></div>
       <div class="transfer" v-bind:style="transfer_style">
         Umsteigezeit: {{ segment.transfer_time }} Min.
       </div>
@@ -54,10 +38,7 @@
     </div>
 
     <div v-if="segment.walk" class="walk" v-bind:style="transfer_style">
-      <div style="background-color: #212529">
-        <div style="border-left: 4px none lightgray;height: 50%;"></div>
-        <div style="border-left: 4px none lightgray;height: 50%;"></div>
-      </div>
+      <div style="background-color: #212529"></div>
       <img src="../assets/img/pedestrian.svg" height="20px" style="color: lightgray" />
       davon {{ segment.walk }} Min. Fußweg
     </div>
@@ -83,6 +64,9 @@ export default {
       },
       text_color: {
         color: rdylgr_colormap(this.segment.score, 50, 100, 200)
+      },
+      gradient_line: {
+        'background-image': 'linear-gradient(' + rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8, 200) + ', ' + rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8, 200) + ')'
       },
       train_icons: {
         ICE: require('../assets/img/ICE.svg'),

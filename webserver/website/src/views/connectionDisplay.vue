@@ -74,7 +74,6 @@ export default {
   margin: 10px 0;
   width: 100%;
   padding: 5px;
-  /* border: solid 1px; */
   background-color: #212529;
 }
 
@@ -110,23 +109,9 @@ export default {
   }
 }
 
-.line_solid {
-  border-left: 4px solid gray;
-  height: 50%;
-  margin: 0 14px;
-}
-
-.line_hidden {
-  border-left: 4px none lightgray;
-  height: 50%;
-  margin: 0 14px;
-}
-
-.dot_on_line {
-  width: 20px;
-  height: 20px;
-  position: relative;
-  margin: -39px 0px 0px 6px;
-  border-radius: 10px;
+.station_delay_line {
+  grid-row-start: span 3;
+  width: 10px;
+  margin: 10px 5px;
 }
 </style>
