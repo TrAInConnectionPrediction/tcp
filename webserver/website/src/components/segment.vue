@@ -1,6 +1,11 @@
 <template>
   <div style="display: contents">
-    <div class="station" v-bind:style="dp_station_style">
+    <div>
+      <div class="line_hidden"></div>
+      <div class="line_solid"></div>
+      <div v-bind:style="dp_station_style" class="dot_on_line"></div>
+    </div>
+    <div class="station">
       {{ segment.dp_station_display_name }}
     </div>
     <div class="time" v-if="segment.dp_pt == segment.dp_ct">ab {{ segment.dp_ct }}</div>
@@ -8,6 +13,10 @@
     <div class="platform" v-if="segment.dp_pp == segment.dp_cp">von Gl. {{ segment.dp_cp }}</div>
     <div class="platform" v-else>von Gl. {{ segment.dp_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 
+    <div>
+      <div class="line_solid"></div>
+      <div class="line_solid"></div>
+    </div>
     <div class="train" style="grid-column-start: span 3;">
       <img
         v-if="segment.dp_c in train_icons"
@@ -17,7 +26,12 @@
       {{ segment.train_name }} nach {{ segment.train_destination }}
     </div>
 
-    <div class="station" v-bind:style="ar_station_style">
+    <div>
+      <div class="line_solid"></div>
+      <div class="line_hidden"></div>
+      <div v-bind:style="ar_station_style" class="dot_on_line"></div>
+    </div>
+    <div class="station">
       {{ segment.ar_station_display_name }}
     </div>
     <div class="time" v-if="segment.ar_pt == segment.ar_ct">an {{ segment.ar_ct }}</div>
@@ -26,16 +40,24 @@
     <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="pt">{{ segment.dp_pp }}</del></div>
 
     <div v-if="'transfer_time' in segment" style="display: contents">
+      <div style="background-color: #212529">
+        <div style="border-left: 4px none lightgray;height: 50%;"></div>
+        <div style="border-left: 4px none lightgray;height: 50%;"></div>
+      </div>
       <div class="transfer" v-bind:style="transfer_style">
         Umsteigezeit: {{ segment.transfer_time }} Min.
       </div>
       <div class="score" v-bind:style="transfer_style">
         Verbindungs-Score:
-        <span v-bind:style="text_color">{{ segment.score }}%<span>
+        <span v-bind:style="text_color">{{ segment.score }}%</span>
       </div>
     </div>
 
     <div v-if="segment.walk" class="walk" v-bind:style="transfer_style">
+      <div style="background-color: #212529">
+        <div style="border-left: 4px none lightgray;height: 50%;"></div>
+        <div style="border-left: 4px none lightgray;height: 50%;"></div>
+      </div>
       <img src="../assets/img/pedestrian.svg" height="20px" style="color: lightgray" />
       davon {{ segment.walk }} Min. Fußweg
     </div>
@@ -51,10 +73,10 @@ export default {
     return {
       show_details: false,
       dp_station_style: {
-        border: '2px solid ' + rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8, 200)
+        'background-color': rdylgr_colormap(this.segment.dp_delay, 0.2, 0.8, 200)
       },
       ar_station_style: {
-        border: '2px solid ' + rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8, 200)
+        'background-color': rdylgr_colormap(this.segment.ar_delay, 0.2, 0.8, 200)
       },
       transfer_style: {
         'background-color': '#212529'

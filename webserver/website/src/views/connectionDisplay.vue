@@ -50,7 +50,7 @@ export default {
 .details_grid {
   margin: 20px;
   display: inline-grid;
-  grid-template-columns: repeat(3, max-content);
+  grid-template-columns: repeat(4, max-content);
   grid-gap: 0px;
   width: max-content;
   background-color: rgba(255, 255, 255, 0.05);
@@ -71,10 +71,11 @@ export default {
 }
 
 .station {
-  margin: 10px;
+  margin: 10px 0;
   width: 100%;
   padding: 5px;
-  border: solid 1px;
+  /* border: solid 1px; */
+  background-color: #212529;
 }
 
 .time {
@@ -107,5 +108,25 @@ export default {
   .m-5 {
     margin: 3rem 0.5rem 3rem 0.5rem !important;
   }
+}
+
+.line_solid {
+  border-left: 4px solid gray;
+  height: 50%;
+  margin: 0 14px;
+}
+
+.line_hidden {
+  border-left: 4px none lightgray;
+  height: 50%;
+  margin: 0 14px;
+}
+
+.dot_on_line {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  margin: -39px 0px 0px 6px;
+  border-radius: 10px;
 }
 </style>
