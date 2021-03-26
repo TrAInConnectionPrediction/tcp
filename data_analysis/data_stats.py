@@ -22,12 +22,15 @@ class Stats:
     # Graph?
     stats = {'all': {}, 'new': {}}
 
-    def __init__(self, min_date=datetime.now() - timedelta(1)):
+    def __init__(self, max_date=datetime.now() - timedelta(hours=3)):
         from helpers.RtdRay import RtdRay
 
+        min_date = max_date + timedelta(1)
         self._rtd_d = RtdRay().load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs"])
+        # HYPER OPTIMISATION SPEED DATA LOADING
         self._rtd_d_new = self._rtd_d.loc[
-            (self._rtd_d["ar_pt"] >= min_date) | (self._rtd_d["dp_pt"] >= min_date)
+            (self._rtd_d["ar_pt"] >= min_date) | (self._rtd_d["dp_pt"] >= min_date) |
+            (self._rtd_d["ar_pt"] <= min_date) | (self._rtd_d["dp_pt"] <= min_date)
         ]
 
     def generate_stats(self):
