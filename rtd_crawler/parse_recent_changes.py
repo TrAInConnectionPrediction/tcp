@@ -6,7 +6,7 @@ import datetime
 from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
 from database.rtd import RtdManager, sql_types, RtdArrays
-from helpers.obstacles import ObstacleOlly
+from helpers.ObstacleOlly import ObstacleOlly
 import json
 import re
 import concurrent.futures
@@ -169,9 +169,8 @@ def add_distance(rtd):
         try:
             rtd[col] = rtd[col].str.split('|')
         except AttributeError:
-            # It might happen, that the column is empty and therefor not of type str
+            # It might happen, that the column is empty and therefore not of type str
             pass
-
 
     for i in rtd.index:
         ar_cpth = rtd.at[i, 'ar_cpth']
@@ -256,14 +255,13 @@ def parse(only_new=True):
     else:
         start_date = datetime.datetime(2020, 10, 1, 0, 0)
     end_date = datetime.datetime.now()
-    # parse_station('Tübingen Hbf', start_date, end_date)
+    # parse_station('Tübingen Hbf', datetime.datetime(2021, 1, 1, 0, 0), end_date)
     with concurrent.futures.ProcessPoolExecutor(min(32, os.cpu_count())) as executor:
         futures = {executor.submit(parse_station, station, start_date, end_date): station
                    for station
                    in obstacles}
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(obstacles)):
             future.result()
-
 
 
 if __name__ == "__main__":
