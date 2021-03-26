@@ -1,0 +1,30 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  labels:
+    app: update_butler
+  name: update_butler
+  namespace: default
+spec:
+  schedule: "0 3 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: update_butler_container
+            image: trainconnectionprediction/update_butler:latest
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+            - mountPath: /mnt/config
+              name: config-pvc-storage
+            - mountPath: /usr/src/app/cache
+              name: cache-pvc-storage
+          restartPolicy: OnFailure
+          volumes:
+          - name: config-pvc-storage
+            persistentVolumeClaim:
+              claimName: config-pvc
+          - name: cache-pvc-storage
+            persistentVolumeClaim:
+              claimName: cache-pvc

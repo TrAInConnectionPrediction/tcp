@@ -1,13 +1,17 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Print Logo
 import helpers.fancy_print_tcp
-from rtd_crawler.parse_recent_changes import parse
 
 print("Init")
 
+if os.path.isfile("/mnt/config/config.py"):
+    sys.path.append("/mnt/config/")
+import config
+
 # load/import classes
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client
 
 # set up cluster and workers
 client = Client(n_workers=8, threads_per_worker=2, memory_limit='8GB')
@@ -19,6 +23,7 @@ print("Done")
 
 print("Parsing new data...")
 
+from rtd_crawler.parse_recent_changes import parse
 parse(only_new=True)
 
 print("Done")
