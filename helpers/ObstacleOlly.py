@@ -44,7 +44,7 @@ class ObstacleOlly(StreckennetzSteffi):
             'length': [],
             'edge_id': [],
             'dir': [],
-            'type':[],
+            'type': [],
             'summary': [],
             'category': [],
             'modified': [],
@@ -86,17 +86,21 @@ class ObstacleOlly(StreckennetzSteffi):
                 if path is None:
                     continue
                 for edge_id in path:
-                    edge_obstacles['edge_id'].append(edge_id)
-                    edge_obstacles['length'].append(self.streckennetz_igraph.es[edge_id]['length'])
-                    edge_obstacles['from_time'].append(obstacle['from_time'])
-                    edge_obstacles['to_time'].append(obstacle['to_time'])
-                    edge_obstacles['dir'].append(obstacle['dir'])
-                    edge_obstacles['type'].append(obstacle['type'])
+                    # type == 0: Störung
+                    # type == 1: Baustelle
+                    # type == 2: Meldung von Fahrdienstleiter*innen
+                    if obstacle['type'] == 1:
+                        edge_obstacles['edge_id'].append(edge_id)
+                        edge_obstacles['length'].append(self.streckennetz_igraph.es[edge_id]['length'])
+                        edge_obstacles['from_time'].append(obstacle['from_time'])
+                        edge_obstacles['to_time'].append(obstacle['to_time'])
+                        edge_obstacles['dir'].append(obstacle['dir'])
+                        edge_obstacles['type'].append(obstacle['type'])
 
-                    edge_obstacles['summary'].append(obstacle['summary'])
-                    edge_obstacles['category'].append(obstacle['category'])
-                    edge_obstacles['modified'].append(obstacle['modified'])
-                    edge_obstacles['priority'].append(obstacle['priority'])
+                        edge_obstacles['summary'].append(obstacle['summary'])
+                        edge_obstacles['category'].append(obstacle['category'])
+                        edge_obstacles['modified'].append(obstacle['modified'])
+                        edge_obstacles['priority'].append(obstacle['priority'])
 
         self.obstacles = pd.DataFrame(edge_obstacles)
         self.obstacles = self.obstacles.set_index('edge_id')
@@ -111,8 +115,9 @@ class ObstacleOlly(StreckennetzSteffi):
             'from_station': [],
             'to_station': [],
             'dir': [],
-            'type':[],
+            'type': [],
             'summary': [],
+            'text': [],
             'category': [],
             'modified': [],
             'priority': [],
@@ -137,6 +142,7 @@ class ObstacleOlly(StreckennetzSteffi):
 
                     simpler_obstacles['type'].append(obstacle['type'])
                     simpler_obstacles['summary'].append(obstacle['summary'])
+                    simpler_obstacles['text'].append(obstacle['text'])
                     simpler_obstacles['category'].append(obstacle['category'])
                     simpler_obstacles['modified'].append(obstacle['modified'])
                     simpler_obstacles['priority'].append(obstacle['priority'])
@@ -189,23 +195,18 @@ class ObstacleOlly(StreckennetzSteffi):
                 agg['priority_mean'] = mean[1]
                 agg['length_mean'] = mean[2]
                 agg['length_count'] = len(obstacles_on_path)
-                # agg = {}
-                # agg['category_sum'] = ob
-                # agg = obstacles_on_path.aggregate({
-                #     'category': ['sum', 'mean'],
-                #     'priority': ['sum', 'mean'],
-                #     'length': ['sum', 'mean', 'count'],
-                # })
                 return agg
             else:
                 return None
         return None
 
+
 def from_hafas_time(hafas_time):
     datetime.datetime.strptime(hafas_time, "%Y-%m-%dT%H:%M:%S%z").astimezone(timezone("Europe/Berlin"))
 
+
 if __name__ == '__main__':
-    obstacles = ObstacleOlly(prefer_cache=True)
-    obstacles.obstacles_of_path(['Tübingen Hbf', 'Stuttgart Hbf', 'Köln Hbf'], datetime.datetime(2021, 3, 18, 12))
+    obstacles = ObstacleOlly(prefer_cache=False)
+    # obstacles.obstacles_of_path(['Tübingen Hbf', 'Stuttgart Hbf', 'Köln Hbf'], datetime.datetime(2021, 3, 18, 12))
     obstacles.parse()
     obstacles.push_to_db()
