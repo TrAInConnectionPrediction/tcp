@@ -36,11 +36,13 @@
         <span v-bind:style="text_color">{{ segment.score }}%</span>
       </div>
     </div>
-
-    <div v-if="segment.walk" class="walk" v-bind:style="transfer_style">
+    <div v-if="segment.walk" v-bind:style="transfer_style" style="display: contents;">
       <div style="background-color: #212529"></div>
-      <img src="../assets/img/pedestrian.svg" height="20px" style="color: lightgray" />
-      davon {{ segment.walk }} Min. Fußweg
+      <div class="walk" v-bind:style="transfer_style">
+        <div style="background-color: #212529"></div>
+        <img src="../assets/img/pedestrian.svg" height="20px" style="color: lightgray" />
+        davon {{ segment.walk }} Min. Fußweg
+      </div>
     </div>
   </div>
 </template>
