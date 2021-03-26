@@ -168,7 +168,9 @@ export default {
         .then((connections) => {
           this.$store.commit('set_connections', connections)
           this.stop_progress()
-          this.$router.push('/')
+          if (this.$route.path !== '/') {
+            this.$router.push('/')
+          }
         })
     }
   }
