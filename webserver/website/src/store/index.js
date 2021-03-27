@@ -13,7 +13,6 @@ export default new Vuex.Store({
       state.stations = stations
     },
     set_connections (state, connections) {
-      console.log(connections)
       state.connections = connections
     }
   },
