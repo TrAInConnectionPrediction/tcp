@@ -22,15 +22,15 @@ class BetriebsstellenBill:
         return len(self.betriebsstellen)
 
     def __iter__(self):
-        self.n = 0
-        return self
+        """
+        Iterate over Betriebsstellen names
 
-    def __next__(self):
-        if self.n < len(self.betriebsstellen_list):
-            self.n += 1
-            return self.betriebsstellen_list[self.n - 1]
-        else:
-            raise StopIteration
+        Yields
+        -------
+        str
+            Name of Betriebsstelle
+        """
+        yield from self.betriebsstellen['name']
 
     def get_geopandas(self):
         """

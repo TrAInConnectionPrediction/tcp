@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.cached_table_fetch import cached_table_fetch
 import pandas as pd
-import random
+
 
 class StationPhillip:
     def __init__(self, **kwargs):
@@ -14,21 +14,20 @@ class StationPhillip:
         self.eva_index_stations = self.stations_df.set_index('eva')
         self.ds100_index_stations = self.stations_df.set_index('ds100')
         self.sta_list = self.stations_df['name'].tolist()
-        self.random_sta_list = self.stations_df['name'].tolist()
 
     def __len__(self):
         return len(self.stations_df)
 
     def __iter__(self):
-        self.n = 0
-        return self
+        """
+        Iterate over station names
 
-    def __next__(self):
-        if self.n < self.__len__():
-            self.n += 1
-            return self.sta_list[self.n - 1]
-        else:
-            raise StopIteration
+        Yields
+        -------
+        str
+            Name of station
+        """
+        yield from self.stations_df['name']
 
     def get_geopandas(self):
         """
@@ -61,19 +60,11 @@ class StationPhillip:
         int
             Eva of station
 
-        Notes
-        -----
-        ds100 is not unique and may raise an error
         """
-        try:
-            if name:
-                return self.name_index_stations.at[name, 'eva']
-            elif ds100:
-                return self.ds100_index_stations.at[ds100, 'eva']
-            else:
-                return None
-        except KeyError:
-            return 0
+        if name is not None:
+            return self.name_index_stations.at[name, 'eva']
+        elif ds100 is not None:
+            return self.ds100_index_stations.at[ds100, 'eva']
 
     def get_name(self, eva=None, ds100=None):
         """
@@ -90,20 +81,11 @@ class StationPhillip:
         -------
         str
             official station name
-
-        Notes
-        -----
-        ds100 is not unique and may raise an error
         """
-        try:
-            if eva:
-                return self.eva_index_stations.at[eva, 'name']
-            elif ds100:
-                return self.ds100_index_stations.at[ds100, 'name']
-            else:
-                return None
-        except KeyError:
-            return 'unknown'
+        if eva is not None:
+            return self.eva_index_stations.at[eva, 'name']
+        elif ds100 is not None:
+            return self.ds100_index_stations.at[ds100, 'name']
 
     def get_ds100(self, name=None, eva=None):
         """
@@ -121,15 +103,10 @@ class StationPhillip:
         str
             ds100 of station
         """
-        try:
-            if name:
-                return self.name_index_stations.at[name, 'ds100']
-            elif eva:
-                return self.eva_index_stations.at[eva, 'ds100']
-            else:
-                return None
-        except KeyError:
-            return 'unknown'
+        if name is not None:
+            return self.name_index_stations.at[name, 'ds100']
+        elif eva is not None:
+            return self.eva_index_stations.at[eva, 'ds100']
 
     def get_location(self, name=None, eva=None, ds100=None):
         """
@@ -147,21 +124,23 @@ class StationPhillip:
         Returns
         -------
         tuple
-            longitude and latitide
+            longitude and latitide of station
         """
-        if name or ds100:
+        if eva is None:
             return self.get_location(eva=self.get_eva(name=name, ds100=ds100))
         else:
             return (self.eva_index_stations.at[eva, 'lon'],
                     self.eva_index_stations.at[eva, 'lat'])
 
-    def search_station(self, search_term):
+    @staticmethod
+    def search_station(search_term):
         import requests
         search_term = search_term.replace('/', ' ')
         matches = requests.get(f'https://marudor.de/api/hafas/v1/station/{search_term}').json()
         return matches
 
-    def search_iris(self, search_term):
+    @staticmethod
+    def search_iris(search_term):
         import requests
         from rtd_crawler.xml_parser import xml_to_json
         import lxml.etree as etree
@@ -171,20 +150,34 @@ class StationPhillip:
         matches = list(xml_to_json(match) for match in matches)
         return matches
 
-    def random_iter(self):
-        """
-        Random order iterator over station names.
+    def read_stations_from_derf_Travel_Status_DE_IRIS(self):
+        import requests
 
-        Yields
-        -------
-        str
-            Station names in random order.
-        """
-        random.shuffle(self.random_sta_list)
-        for sta in self.random_sta_list:
-            yield sta
+        derf_stations = requests.get(
+            'https://raw.githubusercontent.com/derf/Travel-Status-DE-IRIS/master/share/stations.json'
+        ).json()
+        parsed_derf_stations = {
+            'name': [],
+            'eva': [],
+            'ds100': [],
+            'lat': [],
+            'lon': [],
+        }
+        for station in derf_stations:
+            parsed_derf_stations['name'].append(station['name'])
+            parsed_derf_stations['eva'].append(station['eva'])
+            parsed_derf_stations['ds100'].append(station['ds100'])
+            parsed_derf_stations['lat'].append(station['latlong'][0])
+            parsed_derf_stations['lon'].append(station['latlong'][1])
+        return pd.DataFrame(parsed_derf_stations)
+
+    def push_to_db(self):
+        from database.engine import DB_CONNECT_STRING
+        self.stations_df.to_sql('stations', DB_CONNECT_STRING, if_exists='replace', method='multi')
 
 
 if __name__ == "__main__":
+    import helpers.fancy_print_tcp
     stations = StationPhillip()
+
     print('len:', len(stations))
