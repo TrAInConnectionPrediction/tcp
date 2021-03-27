@@ -60,7 +60,7 @@
             <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br /></h2>
             <hr class="hr-light" />
             <p>
-              <strong> Ihr Verbindungsvorhersage </strong>
+              <strong> Ihre Verbindungsvorhersage </strong>
             </p>
           </div>
           <div class="col">
@@ -115,6 +115,23 @@ export default {
     searchform
   },
   mounted () {
+    console.log(`
+                            ╔═══╗                           
+   ╔════════════════════════╩═══╩════════════════════════╗  
+   ║            ████████    ██████   ██████              ║  
+   ║               ██      ██        ██   ██             ║  
+   ║               ██      ██        ██████              ║  
+   ║               ██      ██        ██                  ║  
+   ║               ██       ██████   ██                  ║  
+   ╚════════════════════════╦═══╦════════════════════════╝  
+                    \\''''───║   ╟───''''/                   
+                     )__,--─║   ╟─--,__(                    
+                            ║   ║                           
+      Your friendly         ║   ║                           
+TrAIn_Connection_Prediction ║   ║                           
+          Service           ║   ║                           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^╜   ╙^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      `)
     // Progressbar init
     this.progress = new ProgressBar.Line('#pgr_bar', {
       strokeWidth: 0.5,
