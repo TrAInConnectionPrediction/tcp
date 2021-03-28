@@ -1,7 +1,5 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import pandas as pd
-import networkx as nx
 import functools
 import geopy.distance
 from helpers.StationPhillip import StationPhillip
@@ -17,8 +15,6 @@ class StreckennetzSteffi(StationPhillip):
 
         tuples = [tuple(x) for x in streckennetz_df[['u', 'v', 'length']].values]
         self.streckennetz_igraph = igraph.Graph.TupleList(tuples, directed=False, edge_attrs=['length'])
-
-        self.streckennetz = nx.from_pandas_edgelist(streckennetz_df, source='u', target='v', edge_attr=True)
 
         self.get_length = lambda edge: self.streckennetz_igraph.es[edge]['length']
 
@@ -108,23 +104,8 @@ class StreckennetzSteffi(StationPhillip):
                 return 0
 
 
-from helpers.profiler import profile
-from tqdm import tqdm
-
-@profile
-def speedtest(streckennetz_steffi):
-    errors = 0
-    for station in tqdm(streckennetz_steffi):
-        if station != 'Tübingen Hbf':
-            try:
-                streckennetz_steffi.distance('Tübingen Hbf', station)
-            except:
-                errors += 1
-    return errors
-
-
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
-    streckennetz_steffi = StreckennetzSteffi(prefer_cache=True)
-    print(speedtest(streckennetz_steffi) / len(streckennetz_steffi))
-    # print(streckennetz_steffi.route_length(['Tübingen Hbf', 'Stuttgart Hbf', 'Paris Est']))
+    streckennetz_steffi = StreckennetzSteffi(prefer_cache=False)
+
+    print(streckennetz_steffi.route_length(['Tübingen Hbf', 'Altingen(Württ)', 'Stuttgart Hbf', 'Paris Est']))
