@@ -145,6 +145,7 @@ class StationPhillip:
         from rtd_crawler.xml_parser import xml_to_json
         import lxml.etree as etree
 
+        search_term = search_term.replace('/', ' ')
         matches = requests.get(f'http://iris.noncd.db.de/iris-tts/timetable/station/{search_term}').text
         matches = etree.fromstring(matches.encode())
         matches = list(xml_to_json(match) for match in matches)
