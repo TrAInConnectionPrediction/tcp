@@ -1,16 +1,15 @@
 import os
 import sys
-from webserver.db_logger import log_activity
 
 from webserver.predictor import from_utc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from functools import lru_cache
 import requests
-import datetime
 from pytz import timezone
 from webserver import streckennetz
 from concurrent.futures import ThreadPoolExecutor
+from . import client
 
 
 def get_connections(start, destination, time, max_changes=-1, transfer_time=0, hafas_profile='db'):
@@ -62,14 +61,25 @@ def datetimes_to_text(connection):
 
     return connection
 
+
 def parse_connection(connection):
     summary = {}
     segments = []
-    summary['dp_station'] = streckennetz.get_name(eva=int(connection['segments'][0]['stops'][0]['station']['id']))
+    try:
+        summary['dp_station'] = streckennetz.get_name(
+            eva=int(connection['segments'][0]['stops'][0]['station']['id'])
+        )
+    except KeyError:
+        summary['dp_station'] = ''
     summary['dp_station_display_name'] = connection['segments'][0]['stops'][0]['station']['title']
     summary['dp_pt'] = from_utc(connection['segments'][0]['stops'][0]['departure']['scheduledTime'])
     summary['dp_ct'] = from_utc(connection['segments'][0]['stops'][0]['departure']['time'])
-    summary['ar_station'] = streckennetz.get_name(eva=int(connection['segments'][-1]['stops'][-1]['station']['id']))
+    try:
+        summary['ar_station'] = streckennetz.get_name(
+            eva=int(connection['segments'][-1]['stops'][-1]['station']['id'])
+        )
+    except KeyError:
+        summary['ar_station'] = ''
     summary['ar_station_display_name'] = connection['segments'][-1]['stops'][-1]['station']['title']
     summary['ar_pt'] = from_utc(connection['segments'][-1]['stops'][-1]['arrival']['scheduledTime'])
     summary['ar_ct'] = from_utc(connection['segments'][-1]['stops'][-1]['arrival']['time'])
@@ -88,7 +98,6 @@ def parse_connection(connection):
             summary['transfers'] = summary['transfers'] - 1
             continue
         parsed_segment = {
-            'dp_station': streckennetz.get_name(eva=int(segment['stops'][0]['station']['id'])),
             'dp_station_display_name': segment['stops'][0]['station']['title'],
             'dp_lat': segment['stops'][0]['station']['coordinates']['lat'],
             'dp_lon': segment['stops'][0]['station']['coordinates']['lng'],
@@ -96,7 +105,6 @@ def parse_connection(connection):
             'dp_ct': from_utc(segment['stops'][0]['departure']['time']),
             'dp_pp': segment['stops'][0]['departure']['scheduledPlatform'] if 'scheduledPlatform' in segment['stops'][0]['departure'] else None,
             'dp_cp': segment['stops'][0]['departure']['platform'] if 'platform' in segment['stops'][0]['departure'] else None,
-            'ar_station': streckennetz.get_name(eva=int(segment['stops'][-1]['station']['id'])),
             'ar_station_display_name': segment['stops'][-1]['station']['title'],
             'ar_lat': segment['stops'][-1]['station']['coordinates']['lat'],
             'ar_lon': segment['stops'][-1]['station']['coordinates']['lng'],
@@ -105,7 +113,6 @@ def parse_connection(connection):
             'ar_pp': segment['stops'][-1]['arrival']['scheduledPlatform'] if 'scheduledPlatform' in segment['stops'][-1]['arrival'] else None,
             'ar_cp': segment['stops'][-1]['arrival']['platform'] if 'platform' in segment['stops'][-1]['arrival'] else None,
             'train_name': segment['train']['name'],
-            'train_destination': segment['finalDestination'] if 'finalDestination' in segment else streckennetz.get_name(eva=int(segment['stops'][-1]['station']['id'])),
             'ar_c': segment['train']['type'],
             'ar_n': segment['train']['number'],
             'ar_o': segment['train']['admin'].replace('_', ''),
@@ -114,6 +121,25 @@ def parse_connection(connection):
             'dp_o': segment['train']['admin'].replace('_', ''),
             'walk': 0
         }
+        try:
+            parsed_segment['dp_station'] = streckennetz.get_name(
+                eva=int(segment['stops'][0]['station']['id'])
+            )
+        except KeyError:
+            parsed_segment['dp_station'] = ''
+        try:
+            parsed_segment['ar_station'] = streckennetz.get_name(
+                eva=int(segment['stops'][-1]['station']['id'])
+            )
+        except KeyError:
+            parsed_segment['ar_station'] = ''
+        try:
+            parsed_segment['train_destination'] = segment['finalDestination'] \
+                if 'finalDestination' in segment \
+                else streckennetz.get_name(eva=int(segment['stops'][-1]['station']['id']))
+        except KeyError:
+            parsed_segment['train_destination'] = ''
+        
         parsed_segment['full_trip'], parsed_segment['stay_times'] = get_trip_of_train(segment['jid'])
         parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station'])
         parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['ar_station'])
@@ -126,6 +152,7 @@ def parse_connection(connection):
                                               - segments[segment]['ar_ct']).seconds // 60
     return {'summary': summary, 'segments': segments}
 
+
 def parse_connections(connections):
     with ThreadPoolExecutor(max_workers=10) as executor:
         parsed = list(executor.map(parse_connection, connections['routes']))
@@ -134,17 +161,13 @@ def parse_connections(connections):
 
 @lru_cache
 def get_trip_of_train(jid):
-    r = requests.get(
-        "https://marudor.de/api/hafas/v2/journeyDetails?jid={}?profile=db".format(
-            jid
-        )
-    )
-    trip = r.json()["stops"]
-    waypoints = [streckennetz.get_name(eva=int(stop["station"]["id"])) for stop in trip]
-    stay_times = [(from_utc(stop["departure"]["scheduledTime"]) \
-                  - from_utc(stop["arrival"]["scheduledTime"])).seconds // 60
-                  if 'arrival' in stop and 'departure' in stop 
-                  else None 
-                  for stop 
-                  in trip]
+    trip = client.trip(jid)
+    waypoints = [stopover.stop.name for stopover in trip.stopovers]
+    stay_times = [
+        (stopover.departure - stopover.arrival).seconds // 60
+        if stopover.departure is not None and stopover.arrival is not None
+        else None
+        for stopover
+        in trip.stopovers
+    ]
     return waypoints, stay_times

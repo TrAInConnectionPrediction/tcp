@@ -10,6 +10,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import logging
 import logging.handlers as handlers
+import pyhafas
 
 # Create app with changed paths  https://stackoverflow.com/a/42791810
 app = Flask(
@@ -37,8 +38,6 @@ if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 import config
 
-# app.config.from_mapping(config)
-
 from database.engine import DB_CONNECT_STRING
 
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_CONNECT_STRING
@@ -49,6 +48,10 @@ logHandler.setLevel(logging.DEBUG if app.debug else logging.INFO)
 app.logger.addHandler(logHandler)
 app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
 
+app.logger.info("Done")
+
+app.logger.info("Loading pyhafas client...")
+client = pyhafas.HafasClient(pyhafas.profile.DBProfile())
 app.logger.info("Done")
 
 app.logger.info("Initializing streckennetz...")
