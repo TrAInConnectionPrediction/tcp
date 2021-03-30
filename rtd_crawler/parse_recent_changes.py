@@ -181,13 +181,12 @@ def add_distance(rtd):
 
             path_obstacles = obstacles.obstacles_of_path(ar_cpth + [station], rtd.at[i, 'ar_pt'])
             if path_obstacles is not None:
-                rtd.at[i, 'category_sum'] = path_obstacles['category_sum']
-                rtd.at[i, 'category_mean'] = path_obstacles['category_mean']
-                rtd.at[i, 'priority_sum'] = path_obstacles['priority_sum']
-                rtd.at[i, 'priority_mean'] = path_obstacles['priority_mean']
-                rtd.at[i, 'length_sum'] = path_obstacles['length_sum']
-                rtd.at[i, 'length_mean'] = path_obstacles['length_mean']
-                rtd.at[i, 'length_count'] = path_obstacles['length_count']
+                rtd.at[i, 'obstacles_priority_24'] = path_obstacles['priority_24']
+                rtd.at[i, 'obstacles_priority_37'] = path_obstacles['priority_37']
+                rtd.at[i, 'obstacles_priority_63'] = path_obstacles['priority_63']
+                rtd.at[i, 'obstacles_priority_65'] = path_obstacles['priority_65']
+                rtd.at[i, 'obstacles_priority_70'] = path_obstacles['priority_70']
+                rtd.at[i, 'obstacles_priority_80'] = path_obstacles['priority_80']
             
         else:
             rtd.at[i, 'distance_to_last'] = 0
@@ -244,8 +243,8 @@ def parse_station(station, start_date, end_date):
         # rtd_arrays_df = parsed.loc[:, current_array_cols]
         # rtd.upsert_arrays(rtd_arrays_df)
         rtd_df = parsed.drop(current_array_cols, axis=1)
-        db = DBManager()
-        db.upsert_rtd(rtd_df)
+        with DBManager() as db:
+            db.upsert_rtd(rtd_df)
 
     return True
 

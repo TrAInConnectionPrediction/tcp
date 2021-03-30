@@ -15,17 +15,34 @@ import re
 from tqdm import tqdm
 from database.cached_table_fetch import cached_table_fetch
 
+# From http://db-livemaps.hafas.de/bin/query.exe/dn?L=vs_baustellen& page source
+priorities_text = {
+    2 : 'Ausfall',
+    8 : 'Teilausfall',
+    16 : 'Zurückhalten von Zügen',
+    23 : 'Umleitung',
+    24 : 'Totalsperrung',
+    25 : 'Streckenruhe',
+    37 : 'Fahren auf dem Gegengleis mit Zs 8 oder Befehl',
+    60 : 'Umleitung unter erleichterten Bedingungen',
+    63 : 'Fahrzeitverlängerung auf Regellaufweg',
+    65 : 'Fahren auf dem Gegengleis mit Zs 6',
+    70 : 'Sonstiges',
+    80 : 'Abweichung vom Fahrplan für Zugmeldestellen',
+    90 : 'Ohne Abweichung des Laufwegs',
+}
 
 class ObstacleOlly(StreckennetzSteffi):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.kwargs = kwargs
 
         self.ds100_regex = r".*\(([A-Z\s]+)\)"
         self.betriebsstellen = BetriebsstellenBill(**kwargs)
 
         self.obstacles = cached_table_fetch('parsed_obstacles', **kwargs).set_index('edge_id')
         self.dict_index = {edge_id: index for index, edge_id in enumerate(self.obstacles.index)}
-        self.np_obstacles = self.obstacles[['category', 'priority', 'length', 'from_time', 'to_time']].to_numpy()
+        self.np_obstacles = self.obstacles[['priority', 'length', 'from_time', 'to_time']].to_numpy()
         self.simpler_obstacles = cached_table_fetch('simpler_obstacles', **kwargs)
 
     def find_ds100(self, name):
@@ -43,70 +60,70 @@ class ObstacleOlly(StreckennetzSteffi):
             'to_time': [],
             'length': [],
             'edge_id': [],
-            'dir': [],
-            'type': [],
-            'summary': [],
-            'category': [],
-            'modified': [],
             'priority': [],
+            'u': [],
+            'v': [],
         }
+        unknown_stations = []
         for i, obstacle in tqdm(self.simpler_obstacles.iterrows(), total=len(self.simpler_obstacles)):
             try: 
                 source = self.betriebsstellen.get_name(ds100=self.find_ds100(obstacle['from_station']))
             except KeyError:
-                source = self.get_name(eva=int(obstacle['from_id']))
+                try:
+                    source = self.get_name(eva=int(obstacle['from_id']))
+                except KeyError:
+                    unknown_station = f"{obstacle['from_station']}\t{obstacle['from_id']}"
+                    if unknown_station not in unknown_stations:
+                        unknown_stations.append(unknown_station)
+                    continue
             try:
                 target = self.betriebsstellen.get_name(ds100=self.find_ds100(obstacle['to_station']))
             except KeyError:
-                target = self.get_name(eva=int(obstacle['to_id']))
-            if source == 'unknown':
-                print('unknown:', obstacle['from_station'], int(obstacle['from_id']))
-                continue
-                # print(self.search_station(obstacle['from_station']))
-            if target == 'unknown':
-                print('unknown:', obstacle['to_station'], int(obstacle['to_id']))
-                continue
+                try:
+                    target = self.get_name(eva=int(obstacle['to_id']))
+                except KeyError:
+                    unknown_station = f"{obstacle['to_station']}\t{obstacle['to_id']}"
+                    if unknown_station not in unknown_stations:
+                        unknown_stations.append(unknown_station)
+                    continue
             if source == target:
                 # ignore these for now
                 pass
-                # edge_obstacles['from_edge'].append(source)
-                # edge_obstacles['to_edge'].append(target)
-                # edge_obstacles['length'].append(0)
-                # edge_obstacles['from_time'].append(obstacle['from_time'])
-                # edge_obstacles['to_time'].append(obstacle['to_time'])
-                # edge_obstacles['dir'].append(obstacle['dir'])
-                # edge_obstacles['type'].append(obstacle['type'])
-
-                # edge_obstacles['summary'].append(obstacle['summary'])
-                # edge_obstacles['category'].append(obstacle['category'])
-                # edge_obstacles['modified'].append(obstacle['modified'])
-                # edge_obstacles['priority'].append(obstacle['priority'])
-            else:
+            # Category:
+            # category == 0: Störung
+            # category == 1: Baustelle
+            # category == 2: Streckenunruche (Was auch immer das heißt)
+            elif obstacle['category'] == 1:
                 path = self.get_edge_path(source, target)
                 if path is None:
                     continue
                 for edge_id in path:
-                    # type == 0: Störung
-                    # type == 1: Baustelle
-                    # type == 2: Meldung von Fahrdienstleiter*innen
-                    if obstacle['type'] == 1:
-                        edge_obstacles['edge_id'].append(edge_id)
-                        edge_obstacles['length'].append(self.streckennetz_igraph.es[edge_id]['length'])
-                        edge_obstacles['from_time'].append(obstacle['from_time'])
-                        edge_obstacles['to_time'].append(obstacle['to_time'])
-                        edge_obstacles['dir'].append(obstacle['dir'])
-                        edge_obstacles['type'].append(obstacle['type'])
+                    edge_obstacles['edge_id'].append(edge_id)
+                    edge_obstacles['length'].append(self.streckennetz_igraph.es[edge_id]['length'])
+                    edge_obstacles['u'].append(
+                        self.streckennetz_igraph.vs[
+                            self.streckennetz_igraph.es[edge_id].source
+                        ]['name']
+                    )
+                    edge_obstacles['v'].append(
+                        self.streckennetz_igraph.vs[
+                            self.streckennetz_igraph.es[edge_id].target
+                        ]['name']
+                    )
+                    edge_obstacles['from_time'].append(obstacle['from_time'])
+                    edge_obstacles['to_time'].append(obstacle['to_time'])
 
-                        edge_obstacles['summary'].append(obstacle['summary'])
-                        edge_obstacles['category'].append(obstacle['category'])
-                        edge_obstacles['modified'].append(obstacle['modified'])
-                        edge_obstacles['priority'].append(obstacle['priority'])
+                    edge_obstacles['priority'].append(obstacle['priority'])
+
+        print('unknown stations:')
+        for unknown_station in unknown_stations:
+            print(unknown_station)
 
         self.obstacles = pd.DataFrame(edge_obstacles)
         self.obstacles = self.obstacles.set_index('edge_id')
 
     def hafas_obstacles_to_sql_table(self):
-        obstacles = cached_table_fetch('obstacle', prefer_cache=True)
+        obstacles = cached_table_fetch('obstacle', **self.kwargs)
         simpler_obstacles = {
             'from_time': [],
             'to_time': [],
@@ -121,6 +138,9 @@ class ObstacleOlly(StreckennetzSteffi):
             'category': [],
             'modified': [],
             'priority': [],
+            'priority_text': [],
+            'icon_title': [],
+            'icon_type': [],
         }
 
         for i, obstacle in obstacles.iterrows():
@@ -140,12 +160,16 @@ class ObstacleOlly(StreckennetzSteffi):
                     simpler_obstacles['to_id'].append(edge['toLoc']['id'])
                     simpler_obstacles['dir'].append(edge['dir'])
 
+                    simpler_obstacles['icon_title'].append(edge['icon']['title'])
+                    simpler_obstacles['icon_type'].append(edge['icon']['type'])
+
                     simpler_obstacles['type'].append(obstacle['type'])
                     simpler_obstacles['summary'].append(obstacle['summary'])
                     simpler_obstacles['text'].append(obstacle['text'])
                     simpler_obstacles['category'].append(obstacle['category'])
                     simpler_obstacles['modified'].append(obstacle['modified'])
                     simpler_obstacles['priority'].append(obstacle['priority'])
+                    simpler_obstacles['priority_text'].append(priorities_text[obstacle['priority']])
 
         self.simpler_obstacles = pd.DataFrame(simpler_obstacles)
         self.simpler_obstacles['from_time'] = pd.to_datetime(self.simpler_obstacles['from_time'])
@@ -177,24 +201,24 @@ class ObstacleOlly(StreckennetzSteffi):
             if waypoints_part is not None:
                 waypoints.extend(waypoints_part)
         if len(waypoints):
+            # Get the obstacles on the path
             obstacles_on_path = self.np_obstacles[[self.dict_index[waypoint] for waypoint in waypoints if waypoint in self.dict_index], :]
+            # Filter for the time of the journey
             obstacles_on_path = obstacles_on_path[
-                (obstacles_on_path[:, 3] <= time)
-                & (obstacles_on_path[:, 4] >= time),
+                (obstacles_on_path[:, 2] <= time)
+                & (obstacles_on_path[:, 3] >= time),
                 :3
             ]
             if obstacles_on_path.size:
-                # obstacles_on_path = obstacles_on_path[['category', 'priority', 'length']].to_numpy()
-                summed = obstacles_on_path.sum(axis=0)
-                mean = obstacles_on_path.mean(axis=0)
-                agg = {}
-                agg['category_sum'] = summed[0]
-                agg['priority_sum'] = summed[1]
-                agg['length_sum'] = summed[2]
-                agg['category_mean'] = mean[0]
-                agg['priority_mean'] = mean[1]
-                agg['length_mean'] = mean[2]
-                agg['length_count'] = len(obstacles_on_path)
+                # Group by priority and sum the length of the obstacles
+                agg = {
+                    'priority_24': obstacles_on_path[obstacles_on_path[:, 0] == 24, 1].sum(),
+                    'priority_37': obstacles_on_path[obstacles_on_path[:, 0] == 37, 1].sum(),
+                    'priority_63': obstacles_on_path[obstacles_on_path[:, 0] == 63, 1].sum(),
+                    'priority_65': obstacles_on_path[obstacles_on_path[:, 0] == 65, 1].sum(),
+                    'priority_70': obstacles_on_path[obstacles_on_path[:, 0] == 70, 1].sum(),
+                    'priority_80': obstacles_on_path[obstacles_on_path[:, 0] == 80, 1].sum(),
+                }
                 return agg
             else:
                 return None
@@ -206,7 +230,7 @@ def from_hafas_time(hafas_time):
 
 
 if __name__ == '__main__':
-    obstacles = ObstacleOlly(prefer_cache=False)
+    obstacles = ObstacleOlly(prefer_cache=True)
     # obstacles.obstacles_of_path(['Tübingen Hbf', 'Stuttgart Hbf', 'Köln Hbf'], datetime.datetime(2021, 3, 18, 12))
     obstacles.parse()
     obstacles.push_to_db()

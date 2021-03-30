@@ -124,13 +124,12 @@ class RtdRay(Rtd):
         'distance_to_last': pd.Series([], dtype='float32'),
         'distance_to_next': pd.Series([], dtype='float32'),
 
-        'category_sum': pd.Series([], dtype='float32'),
-        'category_mean': pd.Series([], dtype='float32'),
-        'priority_sum': pd.Series([], dtype='float32'),
-        'priority_mean': pd.Series([], dtype='float32'),
-        'length_sum': pd.Series([], dtype='float32'),
-        'length_mean': pd.Series([], dtype='float32'),
-        'length_count': pd.Series([], dtype='float32'),
+        'obstacles_priority_24': pd.Series([], dtype='float32'),
+        'obstacles_priority_37': pd.Series([], dtype='float32'),
+        'obstacles_priority_63': pd.Series([], dtype='float32'),
+        'obstacles_priority_65': pd.Series([], dtype='float32'),
+        'obstacles_priority_70': pd.Series([], dtype='float32'),
+        'obstacles_priority_80': pd.Series([], dtype='float32'),
 
         'station': pd.Series([], dtype='str'),
         'id': pd.Series([], dtype='str'),
@@ -210,7 +209,11 @@ class RtdRay(Rtd):
         replace_lat = {}
 
         for station in rtd['station'].unique():
-            lon, lat = stations.get_location(name=station)
+            try:
+                lon, lat = stations.get_location(name=station)
+            except KeyError:
+                lon, lat = 0, 0
+                print(station)
 
             replace_lon[station] = lon
             replace_lat[station] = lat
@@ -439,7 +442,7 @@ class RtdRay(Rtd):
             'dp_ct',
             'dp_pt',
             'pp',
-            'stop_id'
+            'stop_id',
         ]
         if return_date_id:
             columns.append('date_id')
@@ -458,7 +461,7 @@ class RtdRay(Rtd):
         if return_status:
             categoricals.extend(['ar_cs', 'dp_cs'])
         for key in categoricals:
-            # dd.read_parquet reads categoricals as unknown categories. All the categories howerver get
+            # dd.read_parquet reads categoricals as unknown categories. All the categories however get
             # saved in each partition. So we read those and set them as categories for the whole column.
             # https://github.com/dask/dask/issues/2944 
             rtd[key] = rtd[key].cat.set_categories(rtd[key].head(1).cat.categories)
@@ -482,6 +485,9 @@ if __name__ == "__main__":
     # client = Client()
 
     rtd_ray = RtdRay()
+    # rtd = rtd_ray.load_data(min_date=datetime.datetime(2021, 3, 14)).compute()
+    # print(rtd)
+    # print(rtd)
     # rtd = rtd_ray.load_data()
     # rtd = rtd_ray._get_delays(rtd)
     # rtd = rtd_ray._categorize(rtd)
@@ -492,17 +498,16 @@ if __name__ == "__main__":
     # rtd_ray.update_local_buffer()
 
     # rtd = rtd_ray.load_for_ml_model()
-    # rtd = rtd_ray.load_data(columns=['ar_pt'])
-    # print('max pt:', rtd['ar_pt'].max())
-    # print('len rtd:', len(rtd))
+    rtd = rtd_ray.load_data(columns=['ar_pt'])
+    print('max pt:', rtd['ar_pt'].max())
+    print('len rtd:', len(rtd))
 
-
-    # create trimmed version of rtd to upload to dockerhub
-    rtd = rtd_ray.load_for_ml_model(
-            min_date=datetime.datetime(2021, 1, 1),
-            max_date=datetime.datetime(2021, 3, 6),
-            return_status=True,
-            label_encode=True,
-            return_times=True,
-        )
-    rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_hyper_dataset', engine='pyarrow', schema='infer')
+    # # create trimmed version of rtd to upload to dockerhub
+    # rtd = rtd_ray.load_for_ml_model(
+    #         min_date=datetime.datetime(2021, 1, 1),
+    #         max_date=datetime.datetime(2021, 3, 6),
+    #         return_status=True,
+    #         label_encode=True,
+    #         return_times=True,
+    #     )
+    # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_hyper_dataset', engine='pyarrow', schema='infer')

@@ -63,13 +63,12 @@ class Rtd(Base):
     distance_to_last = Column(Float)
     distance_to_next = Column(Float)
 
-    category_sum = Column(Float)
-    category_mean = Column(Float)
-    priority_sum = Column(Float)
-    priority_mean = Column(Float)
-    length_sum = Column(Float)
-    length_mean = Column(Float)
-    length_count = Column(Float)
+    obstacles_priority_24 = Column(Float)
+    obstacles_priority_37 = Column(Float)
+    obstacles_priority_63 = Column(Float)
+    obstacles_priority_65 = Column(Float)
+    obstacles_priority_70 = Column(Float)
+    obstacles_priority_80 = Column(Float)
 
     station = Column(Text)
     id = Column(Text)
@@ -179,13 +178,12 @@ sql_types = {
     'distance_to_last': Float,
     'distance_to_next': Float,
 
-    'category_sum': Float,
-    'category_mean': Float,
-    'priority_sum': Float,
-    'priority_mean': Float,
-    'length_sum': Float,
-    'length_mean': Float,
-    'length_count': Float,
+    'obstacles_priority_24': Float,
+    'obstacles_priority_37': Float,
+    'obstacles_priority_63': Float,
+    'obstacles_priority_65': Float,
+    'obstacles_priority_70': Float,
+    'obstacles_priority_80': Float,
 }
 
 try:
