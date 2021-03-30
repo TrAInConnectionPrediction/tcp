@@ -36,10 +36,13 @@ def cached_table_fetch(tablename, use_cache=True, prefer_cache=False):
 
     try:
         table_df = pd.read_sql_table(tablename, DB_CONNECT_STRING)
-        table_df.to_pickle(cache_path)
+        if use_cache:
+            table_df.to_pickle(cache_path)
         return table_df
     except Exception as ex:
         try:
+            if not use_cache:
+                raise FileNotFoundError
             return pd.read_pickle(cache_path)
         except FileNotFoundError:
             print(ex)
