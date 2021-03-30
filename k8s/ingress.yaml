@@ -16,12 +16,21 @@ metadata:
   annotations:
     # Add the following line (staging first for testing, then apply the prod issuer)
     cert-manager.io/cluster-issuer: letsencrypt-prod # letsencrypt-staging
+    acme.cert-manager.io/http01-edit-in-place: "true" # !!!This seems to be really important!!!
 spec:
   tls:
   - hosts:
+    - trainconnectionprediction.de
     - qkhrecvu4nfgijjt.myfritz.net
     secretName: default-tls-secret
   rules:
+  - host: "trainconnectionprediction.de"
+    http:
+      paths:
+        - path: /
+          backend:
+            serviceName: webserver-service
+            servicePort: 5000
   - host: "qkhrecvu4nfgijjt.myfritz.net"
     http:
       paths:
