@@ -108,8 +108,8 @@ class Predictor:
             dp_data.at[i, 'lat'] = segment['dp_lat']
             dp_data.at[i, 'lon'] = segment['dp_lon']
 
-            ar_data.at[i, 'stop_id'] = segment['full_trip'].index(segment['ar_station'])
-            dp_data.at[i, 'stop_id'] = segment['full_trip'].index(segment['dp_station'])
+            ar_data.at[i, 'stop_id'] = segment['ar_stop_id']
+            dp_data.at[i, 'stop_id'] = segment['dp_stop_id']
 
             ar_data.at[i, 'distance_to_start'] = streckennetz.route_length(segment['full_trip'][:ar_data.at[i, 'stop_id'] + 1])
             ar_data.at[i, 'distance_to_end'] = streckennetz.route_length(segment['full_trip'][ar_data.at[i, 'stop_id']:])

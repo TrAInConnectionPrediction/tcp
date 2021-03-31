@@ -41,6 +41,12 @@ def get_connections(start, destination, time, max_changes=-1, transfer_time=0, h
     r = requests.post(
         "https://marudor.de/api/hafas/v3/tripSearch?profile=db", json=json
     )
+    # journeys = client.journeys(
+    #     str(streckennetz.get_eva(name=start)),
+    #     str(streckennetz.get_eva(name=destination)),
+    #     time.replace(tzinfo=timezone("CET")),
+    #     max_journeys=6,
+    # )
     connections = parse_connections(r.json())
     return connections
 
@@ -141,8 +147,14 @@ def parse_connection(connection):
             parsed_segment['train_destination'] = ''
         
         parsed_segment['full_trip'], parsed_segment['stay_times'] = get_trip_of_train(segment['jid'])
-        parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station'])
-        parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['ar_station'])
+        try:
+            parsed_segment['dp_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station'])
+        except ValueError:
+            parsed_segment['dp_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station_display_name'])
+        try:
+            parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['ar_station'])
+        except ValueError:
+            parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['ar_station_display_name'])
         parsed_segment['duration'] = str(parsed_segment['ar_ct'] - parsed_segment['dp_ct'])[:-3]
         segments.append(parsed_segment)
 
