@@ -89,7 +89,10 @@ class PerStationAnalysis(StationPhillip):
         c = np.zeros(len(self.data.index))
 
         for i, station in enumerate(self.data.index):
-            x[i], y[i] = self.get_location(name=station)
+            try:
+                x[i], y[i] = self.get_location(name=station)
+            except KeyError:
+                x[i], y[i] = 0, 0
             s[i] = (
                 self.data.loc[station, [(data_to_plot["count_1"], "count")]][0]
                 + self.data.loc[station, [(data_to_plot["count_2"], "count")]][0]
@@ -108,7 +111,7 @@ class PerStationAnalysis(StationPhillip):
 
 class PerStationOverTime(StationPhillip):
     DATA_CACHE_PATH = CACHE_PATH + "/per_station_over_time.csv"
-    FREQ = "1H"
+    FREQ = "24H"
     DEFAULT_PLOTS = ["error", "no data available", "default"]
 
     def __init__(self, rtd, use_cache=True, logger=None):
@@ -266,7 +269,10 @@ class PerStationOverTime(StationPhillip):
                 c = np.zeros(len(current_data.index))
 
                 for i, station in enumerate(current_data.index):
-                    x[i], y[i] = self.get_location(name=station)
+                    try:
+                        x[i], y[i] = self.get_location(name=station)
+                    except KeyError:
+                        x[i], y[i] = 0, 0
 
                 s[:] = (
                     current_data.loc[:, [("ar_cancellations", "sum")]].to_numpy()[:, 0]
@@ -356,7 +362,11 @@ class PerStationOverTime(StationPhillip):
             c = np.zeros(len(current_data.index))
 
             for i, station in enumerate(current_data.index):
-                x[i], y[i] = self.get_location(name=station)
+                try:
+                    x[i], y[i] = self.get_location(name=station)
+                except KeyError:
+                    x[i] = 0
+                    y[i] = 0
 
             s[:] = (
                 current_data.loc[:, [("ar_cancellations", "sum")]].to_numpy()[:, 0]
