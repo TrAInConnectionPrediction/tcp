@@ -73,22 +73,22 @@ def parse_connection(connection):
     segments = []
     try:
         summary['dp_station'] = streckennetz.get_name(
-            eva=int(connection['segments'][0]['stops'][0]['station']['id'])
+            eva=int(connection['segments'][0]['segmentStart']['id'])
         )
     except KeyError:
         summary['dp_station'] = ''
-    summary['dp_station_display_name'] = connection['segments'][0]['stops'][0]['station']['title']
-    summary['dp_pt'] = from_utc(connection['segments'][0]['stops'][0]['departure']['scheduledTime'])
-    summary['dp_ct'] = from_utc(connection['segments'][0]['stops'][0]['departure']['time'])
+    summary['dp_station_display_name'] = connection['segments'][0]['segmentStart']['title']
+    summary['dp_pt'] = from_utc(connection['departure']['scheduledTime'])
+    summary['dp_ct'] = from_utc(connection['departure']['time'])
     try:
         summary['ar_station'] = streckennetz.get_name(
-            eva=int(connection['segments'][-1]['stops'][-1]['station']['id'])
+            eva=int(connection['segments'][-1]['segmentDestination']['id'])
         )
     except KeyError:
         summary['ar_station'] = ''
-    summary['ar_station_display_name'] = connection['segments'][-1]['stops'][-1]['station']['title']
-    summary['ar_pt'] = from_utc(connection['segments'][-1]['stops'][-1]['arrival']['scheduledTime'])
-    summary['ar_ct'] = from_utc(connection['segments'][-1]['stops'][-1]['arrival']['time'])
+    summary['ar_station_display_name'] = connection['segments'][-1]['segmentDestination']['title']
+    summary['ar_pt'] = from_utc(connection['arrival']['scheduledTime'])
+    summary['ar_ct'] = from_utc(connection['arrival']['time'])
     summary['transfers'] = len(connection['segments']) - 1
     summary['train_categories'] = list(set(connection['segmentTypes'])) # get unique categories
     summary['duration'] = str(summary['ar_ct'] - summary['dp_ct'])[:-3]
@@ -104,20 +104,20 @@ def parse_connection(connection):
             summary['transfers'] = summary['transfers'] - 1
             continue
         parsed_segment = {
-            'dp_station_display_name': segment['stops'][0]['station']['title'],
+            'dp_station_display_name': segment['segmentStart']['title'],
             'dp_lat': segment['stops'][0]['station']['coordinates']['lat'],
             'dp_lon': segment['stops'][0]['station']['coordinates']['lng'],
-            'dp_pt': from_utc(segment['stops'][0]['departure']['scheduledTime']),
-            'dp_ct': from_utc(segment['stops'][0]['departure']['time']),
-            'dp_pp': segment['stops'][0]['departure']['scheduledPlatform'] if 'scheduledPlatform' in segment['stops'][0]['departure'] else None,
-            'dp_cp': segment['stops'][0]['departure']['platform'] if 'platform' in segment['stops'][0]['departure'] else None,
-            'ar_station_display_name': segment['stops'][-1]['station']['title'],
+            'dp_pt': from_utc(segment['departure']['scheduledTime']),
+            'dp_ct': from_utc(segment['departure']['time']),
+            'dp_pp': segment['departure']['scheduledPlatform'] if 'scheduledPlatform' in segment['departure'] else None,
+            'dp_cp': segment['departure']['platform'] if 'platform' in segment['departure'] else None,
+            'ar_station_display_name': segment['segmentDestination']['title'],
             'ar_lat': segment['stops'][-1]['station']['coordinates']['lat'],
             'ar_lon': segment['stops'][-1]['station']['coordinates']['lng'],
-            'ar_pt': from_utc(segment['stops'][-1]['arrival']['scheduledTime']),
-            'ar_ct': from_utc(segment['stops'][-1]['arrival']['time']),
-            'ar_pp': segment['stops'][-1]['arrival']['scheduledPlatform'] if 'scheduledPlatform' in segment['stops'][-1]['arrival'] else None,
-            'ar_cp': segment['stops'][-1]['arrival']['platform'] if 'platform' in segment['stops'][-1]['arrival'] else None,
+            'ar_pt': from_utc(segment['arrival']['scheduledTime']),
+            'ar_ct': from_utc(segment['arrival']['time']),
+            'ar_pp': segment['arrival']['scheduledPlatform'] if 'scheduledPlatform' in segment['arrival'] else None,
+            'ar_cp': segment['arrival']['platform'] if 'platform' in segment['arrival'] else None,
             'train_name': segment['train']['name'],
             'ar_c': segment['train']['type'],
             'ar_n': segment['train']['number'],
@@ -129,20 +129,20 @@ def parse_connection(connection):
         }
         try:
             parsed_segment['dp_station'] = streckennetz.get_name(
-                eva=int(segment['stops'][0]['station']['id'])
+                eva=int(segment['segmentStart']['id'])
             )
         except KeyError:
             parsed_segment['dp_station'] = ''
         try:
             parsed_segment['ar_station'] = streckennetz.get_name(
-                eva=int(segment['stops'][-1]['station']['id'])
+                eva=int(segment['segmentDestination']['id'])
             )
         except KeyError:
             parsed_segment['ar_station'] = ''
         try:
             parsed_segment['train_destination'] = segment['finalDestination'] \
                 if 'finalDestination' in segment \
-                else streckennetz.get_name(eva=int(segment['stops'][-1]['station']['id']))
+                else segment['segmentDestination']['title']
         except KeyError:
             parsed_segment['train_destination'] = ''
         
