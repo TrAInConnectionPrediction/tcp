@@ -9,6 +9,7 @@ from database.rtd import Rtd
 from helpers.StationPhillip import StationPhillip
 from database.engine import DB_CONNECT_STRING
 from config import RTD_CACHE_PATH, ENCODER_PATH
+from typing import Optional
 
 
 """
@@ -179,14 +180,13 @@ class RtdRay(Rtd):
         rtd['ar_cancellations'] = rtd['ar_cs'] != 'c'
         rtd['ar_cancellation_time_delta'] = (((rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
         rtd['ar_delay'] = (((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
-        # ar_mask = (rtd['ar_cs'] != 'c') & (rtd['ar_delay'].notnull())
-        # rtd['ar_on_time_5'] = rtd.loc[ar_mask, 'ar_delay'] < 6
 
         rtd['dp_cancellations'] = rtd['dp_cs'] != 'c'
         rtd['dp_cancellation_time_delta'] = (((rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
         rtd['dp_delay'] = (((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
-        # dp_mask = (rtd['dp_cs'] != 'c') & (rtd['dp_delay'].notnull())
-        # rtd['dp_on_time_5'] = rtd.loc[dp_mask, 'dp_delay'] < 6
+
+        # Everything with less departure delay than -1 is definitly a bug of IRIS
+        rtd.loc[rtd['dp_delay'] >= -1, ['ar_delay', 'dp_delay']] = 0
 
         return rtd
 
@@ -344,7 +344,14 @@ class RtdRay(Rtd):
         print('Number of dublicate indicies', rtd.index.compute().duplicated(keep='last').sum())
 
 
-    def load_data(self, max_date=None, min_date=None, long_distance_only=False, **kwargs):
+    def load_data(
+        self,
+        max_date: Optional[datetime.datetime]=None,
+        min_date: Optional[datetime.datetime]=None,
+        long_distance_only: bool=False,
+        load_categories: bool=True,
+        **kwargs
+    ) -> dd.DataFrame:              
         """
         Try to load data from disk. If not present, pull db to disk and then open it.
         It may not work after the data was pulled from db (unicode decode error).
@@ -353,16 +360,21 @@ class RtdRay(Rtd):
         Parameters
         ----------
         max_date : datetime.datetime, optional
-            Maximum arrival or departure time filter, exclusive, by default None
+            Maximum arrival or departure time filter, exclusive
         min_date : datetime.datetime, optional
-            Minimum arrival or departure time filter, inclusive, by default None
+            Minimum arrival or departure time filter, inclusive
+        long_distance_only : bool, optional
+            Only return long distance trains?, by default False
+        load_categories : bool, optional
+            Whether to load the categories of the categorical columns
+            of not, by default True
         kwargs
             kwargs passed to dask.dataframe.read_parquet()
 
         Returns
         -------
-        dask.DataFrame
-            dask.DataFrame containing the loaded data
+        dd.DataFrame
+            dd.DataFrame containing the loaded data
 
         Examples
         --------
@@ -406,6 +418,14 @@ class RtdRay(Rtd):
             _filter = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', columns=['f'])
             rtd = rtd.loc[_filter['f'] == 'F']
 
+        if load_categories:
+            # dd.read_parquet reads categoricals as unknown categories. All the categories however get
+            # saved in each partition. So we read those and set them as categories for the whole column.
+            # https://github.com/dask/dask/issues/2944 
+            for key in self.categoricals:
+                if key in rtd.columns:
+                    rtd[key] = rtd[key].cat.set_categories(rtd[key].head(1).cat.categories)
+
         return rtd
 
     def load_for_ml_model(self, return_date_id=False, label_encode=True, return_times=False, return_status=False, **kwargs):
@@ -443,6 +463,12 @@ class RtdRay(Rtd):
             'dp_pt',
             'pp',
             'stop_id',
+            'obstacles_priority_24',
+            'obstacles_priority_37',
+            'obstacles_priority_63',
+            'obstacles_priority_65',
+            'obstacles_priority_70',
+            'obstacles_priority_80',
         ]
         if return_date_id:
             columns.append('date_id')
@@ -456,18 +482,17 @@ class RtdRay(Rtd):
         rtd['day'] = rtd['ar_pt'].fillna(value=rtd['dp_pt']).dt.dayofweek.astype('int8')
         rtd['stay_time'] = ((rtd['dp_pt'] - rtd['ar_pt']).dt.seconds // 60) #.astype('Int16')
 
-        # Label encode categorical columns
-        categoricals = ['o', 'c', 'n', 'station', 'pp']
-        if return_status:
-            categoricals.extend(['ar_cs', 'dp_cs'])
-        for key in categoricals:
-            # dd.read_parquet reads categoricals as unknown categories. All the categories however get
-            # saved in each partition. So we read those and set them as categories for the whole column.
-            # https://github.com/dask/dask/issues/2944 
-            rtd[key] = rtd[key].cat.set_categories(rtd[key].head(1).cat.categories)
+        rtd['obstacles_priority_24'] = rtd['obstacles_priority_24'].astype('float32').fillna(0)
+        rtd['obstacles_priority_37'] = rtd['obstacles_priority_37'].astype('float32').fillna(0)
+        rtd['obstacles_priority_63'] = rtd['obstacles_priority_63'].astype('float32').fillna(0)
+        rtd['obstacles_priority_65'] = rtd['obstacles_priority_65'].astype('float32').fillna(0)
+        rtd['obstacles_priority_70'] = rtd['obstacles_priority_70'].astype('float32').fillna(0)
+        rtd['obstacles_priority_80'] = rtd['obstacles_priority_80'].astype('float32').fillna(0)
 
-            if label_encode:
-                rtd[key] = rtd[key].cat.codes.astype('int16')
+        if label_encode:
+            for key in self.categoricals:
+                if key in rtd.columns:
+                    rtd[key] = rtd[key].cat.codes.astype('int16')
         rtd['stop_id'] = rtd['stop_id'].astype('int16')
 
         if return_times:
@@ -488,18 +513,21 @@ if __name__ == "__main__":
     # rtd = rtd_ray.load_data(min_date=datetime.datetime(2021, 3, 14)).compute()
     # print(rtd)
     # print(rtd)
-    # rtd = rtd_ray.load_data()
+    # rtd = rtd_ray.load_data(load_categories=True)
+    # rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
+    # rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
     # rtd = rtd_ray._get_delays(rtd)
     # rtd = rtd_ray._categorize(rtd)
+    # rtd = rtd_ray._add_station_coordinates(rtd)
     # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH, engine='pyarrow') # , schema='infer')
     # rtd_ray._save_encoders(rtd)
 
-    rtd_ray.refresh_local_buffer()
+    # rtd_ray.refresh_local_buffer()
     # rtd_ray.update_local_buffer()
 
     # rtd = rtd_ray.load_for_ml_model()
     rtd = rtd_ray.load_data(columns=['ar_pt'])
-    print('max pt:', rtd['ar_pt'].max())
+    print('max pt:', rtd['ar_pt'].max().compute())
     print('len rtd:', len(rtd))
 
     # # create trimmed version of rtd to upload to dockerhub
