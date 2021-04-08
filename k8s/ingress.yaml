@@ -17,6 +17,14 @@ metadata:
     # Add the following line (staging first for testing, then apply the prod issuer)
     cert-manager.io/cluster-issuer: letsencrypt-prod # letsencrypt-staging
     acme.cert-manager.io/http01-edit-in-place: "true" # !!!This seems to be really important!!!
+
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      if ($host ~ "qkhrecvu4nfgijjt.myfritz.net")
+      {
+        rewrite ^ https://trainconnectionprediction.de$request_uri permanent;
+      }
+
 spec:
   tls:
   - hosts:
