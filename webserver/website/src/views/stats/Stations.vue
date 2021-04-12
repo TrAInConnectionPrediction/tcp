@@ -1,5 +1,5 @@
 <template>
-  <div id="stats" class="stations">
+  <div id="stats" class="stations dark_background">
     <h1 class="text-center">Verspätungen in Deutschland</h1>
     <div class="stats-picker">
       <vue-slider
@@ -88,50 +88,3 @@ export default {
   }
 }
 </script>
-
-<style>
-.stats {
-  height: 100%;
-  margin: 20px;
-  /* display: flex; */
-  flex-direction: row;
-  flex-wrap: wrap;
-  color: #cacaca;
-}
-
-.stats-picker {
-  display: flex;
-  justify-content: space-around;
-  margin: auto;
-  width: 100%;
-  gap: 20px;
-  align-items: center;
-}
-
-.stats-image {
-  width: 100%;
-  max-width: 50em;
-  margin: auto;
-  display: block;
-}
-
-@media (max-width: 1000px) {
-  .stats-picker {
-    flex-wrap: wrap;
-  }
-}
-
-.vue-slider-process {
-  background-color: #3f51b5;
-}
-
-.vue-slider-dot-tooltip-inner {
-  border-color: #3f51b5;
-  background-color: #3f51b5;
-}
-
-.vue-slider {
-  margin: 50px 0;
-  width: 100% !important;
-}
-</style>

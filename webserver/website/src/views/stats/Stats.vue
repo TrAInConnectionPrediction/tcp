@@ -93,9 +93,3 @@ export default {
   methods: {}
 }
 </script>
-
-<style>
-th {
-  padding-left: 20px !important;
-}
-</style>

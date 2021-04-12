@@ -1,8 +1,7 @@
 <template>
-  <body class="body" style="background-color: #000000; overflow: auto">
+  <body>
     <nav
-      class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top"
-      style="background-color: rgba(0, 0, 0, 0.5) !important; backdrop-filter: blur(5px)"
+      class="navbar navbar-expand-lg navbar-dark fixed-top"
     >
       <div class="container-fluid">
         <router-link class="navbar-brand" to="/">TCP</router-link>
@@ -45,7 +44,7 @@
             </li>
           </ul>
           <div class="d-flex">
-            <a class="btn btn-outline-success" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank"
+            <a class="pretty_button" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank"
               ><i class="tcp-github"></i>TCP auf GitHub</a
             >
           </div>
@@ -53,7 +52,7 @@
       </div>
     </nav>
 
-    <div id="intro" class="view shadow" style="">
+    <div id="intro" class="view">
       <div class="d-flex justify-content-center align-items-center mask" style="height: 100%">
         <div class="row" style="justify-content: center; min-width: 0; width: 100%">
           <div class="col white-text text-center">
@@ -64,30 +63,28 @@
             </p>
           </div>
           <div class="col">
-            <div class="card hover bg-dark">
-              <div class="card-body bg-dark">
-                <searchform> </searchform>
-              </div>
-            </div>
+            <searchform class="hover"> </searchform>
           </div>
         </div>
       </div>
     </div>
-    <main id="main" style="margin-top: 0px; max-width: 100%; width: 100%">
+    <div class="main_background">
       <div id="prg_bar_anchor">
         <section id="pgr_bar" class="p-5"></section>
       </div>
-      <div class="m-5 custom_card" id="error_box" style="background-color: rgb(255, 69, 69)">
-        <div v-if="error" @click="error = null" class="card_header">
-          <b>Holy Guacamole</b>! Something went wrong: {{ error.toString() }}
+      <main id="main">
+        <div class="m-5 custom_card" id="error_box" style="background-color: rgb(255, 69, 69)">
+          <div v-if="error" @click="error = null" class="card_header">
+            <b>Holy Guacamole</b>! Something went wrong: {{ error.toString() }}
+          </div>
         </div>
-      </div>
-      <router-view class="m-5" />
-    </main>
+        <router-view class="m-5" />
+      </main>
+    </div>
     <footer class="text-center p-3">
       <div class="fw-bold">
-        <router-link class="pretty_link" to="/imprint">Impressum</router-link> /
-        <router-link class="pretty_link" to="/privacy">Datenschutz</router-link>
+        <router-link class="footer_link" to="/imprint">Impressum</router-link> /
+        <router-link class="footer_link" to="/privacy">Datenschutz</router-link>
       </div>
       <br />
       <span
@@ -194,8 +191,19 @@ TrAIn_Connection_Prediction ║   ║
 }
 </script>
 
-<style>
-/* Font auf https://icomoon.io/app/#/select generiert */
+<style lang="scss">
+$page_background: black;
+$page_gray: #212529;
+$page_lighter_gray: #2d2f31;
+$page_accent: #3f51b5;
+$page_accent_darker: #344295;
+$page_light_text: lightgray;
+$page_gray_text: gray;
+$page_dark_text: black;
+$page_outdated_text: #686868;
+$page_warning: #ff4545;
+
+// Custom font (https://icomoon.io/app/#/select)
 @font-face {
   font-family: 'tcp_custom_font';
   src: url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
@@ -231,33 +239,49 @@ i {
   content: '\eab0';
 }
 
+h1,
+h2,
+h3,
+h4,
+h5 {
+  color: $page_light_text;
+  text-align: center;
+}
+
 .custom_card {
   margin-bottom: 5px;
-  color: lightgray;
+  color: $page_light_text;
 }
 
-.card_header {
-  padding: 20px;
-  min-height: 60px;
-  height: max-content;
-  display: flex;
-  flex-wrap: wrap;
-  background-color: rgb(0, 0, 0, 0.03);
-}
-
-.pretty_link {
+.footer_link {
   color: inherit;
   font-weight: inherit;
   text-decoration: none;
 }
 
 #intro {
-  background-image: url(./assets/img/ice.jpg);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-attachment: fixed;
   min-height: 800px;
+}
+
+#main {
+  max-width: 1200px;
+}
+
+.main_background {
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  box-shadow: 0px 0px 17px 50px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dark_background {
+  background-color: $page_background;
+  box-shadow: 0px 0px 17px 50px $page_background;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 html,
@@ -267,18 +291,20 @@ header,
   height: 100%;
 }
 
-#pgr_bar {
-  padding-top: 5rem !important;
+body {
+  background-image: url(./assets/img/ice.jpg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  // background-color: $page_background;
+  overflow: auto;
 }
 
 @media (max-width: 740px) {
   h2 {
     font-size: 5vw;
   }
-}
-
-:root {
-  --shadow-bg-color1: #125163;
 }
 
 .col {
@@ -291,28 +317,28 @@ header,
 /* NAVBAR BEGIN */
 
 .navbar {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
 }
 
 .top-nav-collapse {
-  background-color: #202020;
+  background-color: $page_gray;
 }
 
-/* Adding color to the Navbar on mobile */
-
-@media only screen and (max-width: 768px) {
-  .navbar {
-    background-color: #202020;
-  }
-}
+// /* Adding color to the Navbar on mobile */
+// @media only screen and (max-width: 768px) {
+//   .navbar {
+//     background-color: $page_gray;
+//   }
+// }
 
 .navbar .nav-item .dropdown-item {
-  color: rgba(255, 255, 255, 0.55);
+  color: $page_light_text;
 }
 .navbar .nav-item .dropdown-item:hover,
 .dropdown-item:focus,
 .dropdown-item:active {
-  color: #fff;
+  color: $page_light_text;
   background-color: transparent;
 }
 .navbar .dropdown-menu {
@@ -324,31 +350,40 @@ header,
     display: none;
   }
   .navbar .nav-item:hover .nav-link {
-    color: #fff;
+    color: $page_light_text;
   }
   .navbar .nav-item:hover .dropdown-menu {
     display: block;
   }
   .navbar .nav-item .dropdown-menu {
     margin-top: 0;
-    background-color: #212529 !important;
+    background-color: $page_gray !important;
   }
   .navbar .nav-item .dropdown-item:hover,
   .dropdown-item:focus,
   .dropdown-item:active {
-    background-color: #262626;
+    background-color: $page_gray;
   }
+}
+
+.btn-outline-accent {
+  color: $page_accent;
+  border-color: $page_accent;
+}
+
+.btn-outline-accent:hover {
+  color: $page_light_text;
+  background-color: $page_accent;
+  border-color: $page_accent;
 }
 
 /* NAVBAR END */
 
 /* FOOTER BEGIN */
-
 footer {
-  background-color: #212529;
-  color: gray;
+  background-color: $page_gray;
+  color: $page_gray_text;
 }
-
 /* FOOTER END */
 
 /* SHADOW STUFF BEGIN */
@@ -368,23 +403,334 @@ footer {
   box-shadow: 10px 10px 50px 5px black;
 }
 
-.shadowheader2:hover {
-  position: relative;
-  top: -3px;
-  left: -3px;
-  text-shadow: 0px 1px var(--shadow-bg-color1), 2px 2px var(--shadow-bg-color1), 3px 3px var(--shadow-bg-color1),
-    4px 4px var(--shadow-bg-color1), 5px 5px var(--shadow-bg-color1), 6px 6px var(--shadow-bg-color1),
-    7px 7px var(--shadow-bg-color1), 8px 8px var(--shadow-bg-color1) !important;
-}
-
-.backshadow:hover {
-  box-shadow: 1px 1px #2b387c, 2px 2px #2b387c, 3px 3px #2b387c, 4px 4px #2b387c, 5px 5px #2b387c, 6px 6px #2b387c;
-}
-
 .shadowheader {
-  color: white;
+  color: $page_light_text;
   text-shadow: 1px 1px #000, 2px 2px #000;
 }
 
 /* SHADOW STUFF END */
+
+.invalid {
+  border-left: solid 3px $page_warning;
+}
+
+.pretty_form {
+  padding: 40px;
+  margin: auto;
+  display: grid;
+  row-gap: 20px;
+  color: $page_light_text;
+  background-color: $page_gray;
+}
+
+.pretty_textbox {
+  color: $page_light_text !important;
+  border-radius: 0px;
+  background-color: $page_lighter_gray;
+  padding: 6px 12px;
+  width: 100%;
+  border-width: 0;
+  line-height: 1.6 !important;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s, -webkit-box-shadow ease-in-out 0.15s;
+}
+
+.pretty_button {
+  background-color: $page_accent;
+  color: $page_light_text !important;
+  padding: 12px 34px;
+  border: none;
+  border-radius: 0px;
+  line-height: 1.6 !important;
+  text-decoration: none;
+  text-align: center;
+}
+
+.pretty_button:hover {
+  background-color: $page_accent_darker;
+}
+
+.pretty_button:active {
+  position: relative;
+  top: 2px;
+}
+
+.dropdown-item.active {
+  background-color: $page_accent !important;
+}
+
+.flatpickr-calendar,
+.flatpickr-calendar.arrowTop,
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month,
+span.flatpickr-weekday,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  background: $page_gray;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.startRange.inRange,
+.flatpickr-day.endRange.inRange,
+.flatpickr-day.selected:focus,
+.flatpickr-day.startRange:focus,
+.flatpickr-day.endRange:focus,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover,
+.flatpickr-day.selected.prevMonthDay,
+.flatpickr-day.startRange.prevMonthDay,
+.flatpickr-day.endRange.prevMonthDay,
+.flatpickr-day.selected.nextMonthDay,
+.flatpickr-day.startRange.nextMonthDay,
+.flatpickr-day.endRange.nextMonthDay {
+  background: $page_accent;
+  border-color: $page_accent;
+}
+
+.card_header {
+  height: max-content;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr minmax(190px, 1fr);
+
+  .col1,
+  .col3,
+  .col5,
+  .col6 {
+    background-color: transparent;
+  }
+
+  .col2,
+  .col4 {
+    background-color: $page_lighter_gray;
+  }
+}
+
+.connections_header {
+  @extend .card_header;
+
+  div {
+    padding: 5px 20px;
+  }
+}
+
+.lighter {
+  background-color: $page_lighter_gray;
+}
+
+.card_header_item {
+  display: inline-grid;
+  flex-grow: 1;
+  flex-basis: 1px;
+  width: min-content;
+  grid-auto-rows: min-content;
+}
+
+.plan_changed {
+  color: $page_outdated_text;
+}
+
+.affiliate_link_container {
+  display: grid;
+  flex-grow: 1;
+  flex-basis: 0;
+
+  .pretty_button {
+    padding: 12px 12px;
+  }
+}
+
+.card_contents {
+  border-top: 1px solid $page_background;
+  overflow: auto;
+}
+
+.details_grid {
+  margin: 20px;
+  display: inline-grid;
+  grid-template-columns: repeat(4, max-content);
+  grid-gap: 0px;
+  width: max-content;
+  background-color: $page_lighter_gray;
+}
+
+.open-enter-active,
+.open-leave-active {
+  transition: all 0.5s;
+  max-height: 99em;
+  overflow: hidden;
+}
+
+.open-enter,
+.open-leave-to {
+  display: block;
+  max-height: 0px;
+  overflow: hidden;
+}
+
+.station {
+  margin: 10px 0;
+  width: 100%;
+  padding: 5px;
+  background-color: $page_gray;
+}
+
+.time {
+  margin: 15px;
+}
+
+.platform {
+  margin: 15px;
+}
+
+.train {
+  margin: 10px;
+}
+
+.score {
+  border: solid 10px transparent;
+  grid-column-start: span 2;
+}
+
+.transfer {
+  border: solid 10px transparent;
+}
+
+.walk {
+  border: solid 10px transparent;
+  grid-column-start: span 3;
+}
+
+@media (max-width: 1000px) {
+  .m-5 {
+    margin: 3rem 0.5rem 3rem 0.5rem !important;
+  }
+
+  .card_header {
+    grid-template-columns: 1fr 1fr minmax(190px, 1fr);
+
+    .col1,
+    .col3,
+    .col4,
+    .col6 {
+      background-color: transparent;
+    }
+
+    .col2,
+    .col5 {
+      background-color: $page_lighter_gray;
+    }
+  }
+}
+
+@media (max-width: 450px) {
+  .card_header {
+    grid-template-columns: 1fr minmax(190px, 1fr);
+
+    .col1,
+    .col3,
+    .col5 {
+      background-color: $page_lighter_gray;
+    }
+
+    .col2,
+    .col4,
+    .col6 {
+      background-color: transparent;
+    }
+  }
+
+  .pretty_form {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 350px) {
+  .card_header {
+    grid-template-columns: minmax(190px, 1fr);
+  }
+}
+
+.station_delay_line {
+  grid-row-start: span 3;
+  width: 10px;
+  margin: 10px 5px;
+}
+
+#impressum {
+  max-width: 800px;
+  width: 90%;
+  margin: auto !important;
+  margin-bottom: 80px !important;
+  display: grid;
+  row-gap: 20px;
+  color: $page_light_text;
+}
+
+#about {
+  max-width: 800px;
+  width: 90%;
+  margin: auto !important;
+  margin-bottom: 80px !important;
+  display: grid;
+  row-gap: 20px;
+  color: $page_light_text;
+}
+
+#privacy {
+  max-width: 800px;
+  width: 90%;
+  margin: auto !important;
+  margin-bottom: 80px !important;
+  display: grid;
+  row-gap: 20px;
+  color: $page_light_text;
+}
+
+.stats {
+  height: 100%;
+  margin: 20px;
+  color: $page_light_text;
+}
+
+.stats-picker {
+  display: flex;
+  justify-content: space-around;
+  margin: auto;
+  width: 100%;
+  gap: 20px;
+  align-items: center;
+}
+
+.stats-image {
+  width: 100%;
+  max-width: 50em;
+  margin: auto;
+  display: block;
+}
+
+@media (max-width: 1000px) {
+  .stats-picker {
+    flex-wrap: wrap;
+  }
+}
+
+.vue-slider-process {
+  background-color: $page_accent !important;
+}
+
+.vue-slider-dot-tooltip-inner {
+  border-color: $page_accent !important;
+  background-color: $page_accent !important;
+}
+
+.vue-slider {
+  margin: 50px 0;
+  width: 100% !important;
+}
+
+th {
+  padding-left: 20px !important;
+}
 </style>

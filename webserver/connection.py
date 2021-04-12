@@ -9,25 +9,42 @@ import requests
 from pytz import timezone
 from webserver import streckennetz
 from concurrent.futures import ThreadPoolExecutor
+import datetime
 from . import client
 
 
-def get_connections(start, destination, time, max_changes=-1, transfer_time=0, hafas_profile='db'):
-    """ Get connections using marudor hafas api
+def get_connections(
+    start: str,
+    destination: str,
+    time: datetime.datetime,
+    max_changes: int=-1,
+    transfer_time: int=0,
+    hafas_profile: str='db',
+    economic: bool=False,
+) -> list:
+    """[summary]
 
-        Parameters
-        ----------
-        start : string
-            start station name
-        destination : string
-            destination station name
-        time : datetime.datetime
-            time of departure \n
-        
-        Returns
-        -------
-            list : Parsed connections
-        """
+    Parameters
+    ----------
+    start : str
+        start station name
+    destination : str
+        destination station name
+    time : datetime.datetime
+        time of departure \n
+    max_changes : int, optional
+        Maximum number of allowed changes, by default -1
+    transfer_time : int, optional
+        Minimal transfer time, by default 0
+    hafas_profile : str, optional
+        Hafas profile to use, by default 'db'
+    economic : bool, optional
+        True = not only fastest route, by default False
+
+    Returns
+    -------
+        list : Parsed connections
+    """    
     json = {
         "start": str(streckennetz.get_eva(name=start)),
         "destination": str(streckennetz.get_eva(name=destination)),
@@ -35,6 +52,7 @@ def get_connections(start, destination, time, max_changes=-1, transfer_time=0, h
         "maxChanges": max_changes,
         "transferTime": transfer_time,
         "hafasProfile": hafas_profile,
+        'economic': economic,
     }
     json['tarif'] = {'class': 2,'traveler':{"type": "E"}}
 
@@ -58,6 +76,9 @@ def datetimes_to_text(connection):
     connection['summary']['dp_ct'] = connection['summary']['dp_ct'].strftime("%H:%M")
     connection['summary']['ar_ct'] = connection['summary']['ar_ct'].strftime("%H:%M")
 
+    connection['summary']['trip_start_date'] = connection['summary']['trip_start_date'].strftime('%d.%m.%Y')
+    connection['summary']['trip_end_date'] = connection['summary']['trip_end_date'].strftime('%d.%m.%Y')
+
     for i in range(len(connection['segments'])):
         connection['segments'][i]['dp_pt'] = connection['segments'][i]['dp_pt'].strftime("%H:%M")
         connection['segments'][i]['ar_pt'] = connection['segments'][i]['ar_pt'].strftime("%H:%M")
@@ -71,6 +92,8 @@ def datetimes_to_text(connection):
 def parse_connection(connection):
     summary = {}
     segments = []
+    summary['trip_start_date'] = from_utc(connection['departure']['time'])
+    summary['trip_end_date'] = from_utc(connection['arrival']['time'])
     try:
         summary['dp_station'] = streckennetz.get_name(
             eva=int(connection['segments'][0]['segmentStart']['id'])
