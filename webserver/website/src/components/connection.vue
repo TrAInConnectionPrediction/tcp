@@ -5,12 +5,12 @@
       <div class="p-3 col1">
         <div v-if="summary.dp_ct == summary.dp_pt">{{ summary.dp_ct }}</div>
         <div v-else>
-          {{ summary.dp_ct }} <del class="pt">{{ summary.dp_pt }}</del>
+          {{ summary.dp_ct }} <del class="outdated">{{ summary.dp_pt }}</del>
         </div>
 
         <div v-if="summary.ar_ct == summary.ar_pt">{{ summary.ar_ct }}</div>
         <div v-else>
-          {{ summary.ar_ct }} <del class="pt">{{ summary.ar_pt }}</del>
+          {{ summary.ar_ct }} <del class="outdated">{{ summary.ar_pt }}</del>
         </div>
       </div>
       <div class="p-3 col2">{{ summary.duration }}</div>

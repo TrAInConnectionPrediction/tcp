@@ -299,6 +299,7 @@ body {
   background-attachment: fixed;
   // background-color: $page_background;
   overflow: auto;
+  color: $page_light_text;
 }
 
 @media (max-width: 740px) {
@@ -338,7 +339,6 @@ body {
 .navbar .nav-item .dropdown-item:hover,
 .dropdown-item:focus,
 .dropdown-item:active {
-  color: $page_light_text;
   background-color: transparent;
 }
 .navbar .dropdown-menu {
@@ -348,9 +348,6 @@ body {
 @media all and (min-width: 992px) {
   .navbar .nav-item .dropdown-menu {
     display: none;
-  }
-  .navbar .nav-item:hover .nav-link {
-    color: $page_light_text;
   }
   .navbar .nav-item:hover .dropdown-menu {
     display: block;
@@ -367,12 +364,10 @@ body {
 }
 
 .btn-outline-accent {
-  color: $page_accent;
   border-color: $page_accent;
 }
 
 .btn-outline-accent:hover {
-  color: $page_light_text;
   background-color: $page_accent;
   border-color: $page_accent;
 }
@@ -404,7 +399,6 @@ footer {
 }
 
 .shadowheader {
-  color: $page_light_text;
   text-shadow: 1px 1px #000, 2px 2px #000;
 }
 
@@ -419,7 +413,7 @@ footer {
   margin: auto;
   display: grid;
   row-gap: 20px;
-  color: $page_light_text;
+  // color: $page_light_text;
   background-color: $page_gray;
 }
 
@@ -432,6 +426,10 @@ footer {
   border-width: 0;
   line-height: 1.6 !important;
   transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s, -webkit-box-shadow ease-in-out 0.15s;
+}
+
+.pretty_textbox:focus {
+  outline: 1px solid $page_accent;
 }
 
 .pretty_button {
@@ -498,7 +496,7 @@ span.flatpickr-weekday,
   .col3,
   .col5,
   .col6 {
-    background-color: transparent;
+    background-color: $page_gray;
   }
 
   .col2,
@@ -509,6 +507,7 @@ span.flatpickr-weekday,
 
 .connections_header {
   @extend .card_header;
+  border-left: 10px solid transparent;
 
   div {
     padding: 5px 20px;
@@ -527,7 +526,7 @@ span.flatpickr-weekday,
   grid-auto-rows: min-content;
 }
 
-.plan_changed {
+.outdated {
   color: $page_outdated_text;
 }
 
@@ -614,7 +613,7 @@ span.flatpickr-weekday,
     .col3,
     .col4,
     .col6 {
-      background-color: transparent;
+      background-color: $page_gray;
     }
 
     .col2,
@@ -637,7 +636,7 @@ span.flatpickr-weekday,
     .col2,
     .col4,
     .col6 {
-      background-color: transparent;
+      background-color: $page_gray;
     }
   }
 
@@ -665,7 +664,6 @@ span.flatpickr-weekday,
   margin-bottom: 80px !important;
   display: grid;
   row-gap: 20px;
-  color: $page_light_text;
 }
 
 #about {
@@ -675,7 +673,6 @@ span.flatpickr-weekday,
   margin-bottom: 80px !important;
   display: grid;
   row-gap: 20px;
-  color: $page_light_text;
 }
 
 #privacy {
@@ -685,13 +682,12 @@ span.flatpickr-weekday,
   margin-bottom: 80px !important;
   display: grid;
   row-gap: 20px;
-  color: $page_light_text;
 }
 
 .stats {
   height: 100%;
   margin: 20px;
-  color: $page_light_text;
+  // color: $page_light_text;
 }
 
 .stats-picker {
@@ -732,5 +728,56 @@ span.flatpickr-weekday,
 
 th {
   padding-left: 20px !important;
+}
+
+.light_text {
+  color: $page_light_text !important;
+}
+
+.connections-move {
+  transition: transform 1s;
+}
+
+.arrow {
+  border: solid $page_light_text;
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 3px;
+}
+
+.right {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+.left {
+  transform: rotate(135deg);
+  -webkit-transform: rotate(135deg);
+}
+
+.up {
+  transform: rotate(-135deg);
+  -webkit-transform: rotate(-135deg);
+}
+
+.down {
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+}
+
+.sort_col {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.sort_col:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.sort_col:active {
+  position: relative;
+  top: 2px;
 }
 </style>
