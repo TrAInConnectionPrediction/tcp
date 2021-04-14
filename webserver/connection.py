@@ -70,21 +70,21 @@ def get_connections(
 
 
 def datetimes_to_text(connection):
-    connection['summary']['dp_pt'] = connection['summary']['dp_pt'].strftime("%H:%M")
-    connection['summary']['ar_pt'] = connection['summary']['ar_pt'].strftime("%H:%M")
+    connection['summary']['dp_pt'] = connection['summary']['dp_pt'].isoformat()# .strftime("%H:%M")
+    connection['summary']['ar_pt'] = connection['summary']['ar_pt'].isoformat()# .strftime("%H:%M")
 
-    connection['summary']['dp_ct'] = connection['summary']['dp_ct'].strftime("%H:%M")
-    connection['summary']['ar_ct'] = connection['summary']['ar_ct'].strftime("%H:%M")
+    connection['summary']['dp_ct'] = connection['summary']['dp_ct'].isoformat()# .strftime("%H:%M")
+    connection['summary']['ar_ct'] = connection['summary']['ar_ct'].isoformat()# .strftime("%H:%M")
 
     connection['summary']['trip_start_date'] = connection['summary']['trip_start_date'].strftime('%d.%m.%Y')
     connection['summary']['trip_end_date'] = connection['summary']['trip_end_date'].strftime('%d.%m.%Y')
 
     for i in range(len(connection['segments'])):
-        connection['segments'][i]['dp_pt'] = connection['segments'][i]['dp_pt'].strftime("%H:%M")
-        connection['segments'][i]['ar_pt'] = connection['segments'][i]['ar_pt'].strftime("%H:%M")
+        connection['segments'][i]['dp_pt'] = connection['segments'][i]['dp_pt'].isoformat()# .strftime("%H:%M")
+        connection['segments'][i]['ar_pt'] = connection['segments'][i]['ar_pt'].isoformat()# .strftime("%H:%M")
 
-        connection['segments'][i]['dp_ct'] = connection['segments'][i]['dp_ct'].strftime("%H:%M")
-        connection['segments'][i]['ar_ct'] = connection['segments'][i]['ar_ct'].strftime("%H:%M")
+        connection['segments'][i]['dp_ct'] = connection['segments'][i]['dp_ct'].isoformat()# .strftime("%H:%M")
+        connection['segments'][i]['ar_ct'] = connection['segments'][i]['ar_ct'].isoformat()# .strftime("%H:%M")
 
     return connection
 

@@ -4,8 +4,8 @@
     <div class="station">
       {{ segment.dp_station_display_name }}
     </div>
-    <div class="time" v-if="segment.dp_pt == segment.dp_ct">ab {{ segment.dp_ct }}</div>
-    <div class="time" v-else>ab {{ segment.dp_ct }}  <del class="outdated">{{ segment.dp_pt }}</del></div>
+    <div class="time" v-if="segment.dp_pt.isSame(segment.dp_ct)">ab {{ segment.dp_ct.format('HH:mm') }}</div>
+    <div class="time" v-else>ab {{ segment.dp_ct.format('HH:mm') }}  <del class="outdated">{{ segment.dp_pt.format('HH:mm') }}</del></div>
     <div class="platform" v-if="segment.dp_pp == segment.dp_cp">von Gl. {{ segment.dp_cp }}</div>
     <div class="platform" v-else>von Gl. {{ segment.dp_cp }}  <del class="outdated">{{ segment.dp_pp }}</del></div>
 
@@ -21,8 +21,8 @@
     <div class="station">
       {{ segment.ar_station_display_name }}
     </div>
-    <div class="time" v-if="segment.ar_pt == segment.ar_ct">an {{ segment.ar_ct }}</div>
-    <div class="time" v-else>an {{ segment.ar_ct }}  <del class="outdated">{{ segment.ar_pt }}</del></div>
+    <div class="time" v-if="segment.ar_pt.isSame(segment.ar_ct)">an {{ segment.ar_ct.format('HH:mm') }}</div>
+    <div class="time" v-else>an {{ segment.ar_ct.format('HH:mm') }}  <del class="outdated">{{ segment.ar_pt.format('HH:mm') }}</del></div>
     <div class="platform" v-if="segment.ar_pp == segment.ar_cp">an Gl. {{ segment.ar_cp }}</div>
     <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="outdated">{{ segment.dp_pp }}</del></div>
 

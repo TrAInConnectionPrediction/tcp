@@ -98,6 +98,7 @@
 <script>
 import searchform from './components/searchform.vue'
 const ProgressBar = require('progressbar.js')
+const dayjs = require('dayjs')
 
 export default {
   name: 'App',
@@ -163,7 +164,24 @@ TrAIn_Connection_Prediction ║   ║
       // stop animation
       this.progress.animate(0, { duration: 10, easing: 'linear' })
     },
+    parse_datetimes: function (connections) {
+      for (let i = 0; i < connections.length; i++) {
+        connections[i].summary.dp_pt = dayjs(connections[i].summary.dp_pt)
+        connections[i].summary.ar_pt = dayjs(connections[i].summary.ar_pt)
 
+        connections[i].summary.dp_ct = dayjs(connections[i].summary.dp_ct)
+        connections[i].summary.ar_ct = dayjs(connections[i].summary.ar_ct)
+
+        for (let u = 0; u < connections[i].segments.length; u++) {
+          connections[i].segments[u].dp_pt = dayjs(connections[i].segments[u].dp_pt)
+          connections[i].segments[u].ar_pt = dayjs(connections[i].segments[u].ar_pt)
+
+          connections[i].segments[u].dp_ct = dayjs(connections[i].segments[u].dp_ct)
+          connections[i].segments[u].ar_ct = dayjs(connections[i].segments[u].ar_ct)
+        }
+      }
+      return connections
+    },
     get_connections: function (search_data) {
       // remove current connections
       this.$store.commit('set_connections', [])
@@ -179,6 +197,7 @@ TrAIn_Connection_Prediction ║   ║
       })
         .then((response) => this.display_fetch_error(response))
         .then((response) => response.json())
+        .then((connections) => this.parse_datetimes(connections))
         .then((connections) => {
           this.$store.commit('set_connections', connections)
           this.stop_progress()
@@ -413,7 +432,6 @@ footer {
   margin: auto;
   display: grid;
   row-gap: 20px;
-  // color: $page_light_text;
   background-color: $page_gray;
 }
 
@@ -687,7 +705,6 @@ span.flatpickr-weekday,
 .stats {
   height: 100%;
   margin: 20px;
-  // color: $page_light_text;
 }
 
 .stats-picker {
@@ -773,7 +790,8 @@ th {
 }
 
 .sort_col:hover {
-  background-color: rgba(0, 0, 0, 0.2);
+  outline: solid 1px #3f51b5;
+  z-index: 1;
 }
 
 .sort_col:active {
