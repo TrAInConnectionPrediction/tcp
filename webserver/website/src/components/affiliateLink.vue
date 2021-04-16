@@ -2,7 +2,7 @@
   <div>
     <div style="margin: auto;">
       <div v-if="price === -1"></div>
-      <a v-else v-bind:href="link" target="_new" class='pretty_button text-nowrap' style="margin: 10px; display: block;">{{ (price / 100).toFixed(2) }}€</a>
+      <a v-else v-bind:href="link" target="_new" v-on:click.stop class='pretty_button text-nowrap' style="margin: 10px; display: block;">{{ (price / 100).toFixed(2) }}€</a>
     </div>
   </div>
 </template>
