@@ -311,7 +311,7 @@ header,
 }
 
 body {
-  background-image: url(./assets/img/ice.jpg);
+  background-image: url(./assets/img/ice.webp);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
