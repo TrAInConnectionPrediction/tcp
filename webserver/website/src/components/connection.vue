@@ -21,7 +21,7 @@
       <div class="p-3 col5" v-bind:style="[text_color]">{{ summary.score }}%</div>
       <affiliateLink
         class="col6"
-        :date="summary.trip_start_date"
+        :date="summary.dp_ct"
         :time="summary.dp_ct"
         :price="summary.price"
         :start="summary.dp_station_display_name"

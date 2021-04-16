@@ -70,21 +70,18 @@ def get_connections(
 
 
 def datetimes_to_text(connection):
-    connection['summary']['dp_pt'] = connection['summary']['dp_pt'].isoformat()# .strftime("%H:%M")
-    connection['summary']['ar_pt'] = connection['summary']['ar_pt'].isoformat()# .strftime("%H:%M")
+    connection['summary']['dp_pt'] = connection['summary']['dp_pt'].isoformat()
+    connection['summary']['ar_pt'] = connection['summary']['ar_pt'].isoformat()
 
-    connection['summary']['dp_ct'] = connection['summary']['dp_ct'].isoformat()# .strftime("%H:%M")
-    connection['summary']['ar_ct'] = connection['summary']['ar_ct'].isoformat()# .strftime("%H:%M")
-
-    connection['summary']['trip_start_date'] = connection['summary']['trip_start_date'].strftime('%d.%m.%Y')
-    connection['summary']['trip_end_date'] = connection['summary']['trip_end_date'].strftime('%d.%m.%Y')
+    connection['summary']['dp_ct'] = connection['summary']['dp_ct'].isoformat()
+    connection['summary']['ar_ct'] = connection['summary']['ar_ct'].isoformat()
 
     for i in range(len(connection['segments'])):
-        connection['segments'][i]['dp_pt'] = connection['segments'][i]['dp_pt'].isoformat()# .strftime("%H:%M")
-        connection['segments'][i]['ar_pt'] = connection['segments'][i]['ar_pt'].isoformat()# .strftime("%H:%M")
+        connection['segments'][i]['dp_pt'] = connection['segments'][i]['dp_pt'].isoformat()
+        connection['segments'][i]['ar_pt'] = connection['segments'][i]['ar_pt'].isoformat()
 
-        connection['segments'][i]['dp_ct'] = connection['segments'][i]['dp_ct'].isoformat()# .strftime("%H:%M")
-        connection['segments'][i]['ar_ct'] = connection['segments'][i]['ar_ct'].isoformat()# .strftime("%H:%M")
+        connection['segments'][i]['dp_ct'] = connection['segments'][i]['dp_ct'].isoformat()
+        connection['segments'][i]['ar_ct'] = connection['segments'][i]['ar_ct'].isoformat()
 
     return connection
 
@@ -92,8 +89,6 @@ def datetimes_to_text(connection):
 def parse_connection(connection):
     summary = {}
     segments = []
-    summary['trip_start_date'] = from_utc(connection['departure']['time'])
-    summary['trip_end_date'] = from_utc(connection['arrival']['time'])
     try:
         summary['dp_station'] = streckennetz.get_name(
             eva=int(connection['segments'][0]['segmentStart']['id'])
