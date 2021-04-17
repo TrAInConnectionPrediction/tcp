@@ -13,14 +13,3 @@
     </div>
   </div>
 </template>
-<style>
-#about {
-  max-width: 800px;
-  width: 90%;
-  margin:auto !important;
-  margin-bottom: 80px !important;
-  display: grid;
-  row-gap: 20px;
-  color: #cacaca;
-}
-</style>

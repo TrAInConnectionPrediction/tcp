@@ -2,46 +2,31 @@
   <!-- summary -->
   <div v-bind:style="[background_color, border_style]" class="custom_card">
     <div v-on:click="show_details = !show_details" class="card_header">
-      <div class="card_header_item">
-        <div class="card_header_item_header">Bahnhof</div>
-        <div class="card_header_item_item">{{ summary.dp_station_display_name }}</div>
-        <div class="card_header_item_item">{{ summary.ar_station_display_name }}</div>
-      </div>
-      <div class="card_header_item">
-        <div class="card_header_item_header">Zeit</div>
-        <div class="card_header_item_item" v-if="summary.dp_ct == summary.dp_pt">{{ summary.dp_ct }}</div>
-        <div class="card_header_item_item" v-else>{{ summary.dp_ct }}  <del class="pt">{{ summary.dp_pt }}</del></div>
+      <div class="p-3 col1">
+        <div v-if="summary.dp_ct.isSame(summary.dp_pt)">{{ summary.dp_ct.format('HH:mm') }}</div>
+        <div v-else>
+          {{ summary.dp_ct.format('HH:mm') }} <del class="outdated">{{ summary.dp_pt.format('HH:mm') }}</del>
+        </div>
 
-        <div class="card_header_item_item" v-if="summary.ar_ct == summary.ar_pt">{{ summary.ar_ct }}</div>
-        <div class="card_header_item_item" v-else>{{ summary.ar_ct }}  <del class="pt">{{ summary.ar_pt }}</del></div>
-      </div>
-      <div class="card_header_item">
-        <div class="card_header_item_header">Dauer</div>
-        <div class="card_header_item_item">{{ summary.duration }}</div>
-      </div>
-      <div class="card_header_item">
-        <div class="card_header_item_header">Umstiege</div>
-        <div class="card_header_item_item">{{ summary.transfers }}</div>
-      </div>
-      <div class="card_header_item">
-        <div class="card_header_item_header">Produkte</div>
-        <div
-          v-for="cat in summary.train_categories"
-          :key="cat"
-          class="card_header_item_item"
-        >
-          {{ cat }}
+        <div v-if="summary.ar_ct.isSame(summary.ar_pt)">{{ summary.ar_ct.format('HH:mm') }}</div>
+        <div v-else>
+          {{ summary.ar_ct.format('HH:mm') }} <del class="outdated">{{ summary.ar_pt.format('HH:mm') }}</del>
         </div>
       </div>
-      <div class="card_header_item">
-        <div class="card_header_item_header">Preis</div>
-        <div class="card_header_item_item" v-if="summary.price === -1">-</div>
-        <div class="card_header_item_item" v-else>{{ (summary.price / 100).toFixed(2) }}€</div>
+      <div class="p-3 col2">{{ summary.duration }}</div>
+      <div class="p-3 col3">{{ summary.transfers }}</div>
+      <div class="p-3 col4">
+        {{ summary.train_categories.join(', ') }}
       </div>
-      <div class="card_header_item">
-        <div class="card_header_item_header">Verbindungs-Score</div>
-        <div class="card_header_item_item" v-bind:style="[text_color]">{{ summary.score }}%</div>
-      </div>
+      <div class="p-3 col5" v-bind:style="[text_color]">{{ summary.score }}%</div>
+      <affiliateLink
+        class="col6"
+        :date="summary.dp_ct"
+        :time="summary.dp_ct"
+        :price="summary.price"
+        :start="summary.dp_station_display_name"
+        :destination="summary.ar_station_display_name"
+      ></affiliateLink>
     </div>
     <!-- segments -->
     <transition name="open">
@@ -64,11 +49,13 @@
 <script>
 import { rdylgr_colormap } from '../assets/js/colormap.js'
 import segment from './segment.vue'
+import affiliateLink from './affiliateLink.vue'
 
 export default {
   name: 'connection',
   components: {
-    segment
+    segment,
+    affiliateLink
   },
   props: ['summary', 'segments'],
   data: function () {
@@ -87,8 +74,3 @@ export default {
   }
 }
 </script>
-<style>
-  .pt {
-    color: #686868;
-  }
-</style>

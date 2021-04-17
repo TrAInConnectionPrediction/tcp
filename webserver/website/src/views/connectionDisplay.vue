@@ -1,11 +1,60 @@
 <template>
   <div>
-    <connection
-      v-for="(connection, index) in connections"
-      :key="index"
-      :summary="connection.summary"
-      :segments="connection.segments"
-    ></connection>
+    <h1 v-if="connections.length !== 0">
+      {{ connections[0].summary['dp_station_display_name'] }} nach
+      {{ connections[0].summary['ar_station_display_name'] }}
+    </h1>
+    <div v-if="connections.length !== 0" class="custom_card">
+      <div class="connections_header">
+        <div class="col1 sort_col" @click="sort_time()">Zeit
+          <span v-if="last_sort === 'dp_ct' || last_sort === 'ar_ct'">
+            <span v-if="last_sort === 'dp_ct'">Ab </span>
+            <span v-if="last_sort === 'ar_ct'">An </span>
+            <i v-if="asc_sort[last_sort]" class="arrow up"></i>
+            <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
+          </span>
+        </div>
+        <div class="col2 sort_col" @click="sort_by_key('duration')">
+          Dauer
+          <span v-if="last_sort === 'duration'">
+            <i v-if="asc_sort[last_sort]" class="arrow up"></i>
+            <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
+          </span>
+        </div>
+        <div class="col3 sort_col" @click="sort_by_key('transfers')">
+          Umstiege
+          <span v-if="last_sort === 'transfers'">
+            <i v-if="asc_sort[last_sort]" class="arrow up"></i>
+            <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
+          </span>
+        </div>
+        <div class="col4">
+          Produkte
+        </div>
+        <div class="col5 sort_col" @click="sort_by_key('score')">
+          Score
+          <span v-if="last_sort === 'score'">
+            <i v-if="asc_sort[last_sort]" class="arrow up"></i>
+            <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
+          </span>
+          </div>
+        <div class="col6 sort_col" @click="sort_by_key('price')">
+          Ticket
+          <span v-if="last_sort === 'price'">
+            <i v-if="asc_sort[last_sort]" class="arrow up"></i>
+            <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+    <transition-group name="connections" tag="div">
+      <connection
+        v-for="connection in connections"
+        :key="connection.id"
+        :summary="connection.summary"
+        :segments="connection.segments"
+      ></connection>
+    </transition-group>
   </div>
 </template>
 
@@ -20,98 +69,56 @@ export default {
   },
   components: {
     connection
+  },
+  data: function () {
+    return {
+      last_time_key: 'dp_ct',
+      last_sort: 'dp_ct',
+      asc_sort: {
+        dp_ct: true,
+        ar_ct: false,
+        duration: false,
+        trasfers: true,
+        score: true,
+        price: false
+      }
+    }
+  },
+  methods: {
+    sort_time: function () {
+      if (this.last_time_key === 'dp_ct' && !this.asc_sort[this.last_time_key]) {
+        this.last_time_key = 'ar_ct'
+        this.sort_by_key(this.last_time_key)
+        this.asc_sort[this.last_time_key] = true
+      } else if (this.last_time_key === 'ar_ct' && !this.asc_sort[this.last_time_key]) {
+        this.last_time_key = 'dp_ct'
+        this.sort_by_key(this.last_time_key)
+        this.asc_sort[this.last_time_key] = true
+      } else {
+        this.sort_by_key(this.last_time_key)
+      }
+    },
+    sort_by_key: function (key) {
+      this.last_sort = key
+      // switch sort oder
+      this.asc_sort[key] = !this.asc_sort[key]
+      if (this.asc_sort[key]) {
+        // sort ascending
+        this.connections.sort(function (a, b) {
+          const x = a.summary[key]
+          const y = b.summary[key]
+          return x < y ? -1 : x > y ? 1 : 0
+        })
+      } else if (!this.asc_sort[key]) {
+        // sort descending
+        this.connections.sort(function (a, b) {
+          const x = a.summary[key]
+          const y = b.summary[key]
+          return x < y ? 1 : x > y ? -1 : 0
+        })
+      }
+      this.$store.commit('set_connections', this.connections)
+    }
   }
 }
 </script>
-
-<style>
-.card_header_item {
-  display: inline-grid;
-  height: max-content;
-  min-width: 100px;
-  flex-grow: 1;
-}
-
-.card_header_item_header {
-  padding: 10px 10px 0 10px;
-  border-bottom: 1.5px solid #4b4b4b;
-  font-weight: bold;
-}
-
-.card_header_item_item {
-  padding: 0 10px 0 10px;
-}
-
-.card_contents {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  overflow: auto;
-}
-
-.details_grid {
-  margin: 20px;
-  display: inline-grid;
-  grid-template-columns: repeat(4, max-content);
-  grid-gap: 0px;
-  width: max-content;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.open-enter-active,
-.open-leave-active {
-  transition: all 0.5s;
-  max-height: 99em;
-  overflow: hidden;
-}
-
-.open-enter,
-.open-leave-to {
-  display: block;
-  max-height: 0px;
-  overflow: hidden;
-}
-
-.station {
-  margin: 10px 0;
-  width: 100%;
-  padding: 5px;
-  background-color: #212529;
-}
-
-.time {
-  margin: 15px;
-}
-
-.platform {
-  margin: 15px;
-}
-
-.train {
-  margin: 10px;
-}
-
-.score {
-  border: solid 10px transparent;
-  grid-column-start: span 2;
-}
-
-.transfer {
-  border: solid 10px transparent;
-}
-
-.walk {
-  border: solid 10px transparent;
-  grid-column-start: span 3;
-}
-
-@media (max-width: 700px) {
-  .m-5 {
-    margin: 3rem 0.5rem 3rem 0.5rem !important;
-  }
-}
-
-.station_delay_line {
-  grid-row-start: span 3;
-  width: 10px;
-  margin: 10px 5px;
-}
-</style>
