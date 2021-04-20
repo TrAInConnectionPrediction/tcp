@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.cached_table_fetch import cached_table_fetch
 import pandas as pd
+from typing import Tuple
 
 
 class StationPhillip:
@@ -108,9 +109,9 @@ class StationPhillip:
         elif eva is not None:
             return self.eva_index_stations.at[eva, 'ds100']
 
-    def get_location(self, name=None, eva=None, ds100=None):
+    def get_location(self, name=None, eva=None, ds100=None) -> Tuple[float, float]:
         """
-        Get the location of a station.
+        Get the location (lon, lat) of a station.
 
         Parameters
         ----------
@@ -123,7 +124,7 @@ class StationPhillip:
 
         Returns
         -------
-        tuple
+        tuple(float, float)
             longitude and latitide of station
         """
         if eva is None:
