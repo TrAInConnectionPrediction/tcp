@@ -12,6 +12,10 @@ import logging
 import logging.handlers as handlers
 import pyhafas
 
+# Do not use GUI for matplotlib
+import matplotlib
+matplotlib.use('Agg')
+
 # Create app with changed paths  https://stackoverflow.com/a/42791810
 app = Flask(
     __name__,

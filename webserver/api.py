@@ -151,7 +151,7 @@ def stats():
     return resp
 
 
-@bp.route("/stationplot/<string:date_range>.png")
+@bp.route("/stationplot/<string:date_range>.webp")
 @log_activity
 def station_plot(date_range):
     """
@@ -165,7 +165,7 @@ def station_plot(date_range):
 
     Returns
     -------
-    flask generated image/png
+    image/webp
         The generated plot
     """
 
@@ -174,17 +174,35 @@ def station_plot(date_range):
     else:
         date_range = date_range.split("-")
         plot_name = per_station_time.generate_plot(
-            datetime.strptime(date_range[0], "%d.%m.%Y %H:%M"),
-            datetime.strptime(date_range[1], "%d.%m.%Y %H:%M"),
+            datetime.strptime(date_range[0], "%d.%m.%Y"),
+            datetime.strptime(date_range[1], "%d.%m.%Y"),
             use_cached_images=True,
         )
 
-    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.png")
+    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.webp")
     # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
     # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.png') works
     return send_file(
-        f"{CACHE_PATH}/plot_cache/{plot_name}.png", mimetype="image/png"
+        f"{CACHE_PATH}/plot_cache/{plot_name}.webp", mimetype="image/webp"
     )
+
+@bp.route("/stationplot/limits")
+@log_activity
+def limits():
+    """
+    Returns the current datetime limits between which we can generate plots.
+
+    Returns
+    -------
+    {
+        "min": <min_date>,
+        "max": <max_date>
+    }
+    """
+    limits = per_station_time.limits()
+    limits['min'] = limits['min'].date().isoformat()
+    limits['max'] = limits['max'].date().isoformat()
+    return limits
 
 @bp.route("/obstacleplot/<string:date_range>.png")
 @log_activity
