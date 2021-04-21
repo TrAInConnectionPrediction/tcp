@@ -47,10 +47,10 @@ def annotate_station_names(ax, names, station_gdf):
 
 
 stations = StationPhillip(prefer_cache=True)
-station_gdf = stations.get_geopandas()
+station_gdf = stations.to_gpd()
 
 betriebsstellen = BetriebsstellenBill(prefer_cache=True)
-betriebsstellen_gdf = betriebsstellen.get_geopandas()
+betriebsstellen_gdf = betriebsstellen.to_gdf()
 
 streckennetz = cached_table_fetch('full_streckennetz', prefer_cache=True).set_index(['u', 'v', 'key'])
 streckennetz['geometry'] = streckennetz['geometry'].apply(wkb_reverse_hexer)
