@@ -8,16 +8,15 @@ from typing import Tuple
 
 class StationPhillip:
     def __init__(self, **kwargs):
-        self.stations_df = cached_table_fetch('stations', **kwargs)
+        self.name_index_stations = cached_table_fetch('stations', index_col='name', **kwargs)
+        self.name_index_stations['eva'] = self.name_index_stations['eva'].astype(int)
 
-        self.stations_df['eva'] = self.stations_df['eva'].astype(int)
-        self.name_index_stations = self.stations_df.set_index('name')
-        self.eva_index_stations = self.stations_df.set_index('eva')
-        self.ds100_index_stations = self.stations_df.set_index('ds100')
-        self.sta_list = self.stations_df['name'].tolist()
+        self.eva_index_stations = self.name_index_stations.reset_index().set_index('eva')
+        self.ds100_index_stations = self.name_index_stations.reset_index().set_index('ds100')
+        self.sta_list = self.name_index_stations.sort_values(by='number_of_events', ascending=False).index.to_list()
 
     def __len__(self):
-        return len(self.stations_df)
+        return len(self.name_index_stations)
 
     def __iter__(self):
         """
@@ -28,7 +27,7 @@ class StationPhillip:
         str
             Name of station
         """
-        yield from self.stations_df['name']
+        yield from self.name_index_stations.index
 
     def get_geopandas(self):
         """
@@ -173,13 +172,25 @@ class StationPhillip:
             parsed_derf_stations['lon'].append(station['latlong'][1])
         return pd.DataFrame(parsed_derf_stations)
 
+    def add_number_of_events(self):
+        from data_analysis.per_station import PerStationAnalysis
+        # Fail if cache does not exist
+        per_station = PerStationAnalysis(None)
+
+        self.name_index_stations['number_of_events'] = (
+            per_station.data[('ar_delay', 'count')] + per_station.data[('dp_delay', 'count')]
+        )
+
     def push_to_db(self):
         from database.engine import DB_CONNECT_STRING
-        self.stations_df.to_sql('stations', DB_CONNECT_STRING, if_exists='replace', method='multi')
+        self.name_index_stations.to_sql('stations', DB_CONNECT_STRING, if_exists='replace', method='multi')
 
 
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
     stations = StationPhillip()
+
+    stations.add_number_of_events()
+    stations.push_to_db()
 
     print('len:', len(stations))

@@ -5,7 +5,7 @@ import pandas as pd
 from database.engine import DB_CONNECT_STRING
 from config import CACHE_PATH
 
-def cached_table_fetch(tablename, use_cache=True, prefer_cache=False):
+def cached_table_fetch(tablename, use_cache=True, prefer_cache=False, **kwargs):  
     """Fetch table from database and create a local cache of it
 
     Parameters
@@ -35,7 +35,7 @@ def cached_table_fetch(tablename, use_cache=True, prefer_cache=False):
             pass
 
     try:
-        table_df = pd.read_sql_table(tablename, DB_CONNECT_STRING)
+        table_df = pd.read_sql_table(tablename, DB_CONNECT_STRING, **kwargs)
         if use_cache:
             table_df.to_pickle(cache_path)
         return table_df
