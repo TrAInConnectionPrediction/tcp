@@ -18,6 +18,7 @@ import cartopy
 
 from helpers.StationPhillip import StationPhillip
 from helpers.RtdRay import RtdRay
+from database.cached_table_fetch import cached_table_fetch, cached_table_push
 from config import CACHE_PATH
 
 
@@ -61,7 +62,7 @@ class PerStationAnalysis(StationPhillip):
     CANCELLATIONS_PLOT = {
         "count_1": "ar_delay",
         "count_2": "dp_delay",
-        "color_value": "dp_cancellations",
+        "color_value": "dp_happened",
     }
 
     DATA_CACHE_PATH = CACHE_PATH + "/per_station_data.csv"
@@ -83,9 +84,9 @@ class PerStationAnalysis(StationPhillip):
                 rtd_df.groupby("station", sort=False)
                 .agg({
                     "ar_delay": ["count", "mean"],
-                    "ar_cancellations": ["mean"],
+                    "ar_happened": ["mean"],
                     "dp_delay": ["count", "mean"],
-                    "dp_cancellations": ["mean"],
+                    "dp_happened": ["mean"],
                 })
                 .compute()
             )
@@ -146,22 +147,19 @@ class PerStationOverTime(StationPhillip):
     DEFAULT_PLOTS = ["no data available", "default"]
     MAP_CRS = ccrs.Miller()
 
-    def __init__(self, rtd: dd.DataFrame, use_cache=True, logger=None):
+    def __init__(self, rtd: dd.DataFrame, logger=None, **kwargs):
         self.logger = logger
 
         super().__init__()
 
         try:
-            if not use_cache:
+            if 'use_cache' in kwargs and not kwargs['use_cache']:
                 raise FileNotFoundError
             if self.logger:
                 self.logger.info("Reading data...")
-            self.data = (
-                pd.read_csv(self.DATA_CACHE_PATH, index_col=0, parse_dates=["stop_hour"])
-                .reset_index(drop=True)
-            )
+            self.data = cached_table_fetch('per_station_over_time', **kwargs)
 
-            if self.logger:
+            if self.logger is not None:
                 self.logger.info("Done")
             else:
                 print("Using cache")
@@ -181,9 +179,9 @@ class PerStationOverTime(StationPhillip):
                 rtd.groupby("single_index_for_groupby", sort=False)
                 .agg({
                     "ar_delay": ["mean"],
-                    "ar_cancellations": ["sum"],
+                    "ar_happened": ["sum"],
                     "dp_delay": ["mean"],
-                    "dp_cancellations": ["sum"],
+                    "dp_happened": ["sum"],
                     "stop_hour": ["first"],
                     "station": ["first"],
                     "lat": ['first'],
@@ -195,7 +193,7 @@ class PerStationOverTime(StationPhillip):
             new_names = dict([(col, '_'.join(col)) if col[1] != 'first' else (col, col[0]) for col in self.data.columns.to_flat_index()])
             self.data.columns = self.data.columns.to_flat_index()
             self.data = self.data.rename(columns=new_names)
-            self.data.to_csv(self.DATA_CACHE_PATH)
+            cached_table_push(self.data, 'per_station_over_time')
 
         if self.logger:
             self.logger.info("Generating base template...")
@@ -284,27 +282,43 @@ class PerStationOverTime(StationPhillip):
         current_data = self.data.loc[
             (start_time <= self.data["stop_hour"])
             & (self.data["stop_hour"] < end_time)
-        ]
+        ].copy()
 
         if not current_data.empty:
+            # As self.data is already preaggregated we need to compute the weighted
+            # mean of the delays. This requires several steps with pandas.
+            group_sizes = current_data.groupby("station").agg(
+                {
+                    "ar_happened_sum": "sum",
+                    "dp_happened_sum": "sum",
+                }
+            )
+            group_sizes = current_data.set_index('station')[['ar_happened_sum', 'dp_happened_sum']] / group_sizes
+            group_sizes.rename(columns={'ar_happened_sum': 'ar_delay_mean', 'dp_happened_sum': 'dp_delay_mean'}, inplace=True)
+            group_sizes.reset_index(drop=True, inplace=True)
+            weighted_mean = (current_data.reset_index()[['ar_delay_mean', 'dp_delay_mean']] * group_sizes)
+            weighted_mean.index = current_data.index
+            current_data.loc[:, ['ar_delay_mean', 'dp_delay_mean']] = weighted_mean[['ar_delay_mean', 'dp_delay_mean']]
+
             current_data = current_data.groupby("station").agg(
                 {
-                    "ar_delay_mean": "mean",
-                    "ar_cancellations_sum": "sum",
-                    "dp_delay_mean": "mean",
-                    "dp_cancellations_sum": "sum",
+                    "ar_delay_mean": "sum",
+                    "ar_happened_sum": "sum",
+                    "dp_delay_mean": "sum",
+                    "dp_happened_sum": "sum",
                     "lat": "first",
                     "lon": "first",
                 }
             )
+            current_data = current_data.fillna(0)
 
             size = (
-                current_data.loc[:, ["ar_cancellations_sum"]].to_numpy()[:, 0]
-                + current_data.loc[:, ["dp_cancellations_sum"]].to_numpy()[:, 0]
+                current_data.loc[:, ["ar_happened_sum"]].to_numpy()[:, 0]
+                + current_data.loc[:, ["dp_happened_sum"]].to_numpy()[:, 0]
             )
             size = (size / size.max()) * 70
 
-            color = current_data.loc[:, ["ar_delay_mean"]].to_numpy()[:, 0]            
+            color = current_data.loc[:, ["ar_delay_mean"]].to_numpy().astype(float)[:, 0]            
 
             # change the positions 
             self.sc.set_offsets(np.c_[current_data['lon'], current_data['lat']])
@@ -328,26 +342,26 @@ if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
     rtd_df=None
-    # rtd_ray = RtdRay()
-    # rtd_df = rtd_ray.load_data(
-    #     columns=[
-    #         "ar_pt",
-    #         "dp_pt",
-    #         "station",
-    #         "ar_delay",
-    #         "ar_cancellations",
-    #         "dp_delay",
-    #         "dp_cancellations",
-    #         "lat",
-    #         "lon",
-    #     ],
-    #     min_date=datetime.datetime(2021, 3, 1)
-    # )
+    rtd_ray = RtdRay()
+    rtd_df = rtd_ray.load_data(
+        columns=[
+            "ar_pt",
+            "dp_pt",
+            "station",
+            "ar_delay",
+            "ar_happened",
+            "dp_delay",
+            "dp_happened",
+            "lat",
+            "lon",
+        ],
+        # min_date=datetime.datetime(2021, 3, 1)
+    )
 
     # per_station = PerStationAnalysis(rtd_df, use_cache=True)
     # per_station.plot(per_station.DELAY_PLOT)
 
-    per_station_time = PerStationOverTime(rtd_df, use_cache=True)
+    per_station_time = PerStationOverTime(rtd_df, use_cache=False)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )

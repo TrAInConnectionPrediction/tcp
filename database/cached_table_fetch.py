@@ -5,8 +5,9 @@ import pandas as pd
 from database.engine import DB_CONNECT_STRING
 from config import CACHE_PATH
 
-def cached_table_fetch(tablename, use_cache=True, prefer_cache=False, **kwargs):  
-    """Fetch table from database and create a local cache of it
+def cached_table_fetch(tablename: str, use_cache: bool=True, prefer_cache: bool=False, **kwargs) -> pd.DataFrame:  
+    """
+    Fetch table from database and create a local cache of it
 
     Parameters
     ----------
@@ -47,3 +48,19 @@ def cached_table_fetch(tablename, use_cache=True, prefer_cache=False, **kwargs):
         except FileNotFoundError:
             print(ex)
             raise FileNotFoundError(f'There is no connection to the database and no cache of {tablename}')
+
+
+def cached_table_push(df: pd.DataFrame, tablename: str, **kwargs):
+    """
+    Save df to local cache file and replace the table in the database.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to push
+    tablename : str
+        Name of the table in the database
+    """
+    cache_path = CACHE_PATH + '/' + tablename + '.pkl'
+    df.to_pickle(cache_path)
+    df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', **kwargs)
