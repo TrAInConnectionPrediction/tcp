@@ -177,16 +177,18 @@ class RtdRay(Rtd):
         dd.DataFrame or pd.DataFrame
             rtd with additional columns
         """
-        rtd['ar_cancellations'] = rtd['ar_cs'] != 'c'
         rtd['ar_cancellation_time_delta'] = (((rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
         rtd['ar_delay'] = (((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        rtd['ar_happened'] = (rtd['ar_cs'] != 'c') & ~rtd['ar_delay'].isna()
 
-        rtd['dp_cancellations'] = rtd['dp_cs'] != 'c'
         rtd['dp_cancellation_time_delta'] = (((rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
         rtd['dp_delay'] = (((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        rtd['dp_happened'] = (rtd['dp_cs'] != 'c') & ~rtd['dp_delay'].isna()
 
         # Everything with less departure delay than -1 is definitly a bug of IRIS
-        rtd.loc[rtd['dp_delay'] >= -1, ['ar_delay', 'dp_delay']] = 0
+        rtd['ar_delay'] = rtd['ar_delay'].where(rtd['dp_delay'] >= -1, 0)
+        rtd['dp_delay'] = rtd['dp_delay'].where(rtd['dp_delay'] >= -1, 0)
+        # rtd.loc[rtd['dp_delay'] >= -1, ['ar_delay', 'dp_delay']] = 0
 
         return rtd
 
@@ -513,13 +515,13 @@ if __name__ == "__main__":
     # rtd = rtd_ray.load_data(min_date=datetime.datetime(2021, 3, 14)).compute()
     # print(rtd)
     # print(rtd)
-    # rtd = rtd_ray.load_data(load_categories=True)
+    rtd = rtd_ray.load_data(load_categories=True)
     # rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
     # rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
-    # rtd = rtd_ray._get_delays(rtd)
+    rtd = rtd_ray._get_delays(rtd)
     # rtd = rtd_ray._categorize(rtd)
     # rtd = rtd_ray._add_station_coordinates(rtd)
-    # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH, engine='pyarrow') # , schema='infer')
+    rtd.to_parquet(rtd_ray.DATA_CACHE_PATH, engine='pyarrow') # , schema='infer')
     # rtd_ray._save_encoders(rtd)
 
     # rtd_ray.refresh_local_buffer()

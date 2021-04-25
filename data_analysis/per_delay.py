@@ -25,11 +25,11 @@ class DelayAnalysis:
             self.data = rtd_df.groupby('ar_delay').agg({
                         'ar_pt': ['count'],
                         'ar_delay': ['count'],
-                        'ar_cancellations': ['mean'],
+                        'ar_happened': ['mean'],
                         'ar_cancellation_time_delta': ['count', 'mean'],
                         'dp_pt': ['count'],
                         'dp_delay': ['count'],
-                        'dp_cancellations': ['mean'],
+                        'dp_happened': ['mean'],
                         'dp_cancellation_time_delta': ['count', 'mean'],
                     }).compute()
             self.data = self.data.nlargest(50, columns=('ar_pt', 'count'))

@@ -20,9 +20,9 @@ class TrainTypeAnalysis:
         except FileNotFoundError:
             self.data = rtd_df.groupby('c', sort=False).agg({
                         'ar_delay': ['count', 'mean'],
-                        'ar_cancellations': ['mean'],
+                        'ar_happened': ['mean'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_cancellations': ['mean'],
+                        'dp_happened': ['mean'],
                     }).compute()
             # group train types that are uncommon
             count = self.data[('ar_delay', 'count')] + self.data[('dp_delay', 'count')]
@@ -77,9 +77,9 @@ if __name__ == '__main__':
                                         'dp_pt',
                                         'c',
                                         'ar_delay',
-                                        'ar_cancellations',
+                                        'ar_happened',
                                         'dp_delay',
-                                        'dp_cancellations'])
+                                        'dp_happened'])
     rtd_df = rtd_df.astype({'c': 'str'})
     
     tta = TrainTypeAnalysis(rtd_df=rtd_df, use_cache=True)

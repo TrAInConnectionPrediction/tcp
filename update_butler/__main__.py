@@ -55,9 +55,9 @@ rtd_df = rtd_ray.load_data(
         "dp_pt",
         "station",
         "ar_delay",
-        "ar_cancellations",
+        "ar_happened",
         "dp_delay",
-        "dp_cancellations",
+        "dp_happened",
     ]
 )
 
