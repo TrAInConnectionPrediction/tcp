@@ -162,7 +162,7 @@ class RtdRay(Rtd):
             'station': 'category'}
 
     @staticmethod
-    def _get_delays(rtd):
+    def _get_delays(rtd: dd.DataFrame) -> dd.DataFrame:
         """
         Add cancellations, cancellation_time_delta, delay and on time to
         arrival and departure
@@ -177,24 +177,25 @@ class RtdRay(Rtd):
         dd.DataFrame or pd.DataFrame
             rtd with additional columns
         """
-        rtd['ar_cancellation_time_delta'] = (((rtd['ar_clt'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
-        rtd['ar_delay'] = (((rtd['ar_ct'] - rtd['ar_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        # We never used the cancellation time delta, so it is commented out.
+        # rtd['ar_cancellation_time_delta'] = (((rtd['ar_clt'] - rtd['ar_pt']).dt.total_seconds()) // 60).astype('Int16')
+        rtd['ar_delay'] = (((rtd['ar_ct'] - rtd['ar_pt']).dt.total_seconds()) // 60).astype('Int16')
         rtd['ar_happened'] = (rtd['ar_cs'] != 'c') & ~rtd['ar_delay'].isna()
 
-        rtd['dp_cancellation_time_delta'] = (((rtd['dp_clt'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
-        rtd['dp_delay'] = (((rtd['dp_ct'] - rtd['dp_pt']) / pd.Timedelta(minutes=1)) // 1).astype('Int16')
+        # rtd['dp_cancellation_time_delta'] = (((rtd['dp_clt'] - rtd['dp_pt']).dt.total_seconds()) // 60).astype('Int16')
+        rtd['dp_delay'] = (((rtd['dp_ct'] - rtd['dp_pt']).dt.total_seconds()) // 60).astype('Int16')
         rtd['dp_happened'] = (rtd['dp_cs'] != 'c') & ~rtd['dp_delay'].isna()
 
         # Everything with less departure delay than -1 is definitly a bug of IRIS
         rtd['ar_delay'] = rtd['ar_delay'].where(rtd['dp_delay'] >= -1, 0)
         rtd['dp_delay'] = rtd['dp_delay'].where(rtd['dp_delay'] >= -1, 0)
-        # rtd.loc[rtd['dp_delay'] >= -1, ['ar_delay', 'dp_delay']] = 0
 
         return rtd
 
     @staticmethod
-    def _add_station_coordinates(rtd):
-        """Add latitude and logitude to rtd
+    def _add_station_coordinates(rtd: dd.DataFrame) -> dd.DataFrame:
+        """
+        Add latitude and logitude to rtd
 
         Parameters
         ----------
@@ -204,7 +205,7 @@ class RtdRay(Rtd):
         Returns
         -------
         pd.DataFrame
-            DataFrame with columns lat and lon
+            DataFrame with columns lon and lat
         """
         stations = StationPhillip()
         replace_lon = {}
@@ -226,26 +227,23 @@ class RtdRay(Rtd):
         rtd['lat'] = rtd['lat'].map(replace_lat.get).astype('float')
         return rtd
 
-    def _categorize(self, rtd):
+    def _categorize(self, rtd: dd.DataFrame) -> dd.DataFrame:
         """
         Change dtype of categorical like columns to 'category', compute categories
         and save the categories of each column to disk
 
         Parameters
         ----------
-        rtd: dask.dataframe
+        rtd: dd.DataFrame
 
         Returns
         -------
-        dask.dataframe
+        dd.DataFrame
             Dataframe with categorical columns as dtype category
 
         """
-        with ProgressBar():
-            rtd = rtd.astype(self.categoricals)
-            for col in self.categoricals.keys():
-                print('categorizing', col)
-                rtd[col] = rtd[col].cat.as_known()
+        rtd = rtd.astype(self.categoricals)
+        rtd[list(self.categoricals.keys())] = rtd[list(self.categoricals.keys())].categorize()
 
         return rtd
 
@@ -257,26 +255,32 @@ class RtdRay(Rtd):
             cat_dict = {**dict(zip(dict_keys, range(len(dict_keys)))), **{None: -1}}
             pickle.dump(cat_dict, open(self.ENCODER_PATH.format(encoder=key), "wb"))
 
+    def _parse(self, rtd: dd.DataFrame) -> dd.DataFrame:
+        with ProgressBar():
+            if 'ar_pp' in rtd.columns:
+                print('combining platforms')
+                rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
+                rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
+            print('categorizing')
+            # rtd = self._categorize(rtd)
+            print('adding delays')
+            rtd = self._get_delays(rtd)
+            print('adding station coordinates')
+            # rtd = self._add_station_coordinates(rtd)
+        return rtd
+
     def refresh_local_buffer(self):
         """
-        Pull the Rtd.__tablename__ table from db, add delays save it on disk.
+        Pull the Rtd.__tablename__ table from db, parse it and save it on disk.
         """
         with ProgressBar():
             rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
                                     index_col='hash_id', meta=self.meta, npartitions=200)
             rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', schema='infer') # write_metadata_file=False)
             rtd = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow')
-            # Combine arrival and departure platform as these are the same
-            rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
-            rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
 
-            rtd = self._get_delays(rtd)
-            rtd = self._categorize(rtd)
+            rtd = self._parse(rtd)
             self._save_encoders(rtd)
-
-            print('adding latitude and logitude')
-            
-            rtd = self._add_station_coordinates(rtd)
 
             # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
             rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', schema='infer')
@@ -313,15 +317,9 @@ class RtdRay(Rtd):
 
             new_rtd.to_parquet(self.DATA_CACHE_PATH + '_new', engine='pyarrow', schema='infer') 
         new_rtd = dd.read_parquet(self.DATA_CACHE_PATH + '_new', engine='pyarrow')
+
+        new_rtd = self._parse(new_rtd)
         
-        new_rtd['pp'] = new_rtd['ar_pp'].fillna(value=new_rtd['dp_pp'])
-        new_rtd = new_rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
-
-        new_rtd = self._get_delays(new_rtd)
-        new_rtd = self._categorize(new_rtd)
-
-        print('adding latitude and logitude')
-        new_rtd = self._add_station_coordinates(new_rtd)
         new_rtd.to_parquet(self.DATA_CACHE_PATH + '_new', engine='pyarrow', schema='infer')
         new_rtd = dd.read_parquet(self.DATA_CACHE_PATH + '_new', engine='pyarrow')
 
@@ -508,29 +506,30 @@ class RtdRay(Rtd):
 
 if __name__ == "__main__":
     from helpers import fancy_print_tcp
-    # from dask.distributed import Client
-    # client = Client()
+    from dask.distributed import Client
+    client = Client()
+
+    import time
 
     rtd_ray = RtdRay()
-    # rtd = rtd_ray.load_data(min_date=datetime.datetime(2021, 3, 14)).compute()
-    # print(rtd)
-    # print(rtd)
-    rtd = rtd_ray.load_data(load_categories=True)
+    start = time.time()
+    rtd = rtd_ray.load_data(load_categories=False)
+    rtd = rtd_ray._parse(rtd)
     # rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
     # rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
-    rtd = rtd_ray._get_delays(rtd)
+    # rtd = rtd_ray._get_delays(rtd)
     # rtd = rtd_ray._categorize(rtd)
     # rtd = rtd_ray._add_station_coordinates(rtd)
-    rtd.to_parquet(rtd_ray.DATA_CACHE_PATH, engine='pyarrow') # , schema='infer')
+    rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_2', engine='pyarrow') # , schema='infer')
+    print('took', time.time() - start)
     # rtd_ray._save_encoders(rtd)
 
     # rtd_ray.refresh_local_buffer()
     # rtd_ray.update_local_buffer()
 
-    # rtd = rtd_ray.load_for_ml_model()
-    rtd = rtd_ray.load_data(columns=['ar_pt'])
-    print('max pt:', rtd['ar_pt'].max().compute())
-    print('len rtd:', len(rtd))
+    # rtd = rtd_ray.load_data(columns=['ar_pt'])
+    # print('max pt:', rtd['ar_pt'].max().compute())
+    # print('len rtd:', len(rtd))
 
     # # create trimmed version of rtd to upload to dockerhub
     # rtd = rtd_ray.load_for_ml_model(
