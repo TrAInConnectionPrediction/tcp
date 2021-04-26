@@ -375,9 +375,6 @@ if __name__ == '__main__':
                                         'dp_delay',
                                         'dp_happened'])
 
-    # legacy code to plot older data
-    # from data_analysis.delay import load_with_delay
-    # rtd_df = load_with_delay(columns=['station', 'c', 'f'])
     
     print('grouping over hour')
     time = OverHour(rtd_df, use_cache=True)
