@@ -1,42 +1,37 @@
-import os, sys
-
+import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sqlalchemy
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib
-from helpers.StationPhillip import StationPhillip
-import datetime
-from data_analysis.delay import load_with_delay, load_long_distance_with_delay
+from helpers.RtdRay import RtdRay
+from config import CACHE_PATH
 
 
 class DelayAnalysis:
-    _CACHE_PATH = 'data/delay_analysis_data.csv'
-
     def __init__(self, rtd_df, use_cache=True):
+        self.CACHE_PATH = f'{CACHE_PATH}/delay_analysis.csv'
+
         try:
             if not use_cache:
                 raise FileNotFoundError
-            self.data = pd.read_csv(self._CACHE_PATH, header=[0, 1], index_col=0, parse_dates=[0])
+            self.data = pd.read_csv(self.CACHE_PATH, header=[0, 1], index_col=0, parse_dates=[0])
             print('using cached data')
         except FileNotFoundError:
+            # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
+            from dask.distributed import Client
+            client = Client()
+
             self.data = rtd_df.groupby('ar_delay').agg({
                         'ar_pt': ['count'],
-                        'ar_delay': ['count'],
-                        'ar_happened': ['mean'],
-                        'ar_cancellation_time_delta': ['count', 'mean'],
+                        'ar_happened': ['sum'],
                         'dp_pt': ['count'],
-                        'dp_delay': ['count'],
-                        'dp_happened': ['mean'],
-                        'dp_cancellation_time_delta': ['count', 'mean'],
+                        'dp_happened': ['sum'],
                     }).compute()
             self.data = self.data.nlargest(50, columns=('ar_pt', 'count'))
             self.data = self.data.sort_index()
-            self.data.to_csv(self._CACHE_PATH)
+            self.data.to_csv(self.CACHE_PATH)
 
-    def plot_count(self, logy=False):
+    def plot_count(self):
         fig, ax1 = plt.subplots()
         ax1.tick_params(axis="both", labelsize=20) 
         index = self.data.index.to_numpy()
@@ -49,10 +44,22 @@ class DelayAnalysis:
         ax1.set_xlabel('Delay in minutes', fontsize=30)
         ax1.set_ylabel('Count', color="blue", fontsize=30)
 
-        ax1.plot(self.data[('ar_pt', 'count')] + self.data[('dp_pt', 'count')],
-                    color="blue",
-                    linewidth=3,
-                    label='Stops')        
+        ax1.plot(
+            self.data[('ar_happened', 'sum')] + self.data[('ar_happened', 'sum')],
+            color="blue",
+            linewidth=3,
+            label='Stops',
+        )
+
+        ax1.plot(
+            (self.data[('ar_pt', 'count')]
+            + self.data[('dp_pt', 'count')]
+            - self.data[('ar_happened', 'sum')]
+            - self.data[('ar_happened', 'sum')]),
+            color="orange",
+            linewidth=3,
+            label='Cancellations',
+        )             
         
         fig.legend(fontsize=20)
         ax1.set_ylim(bottom=0)
@@ -60,7 +67,9 @@ class DelayAnalysis:
 
 
 if __name__ == '__main__':
-    rtd_df = load_with_delay(columns=['station', 'c', 'f'])
-    delay = DelayAnalysis(rtd_df, use_cache=True)
-    delay.plot_count()
+    import helpers.fancy_print_tcp
 
+    rtd_ray = RtdRay()
+    rtd = rtd_ray.load_data(columns=['ar_delay', 'dp_delay', 'ar_pt', 'dp_pt', 'ar_happened', 'dp_happened'])
+    delay = DelayAnalysis(rtd, use_cache=True)
+    delay.plot_count()
