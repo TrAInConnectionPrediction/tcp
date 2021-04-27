@@ -142,7 +142,6 @@ class PerStationAnalysis(StationPhillip):
 
 
 class PerStationOverTime(StationPhillip):
-    DATA_CACHE_PATH = CACHE_PATH + "/per_station_over_time.csv"
     FREQ = "48H"
     DEFAULT_PLOTS = ["no data available", "default"]
     MAP_CRS = ccrs.Miller()
