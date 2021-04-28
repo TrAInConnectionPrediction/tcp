@@ -11,12 +11,9 @@ import numpy as np
 import geopy.distance
 import itertools
 import math
-# import progressbar
 import pandas as pd
 import geopandas as gpd
-from helpers.StationPhillip import StationPhillip
-from helpers.BetriebsstellenBill import BetriebsstellenBill
-from helpers.profiler import profile
+from helpers import StationPhillip, BetriebsstellenBill
 import matplotlib.pyplot as plt
 import pickle
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
@@ -48,7 +45,7 @@ def get_streckennetz_from_osm(point_cloud=None, place=None, cache=True) -> nx.Mu
                 place,
                 simplify=True,
                 network_type='none',
-                truncate_by_edge=True,
+                truncate_by_edge=False,
                 custom_filter=rail_filter
             )
         else:
@@ -60,11 +57,13 @@ def get_streckennetz_from_osm(point_cloud=None, place=None, cache=True) -> nx.Mu
                 MultiPoint(point_cloud).convex_hull,
                 simplify=True,
                 network_type='none',
-                truncate_by_edge=True,
+                truncate_by_edge=False,
                 custom_filter=rail_filter
             )
         print('projecting streckennetz')
         streckennetz = ox.project_graph(streckennetz, to_crs='EPSG:3857')
+        # Convert to non directional graph which only has half the number of edges and is way faster to compute
+        streckennetz = nx.MultiGraph(streckennetz)
         nx.write_gpickle(streckennetz, "cache/original_osm_rail_graph.gpickle")
     return streckennetz
 
@@ -255,14 +254,14 @@ def split_edge(
     close_edges : gpd.GeoDataFrame
         GeoDataFrame of this and other edges close to the station
     line : LineString
-        Line, with the station as center and orthagonal to the nearest edge
+        Line, with the station as center and orthogonal to the nearest edge
     line_exterior : MultiLineString
-        Two lines, parralel to line, but with +/- a small offset. Used
+        Two lines, parallel to line, but with +/- a small offset. Used
         to calculate the cut angle between edge and orth_line
     orth_line : LineString
-        Line, with the station as center and orthagonal to line
+        Line, with the station as center and orthogonal to line
     orth_line_exterior : MultiLineString
-        Two lines, parralel to orth_line, bit with +/- a small offset. Used
+        Two lines, parallel to orth_line, bit with +/- a small offset. Used
         to calculate the cut angle between edge and orth_line
     plot : bool, optional
         Whether to plot the process or not, by default False
@@ -398,48 +397,29 @@ def insert_station(name, station, edges, nodes, plot=False):
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
-    stations = StationPhillip(prefer_cache=True)
-    betriebsstellen = BetriebsstellenBill(prefer_cache=True)
+    stations = StationPhillip(prefer_cache=False)
+    betriebsstellen = BetriebsstellenBill(prefer_cache=False)
 
-    stations_gdf = stations.get_geopandas()
+    stations_gdf = stations.to_gpd()
     stations_gdf['type'] = 'station'
-    betriebsstellen_gdf = betriebsstellen.get_geopandas()
+    betriebsstellen_gdf = betriebsstellen.to_gdf()
     betriebsstellen_gdf['type'] = 'betriebsstelle'
 
     # Merge stations and betriebsstellen
     stations_gdf = pd.concat([stations_gdf, betriebsstellen_gdf])
     stations_gdf = stations_gdf.loc[~stations_gdf.index.duplicated(keep='first')]
 
-
     ox.config(log_console=True, use_cache=True)
     streckennetz = get_streckennetz_from_osm(
         point_cloud=np.array(list(zip(stations_gdf['geometry'].x, stations_gdf['geometry'].y))),
-        cache=True,
+        cache=False,
     )
-    streckennetz = nx.MultiGraph(streckennetz)
     nodes, edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
 
     stations_gdf = stations_gdf.to_crs('EPSG:3857')
 
-    # Calculate nearest edge for each station
-    # print('Projecting streckennetz')
-    # streckennetz = ox.project_graph(streckennetz, to_crs='EPSG:3857')
-    # print('Calculating nearest edges')
-    # nearest_edges = ox.get_nearest_edges(
-    #     streckennetz,
-    #     stations_gdf.geometry.x,
-    #     stations_gdf.geometry.y,
-    #     method='kdtree',
-    #     dist=1000
-    # ).tolist()
-    # stations_gdf['nearest_edge'] = ''
-    # for i, name in enumerate(stations_gdf.index):
-    #     stations_gdf.loc[name, 'nearest_edge'] = edges.loc[tuple(nearest_edges[i])]['geometry']
-
     pickle.dump(stations_gdf, open("cache/stations_gdf.pkl", "wb"))
     stations_gdf = pickle.load(open("cache/stations_gdf.pkl", "rb"))
-
-
 
     replace_edges = []
     add_edges = {'index': [], 'geometry': []}
@@ -504,7 +484,3 @@ if __name__ == '__main__':
     upload_minimal(streckennetz)
     upload_full(nodes, edges)
 
-    # Test functionality
-    print(nx.shortest_path_length(streckennetz, 'Tübingen Hbf', 'Altingen(Württ)', weight='length'))
-    path = ox.shortest_path(streckennetz, 'Tübingen Hbf', 'Altingen(Württ)')
-    ox.plot_graph_route(streckennetz, path)

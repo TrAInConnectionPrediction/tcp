@@ -59,7 +59,7 @@ client = pyhafas.HafasClient(pyhafas.profile.DBProfile())
 app.logger.info("Done")
 
 app.logger.info("Initializing streckennetz...")
-from helpers.StreckennetzSteffi import StreckennetzSteffi
+from helpers import StreckennetzSteffi
 
 streckennetz = StreckennetzSteffi(prefer_cache=True)
 app.logger.info("Done")

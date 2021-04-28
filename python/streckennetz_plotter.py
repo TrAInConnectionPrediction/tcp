@@ -8,12 +8,10 @@ import datetime
 from shapely.geometry import Point, LineString, Polygon
 import pandas as pd
 import geopandas as gpd
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip, BetriebsstellenBill, ObstacleOlly
 import matplotlib.pyplot as plt
 import pickle
 import matplotlib.pyplot as plt
-from helpers.BetriebsstellenBill import BetriebsstellenBill
-from helpers.ObstacleOlly import ObstacleOlly
 from database.cached_table_fetch import cached_table_fetch
 
 

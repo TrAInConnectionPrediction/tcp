@@ -7,7 +7,7 @@ from sqlalchemy import Integer, Text, DateTime, String
 from sqlalchemy.dialects.postgresql import JSON, ARRAY
 import datetime
 import progressbar
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 from rtd_crawler.DatabaseOfDoom import DatabaseOfDoom
 import database.rtd
 from rtd_crawler.hash64 import hash64

@@ -6,7 +6,7 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import datetime
 from database.rtd import Rtd
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 from database.engine import DB_CONNECT_STRING
 from config import RTD_CACHE_PATH, ENCODER_PATH
 from typing import Optional
@@ -512,24 +512,24 @@ if __name__ == "__main__":
     import time
 
     rtd_ray = RtdRay()
-    start = time.time()
-    rtd = rtd_ray.load_data(load_categories=False)
-    rtd = rtd_ray._parse(rtd)
+    # start = time.time()
+    # rtd = rtd_ray.load_data(load_categories=False)
+    # rtd = rtd_ray._parse(rtd)
     # rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
     # rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
     # rtd = rtd_ray._get_delays(rtd)
     # rtd = rtd_ray._categorize(rtd)
     # rtd = rtd_ray._add_station_coordinates(rtd)
-    rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_2', engine='pyarrow') # , schema='infer')
-    print('took', time.time() - start)
+    # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_2', engine='pyarrow') # , schema='infer')
+    # print('took', time.time() - start)
     # rtd_ray._save_encoders(rtd)
 
     # rtd_ray.refresh_local_buffer()
     # rtd_ray.update_local_buffer()
 
-    # rtd = rtd_ray.load_data(columns=['ar_pt'])
-    # print('max pt:', rtd['ar_pt'].max().compute())
-    # print('len rtd:', len(rtd))
+    rtd = rtd_ray.load_data(columns=['ar_pt'])
+    print('max pt:', rtd['ar_pt'].max().compute())
+    print('len rtd:', len(rtd))
 
     # # create trimmed version of rtd to upload to dockerhub
     # rtd = rtd_ray.load_for_ml_model(

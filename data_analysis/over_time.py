@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker
 import datetime
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 
 
 def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:

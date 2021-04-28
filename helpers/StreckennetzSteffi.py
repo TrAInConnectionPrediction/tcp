@@ -2,7 +2,7 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import functools
 import geopy.distance
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 from database.cached_table_fetch import cached_table_fetch
 import igraph
 

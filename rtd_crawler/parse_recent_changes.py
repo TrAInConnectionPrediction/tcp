@@ -6,7 +6,7 @@ import datetime
 from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
 from database.rtd import RtdManager, sql_types, RtdArrays
-from helpers.ObstacleOlly import ObstacleOlly
+from helpers import ObstacleOlly
 import json
 import re
 import concurrent.futures
@@ -152,8 +152,6 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
                     else:
                         stop['m_' + msg_part].append(msg[msg_part])
     return stop    
-
-from helpers.profiler import profile
 
 
 def add_distance(rtd):

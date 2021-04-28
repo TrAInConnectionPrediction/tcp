@@ -7,8 +7,7 @@ from database.engine import DB_CONNECT_STRING
 import json
 import datetime
 from pytz import timezone
-from helpers.StreckennetzSteffi import StreckennetzSteffi
-from helpers.BetriebsstellenBill import BetriebsstellenBill
+from helpers import StreckennetzSteffi, BetriebsstellenBill
 import networkx as nx
 import functools
 import re

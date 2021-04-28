@@ -3,13 +3,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
 import datetime
-from helpers.StationPhillip import StationPhillip
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import neighbors
 from sklearn.preprocessing import MinMaxScaler
 from sklearn import linear_model
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 
 
 if __name__ == '__main__':

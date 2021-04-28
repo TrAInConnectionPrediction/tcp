@@ -6,7 +6,7 @@ if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 from xgboost import XGBClassifier
 import xgboost
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 import datetime
 import pandas as pd
 import optuna

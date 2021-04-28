@@ -5,7 +5,7 @@ import geopy.distance
 import pandas as pd
 import requests
 import json
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 
 def add_station(eva):
 
