@@ -6,7 +6,7 @@ from sqlalchemy import Column, BIGINT
 from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from database.engine import engine
+from database import get_engine
 import json
 
 Base = declarative_base()
@@ -18,18 +18,14 @@ class Change(Base):
     change = Column(JSON)
 
 
-try:
-    Base.metadata.create_all(engine)
-except sqlalchemy.exc.OperationalError:
-    print('database.change running offline!')
-
-
 class ChangeManager:
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    def __init__(self) -> None:
+        self.engine = get_engine()
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
 
-    queue = []
-    changes = {}
+        self.queue = []
+        self.changes = {}
 
     def upsert(self, rows: list):
         table = Change.__table__
@@ -90,3 +86,12 @@ class ChangeManager:
             Number of Rows.
         """
         return self.session.query(Change).count()
+
+
+if __name__ == '__main__':
+    try:
+        engine = get_engine()
+        Base.metadata.create_all(engine)
+        engine.dispose()
+    except sqlalchemy.exc.OperationalError:
+        print('database.change running offline!')

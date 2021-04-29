@@ -9,7 +9,7 @@ from rtd_crawler.SimplestDownloader import SimplestDownloader
 from rtd_crawler.hash64 import hash64
 import time
 import datetime
-from database.plan import PlanManager
+from database import PlanManager
 from rtd_crawler.xml_parser import xml_to_json
 from concurrent.futures import ThreadPoolExecutor
 import traceback

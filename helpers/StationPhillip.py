@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database.cached_table_fetch import cached_table_fetch
+from database import cached_table_fetch, DB_CONNECT_STRING
 import pandas as pd
 from typing import Tuple, Optional, Union, Any
 
@@ -259,7 +259,6 @@ class StationPhillip:
         )
 
     def push_to_db(self):
-        from database.engine import DB_CONNECT_STRING
         self.name_index_stations.to_sql('stations', DB_CONNECT_STRING, if_exists='replace', method='multi')
 
 

@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Optional, Callable
 import pandas as pd
-from database.engine import DB_CONNECT_STRING
+from database import DB_CONNECT_STRING
 from config import CACHE_PATH
 
 def cached_table_fetch(

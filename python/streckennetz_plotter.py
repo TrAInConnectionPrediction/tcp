@@ -12,7 +12,7 @@ from helpers import StationPhillip, BetriebsstellenBill, ObstacleOlly
 import matplotlib.pyplot as plt
 import pickle
 import matplotlib.pyplot as plt
-from database.cached_table_fetch import cached_table_fetch
+from database import cached_table_fetch
 
 
 plt.style.use('dark_background')

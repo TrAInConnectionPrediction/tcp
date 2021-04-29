@@ -6,8 +6,7 @@ import discord
 from discord.ext import tasks, commands
 from config import discord_bot_token
 import datetime
-from database.change import ChangeManager
-from database.plan import PlanManager
+from database import ChangeManager, PlanManager
 
 client = discord.Client()
 

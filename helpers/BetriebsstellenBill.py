@@ -3,7 +3,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
 from typing import Optional, Union, Any, Tuple
-from database.cached_table_fetch import cached_table_fetch
+from database import cached_table_fetch
 
 
 class NoLocationError(Exception):

@@ -17,7 +17,7 @@ import cartopy
 # apt-get install libgeos-dev 
 
 from helpers import StationPhillip, RtdRay
-from database.cached_table_fetch import cached_table_fetch, cached_table_push
+from database import cached_table_fetch, cached_table_push
 from config import CACHE_PATH
 
 

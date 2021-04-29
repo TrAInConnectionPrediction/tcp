@@ -5,13 +5,12 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
-from database.rtd import RtdManager, sql_types, RtdArrays
+from database import RtdManager, sql_types, RtdArrays, DBManager
 from helpers import ObstacleOlly
 import json
 import re
 import concurrent.futures
 import numpy as np
-from database.db_manager import DBManager
 
 empty_rtd = {key: None for key in sql_types.keys()}
 

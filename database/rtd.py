@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float
 from sqlalchemy.dialects.postgresql import JSON, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from database.engine import engine
+from database import get_engine
 import datetime
 from sqlalchemy import exc
 from config import RTD_TABLENAME
@@ -186,15 +186,12 @@ sql_types = {
     'obstacles_priority_80': Float,
 }
 
-try:
-    Base.metadata.create_all(engine)
-except sqlalchemy.exc.OperationalError:
-    print('database.rtd running offline!')
-
 
 class RtdManager:
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    def __init__(self) -> None:
+        self.engine = get_engine()
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
 
     def max_date(self) -> datetime.datetime:
         """
@@ -207,8 +204,7 @@ class RtdManager:
         """
         return self.session.query(sqlalchemy.func.max(Rtd.ar_pt)).scalar()
 
-    @staticmethod
-    def upsert(df: pd.DataFrame):
+    def upsert(self, df: pd.DataFrame):
         """
         Upsert dataframe to db using pangres
 
@@ -218,7 +214,7 @@ class RtdManager:
             Data to upsert
         """
         if not df.empty:
-            pangres.upsert(engine,
+            pangres.upsert(self.engine,
                         df,
                         if_row_exists='update',
                         table_name=Rtd.__tablename__,
@@ -228,8 +224,7 @@ class RtdManager:
                         adapt_dtype_of_empty_db_columns=False)
 
     
-    @staticmethod
-    def upsert_arrays(df: pd.DataFrame):
+    def upsert_arrays(self, df: pd.DataFrame):
         """
         Upsert dataframe to db using pangres
 
@@ -239,7 +234,7 @@ class RtdManager:
             Arrays to upsert
         """
         if not df.empty:
-            pangres.upsert(engine,
+            pangres.upsert(self.engine,
                         df,
                         if_row_exists='update',
                         table_name=RtdArrays.__tablename__,
@@ -247,3 +242,11 @@ class RtdManager:
                         create_schema=False,
                         add_new_columns=False,
                         adapt_dtype_of_empty_db_columns=False)
+
+if __name__ == '__main__':
+    try:
+        engine = get_engine()
+        Base.metadata.create_all(engine)
+        engine.dispose()
+    except sqlalchemy.exc.OperationalError:
+        print('database.rtd running offline!')

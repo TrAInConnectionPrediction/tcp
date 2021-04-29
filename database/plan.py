@@ -6,7 +6,7 @@ from sqlalchemy import Column, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSON, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from database.engine import get_engine
+from database import get_engine
 import datetime
 
 Base = declarative_base()
@@ -17,14 +17,6 @@ class Plan(Base):
     date = Column(DateTime, primary_key=True)
     bhf = Column(Text, primary_key=True)
     plan = Column(JSON)
-
-    def __init__(self) -> None:
-        try:
-            engine = get_engine()
-            Base.metadata.create_all(engine)
-            engine.dispose()
-        except sqlalchemy.exc.OperationalError:
-            print('database.plan running offline!')
 
 
 class PlanManager:
@@ -74,3 +66,12 @@ class PlanManager:
 
     def count_entries_at_date(self, date: datetime.datetime) -> int:
         return self.session.query(Plan).filter(Plan.date == date).count()
+
+
+if __name__ == '__main__':
+    try:
+        engine = get_engine()
+        Base.metadata.create_all(engine)
+        engine.dispose()
+    except sqlalchemy.exc.OperationalError:
+        print('database.plan running offline!')

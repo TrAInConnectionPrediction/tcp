@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from data_analysis.packed_bubbles import BubbleChart
 from helpers import RtdRay, groupby_index_to_flat
-from database.cached_table_fetch import cached_table_fetch
+from database import cached_table_fetch
 import dask.dataframe as dd
 
 

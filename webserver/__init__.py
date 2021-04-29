@@ -42,7 +42,7 @@ if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 import config
 
-from database.engine import DB_CONNECT_STRING
+from database import DB_CONNECT_STRING
 
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_CONNECT_STRING
 

@@ -5,9 +5,8 @@ import pandas as pd
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import datetime
-from database.rtd import Rtd
+from database import Rtd, DB_CONNECT_STRING, get_engine
 from helpers import StationPhillip
-from database.engine import DB_CONNECT_STRING
 from config import RTD_CACHE_PATH, ENCODER_PATH
 from typing import Optional
 
@@ -301,7 +300,6 @@ class RtdRay(Rtd):
         from sqlalchemy import Column, DateTime
         from sqlalchemy import sql
         from sqlalchemy.dialects import postgresql
-        from database.engine import get_engine
 
         with get_engine().connect() as connection:
             query = sql.select([Column(c) for c in self.df_dict] + [Column('hash_id')])\

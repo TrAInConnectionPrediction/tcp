@@ -4,8 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
-from database.rtd import Rtd
-from database.engine import DB_CONNECT_STRING
+from database import Rtd, DB_CONNECT_STRING
 
 class ConnectionRay(Rtd):
     def __init__(self, notebook=False):

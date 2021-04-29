@@ -11,7 +11,7 @@ import time
 import concurrent.futures
 from itertools import chain
 import datetime
-from database.change import ChangeManager
+from database import ChangeManager
 from rtd_crawler.xml_parser import xml_to_json
 from config import station_to_monitor_per_thread
 

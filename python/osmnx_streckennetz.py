@@ -112,7 +112,7 @@ def upload_minimal(streckennetz):
     streckennetz: nx.Graph
         Graph of the Streckennetz
     """
-    from database.engine import engine
+    from database import DB_CONNECT_STRING
     streckennetz = ox.graph_to_gdfs(streckennetz, nodes=False)
     u_v_key = pd.DataFrame(streckennetz.index.to_numpy().tolist(), columns=streckennetz.index.names)
     u_v_key = u_v_key.set_index(['u', 'v', 'key'], drop=False)
@@ -120,7 +120,7 @@ def upload_minimal(streckennetz):
     streckennetz['v'] = u_v_key['v']
     streckennetz = pd.DataFrame(streckennetz[['u', 'v', 'length']])
     streckennetz = streckennetz.reset_index(drop=True)
-    streckennetz.to_sql('minimal_streckennetz', if_exists='replace', method='multi', con=engine)
+    streckennetz.to_sql('minimal_streckennetz', if_exists='replace', method='multi', con=DB_CONNECT_STRING)
 
 
 def upload_full(nodes, edges):
@@ -134,7 +134,7 @@ def upload_full(nodes, edges):
     edges : gpd.GeoDataFrame
         GeoDataFrame of edges
     """    
-    from database.engine import engine
+    from database import DB_CONNECT_STRING
     # streckennetz_nodes, streckennetz_edges = ox.graph_to_gdfs(streckennetz, nodes=True)
     # Function to generate WKB hex
     def wkb_hexer(line):
@@ -145,10 +145,10 @@ def upload_full(nodes, edges):
     # because it does not have a geometry column anymore. Also note that
     # it is assumed the `'geometry'` column is correctly datatyped.
     edges['geometry'] = edges['geometry'].apply(wkb_hexer)
-    edges.to_sql('full_streckennetz', if_exists='replace', method='multi', con=engine)
+    edges.to_sql('full_streckennetz', if_exists='replace', method='multi', con=DB_CONNECT_STRING)
 
     nodes['geometry'] = nodes['geometry'].apply(wkb_hexer)
-    nodes.to_sql('full_streckennetz_nodes', if_exists='replace', method='multi', con=engine)
+    nodes.to_sql('full_streckennetz_nodes', if_exists='replace', method='multi', con=DB_CONNECT_STRING)
 
 
 def plot_algorithm(
