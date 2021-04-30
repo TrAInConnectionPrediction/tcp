@@ -4,10 +4,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 basepath = os.path.dirname(os.path.realpath(__file__))
 
 from flask import Flask
-import logging
-import logging.handlers as handlers
+# import logging
+# import logging.handlers as handlers
 import pyhafas
-from helpers import StreckennetzSteffi
+from helpers import StreckennetzSteffi, logging
 from webserver.index import index_blueprint
 from webserver.db_logger import db
 from data_analysis.per_station import PerStationOverTime
@@ -18,12 +18,19 @@ matplotlib.use('Agg')
 
 client = pyhafas.HafasClient(pyhafas.profile.DBProfile())
 
+logging.info('Initialising streckennetz')
 streckennetz = StreckennetzSteffi(prefer_cache=True)
+logging.info('Done!')
+
+logging.info('Initialising per_station_time')
+per_station_time = PerStationOverTime(None, prefer_cache=True)
+logging.info('Done!')
 
 from webserver.predictor import Predictor
-pred = Predictor()
+logging.info('Initialising predictior')
+predictor = Predictor()
+logging.info('Done!')
 
-per_station_time = PerStationOverTime(None, prefer_cache=True)
 
 def create_app():
     import helpers.fancy_print_tcp
@@ -37,15 +44,6 @@ def create_app():
         static_url_path="",
     )
 
-    logHandler = handlers.TimedRotatingFileHandler(
-        basepath + "/logs/website.log", when="midnight", backupCount=100
-    )
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    logHandler.setFormatter(formatter)
-    logHandler.setLevel(logging.INFO)
-    app.logger.addHandler(logHandler)
-    app.logger.setLevel(logging.INFO)
-
     app.logger.info("Loading config...")
     if os.path.isfile("/mnt/config/config.py"):
         sys.path.append("/mnt/config/")
@@ -56,13 +54,6 @@ def create_app():
         app.config.from_object(ProductionConfig)
     else:
         app.config.from_object(DevelopmentConfig)
-
-
-    # I don't know what we have to call again to update the loggin level
-    # so let's just call everything...
-    logHandler.setLevel(logging.DEBUG if app.debug else logging.INFO)
-    app.logger.addHandler(logHandler)
-    app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
 
     app.logger.info("Done")
 

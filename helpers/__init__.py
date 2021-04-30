@@ -6,3 +6,4 @@ from .ConnectionRay import ConnectionRay
 from .ObstacleOlly import ObstacleOlly, priorities_text, from_hafas_time
 from .profiler import profile
 from .RtdRay import RtdRay
+from .logger import logging

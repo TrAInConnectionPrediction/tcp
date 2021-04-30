@@ -13,7 +13,7 @@ from webserver.connection import (
     datetimes_to_text,
     get_connections,
 )
-from webserver import pred, streckennetz, per_station_time
+from webserver import predictor, streckennetz, per_station_time
 from webserver.db_logger import log_activity
 from config import CACHE_PATH
 
@@ -34,13 +34,13 @@ def analysis(connection):
     dict
         The connection with the evaluation/rating
     """
-    ar_data, dp_data = pred.get_pred_data(connection["segments"])
-    ar_prediction = pred.predict_ar(ar_data)
-    dp_prediction = pred.predict_dp(dp_data)
+    ar_data, dp_data = predictor.get_pred_data(connection["segments"])
+    ar_prediction = predictor.predict_ar(ar_data)
+    dp_prediction = predictor.predict_dp(dp_data)
     transfer_time = np.array(
         [segment["transfer_time"] for segment in connection["segments"][:-1]]
     )
-    con_scores = pred.predict_con(ar_prediction[:-1], dp_prediction[1:], transfer_time)
+    con_scores = predictor.predict_con(ar_prediction[:-1], dp_prediction[1:], transfer_time)
     connection["summary"]["score"] = int(round(con_scores.prod() * 100))
     for i in range(len(connection["segments"]) - 1):
         connection["segments"][i]["score"] = int(round(con_scores[i] * 100))
@@ -97,7 +97,7 @@ def connect():
         list: a list of strings with all the known train stations
     """
     resp = jsonify({"stations": streckennetz.sta_list})
-    resp.headers.add("Access-Control-Allow-Origin", "*")
+    # resp.headers.add("Access-Control-Allow-Origin", "*")
     return resp
 
 
