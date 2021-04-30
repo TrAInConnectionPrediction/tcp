@@ -1,8 +1,6 @@
 <template>
   <body>
-    <nav
-      class="navbar navbar-expand-lg navbar-dark fixed-top"
-    >
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
       <div class="container-fluid">
         <router-link class="navbar-brand" to="/">TCP</router-link>
         <button
@@ -73,9 +71,17 @@
         <section id="pgr_bar" class="p-5"></section>
       </div>
       <main id="main">
-        <div class="m-5 custom_card" id="error_box" style="background-color: rgb(255, 69, 69)">
-          <div v-if="error" @click="error = null" class="card_header">
-            <b>Holy Guacamole</b>! Something went wrong: {{ error.toString() }}
+        <div id="error_box">
+          <div v-if="error" class="error_box m-1 p-5">
+            <div class="close-x" @click="error = null" style="position: absolute; top: 10px; right: 10px"></div>
+            <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
+            <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
+            <div>
+              Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
+              <a href="https://github.com/TrAInConnectionPrediction/tcp/issues" class="warning_link" target="_blank"
+                >GitHub</a
+              >
+            </div>
           </div>
         </div>
         <router-view class="m-5" />
@@ -156,6 +162,9 @@ TrAIn_Connection_Prediction ║   ║
       console.log(this.error)
       document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
     },
+    hard_reload () {
+      window.location.reload()
+    },
     start_progress () {
       // start progress animation
       this.progress.animate(60, { duration: 30000, easing: 'linear' })
@@ -220,7 +229,7 @@ $page_light_text: lightgray;
 $page_gray_text: gray;
 $page_dark_text: black;
 $page_outdated_text: #686868;
-$page_warning: #ff4545;
+$page_warning: #bb0000;
 
 // Custom font (https://icomoon.io/app/#/select)
 @font-face {
@@ -275,7 +284,18 @@ h5 {
 .footer_link {
   color: inherit;
   font-weight: inherit;
-  text-decoration: none;
+  // text-decoration: none;
+}
+
+.warning_link {
+  color: $page_dark_text;
+  font-weight: bold;
+  // text-decoration: none;
+  cursor: pointer;
+}
+
+.warning_link:hover {
+  color: lighten($page_dark_text, 40%);
 }
 
 #intro {
@@ -344,13 +364,6 @@ body {
 .top-nav-collapse {
   background-color: $page_gray;
 }
-
-// /* Adding color to the Navbar on mobile */
-// @media only screen and (max-width: 768px) {
-//   .navbar {
-//     background-color: $page_gray;
-//   }
-// }
 
 .navbar .nav-item .dropdown-item {
   color: $page_light_text;
@@ -503,6 +516,61 @@ span.flatpickr-weekday,
 .flatpickr-day.endRange.nextMonthDay {
   background: $page_accent;
   border-color: $page_accent;
+}
+
+.error_box {
+  color: $page_dark_text;
+  background-color: $page_warning;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.close-x {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  background: linear-gradient(
+      45deg,
+      transparent 0%,
+      transparent 43%,
+      $page_dark_text 45%,
+      $page_dark_text 55%,
+      transparent 57%,
+      transparent 100%
+    ),
+    linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 43%,
+      $page_dark_text 45%,
+      $page_dark_text 55%,
+      transparent 57%,
+      transparent 100%
+    );
+}
+
+.close-x:hover {
+  background: linear-gradient(
+      45deg,
+      transparent 0%,
+      transparent 43%,
+      lighten($page_dark_text, 40%) 45%,
+      lighten($page_dark_text, 40%) 55%,
+      transparent 57%,
+      transparent 100%
+    ),
+    linear-gradient(
+      135deg,
+      transparent 0%,
+      transparent 43%,
+      lighten($page_dark_text, 40%) 45%,
+      lighten($page_dark_text, 40%) 55%,
+      transparent 57%,
+      transparent 100%
+    );
 }
 
 .card_header {
