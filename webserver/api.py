@@ -1,14 +1,13 @@
 import os
 import sys
-
-from datetime import datetime
-import numpy as np
-import json
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import request, jsonify, current_app, Blueprint
 from flask.helpers import send_file
+
+from datetime import datetime
+import numpy as np
+import json
 
 from webserver.connection import (
     datetimes_to_text,
