@@ -7,12 +7,6 @@ from config import db_database, db_password, db_server, db_username
 
 DB_CONNECT_STRING = 'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
 
-engine = sqlalchemy.create_engine(
-    DB_CONNECT_STRING,
-    pool_pre_ping=True,
-    pool_recycle=3600
-)
-
 def get_engine():
     return sqlalchemy.create_engine(
         DB_CONNECT_STRING,
