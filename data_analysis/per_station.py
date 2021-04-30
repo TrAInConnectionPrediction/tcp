@@ -16,8 +16,8 @@ import cartopy
 # apt-get install libproj-dev proj-data proj-bin  
 # apt-get install libgeos-dev 
 
-from helpers import StationPhillip, RtdRay
-from database import cached_table_fetch, cached_table_push
+from helpers import StationPhillip, RtdRay, groupby_index_to_flat
+from database import cached_table_fetch
 from config import CACHE_PATH
 
 
@@ -145,56 +145,15 @@ class PerStationOverTime(StationPhillip):
     DEFAULT_PLOTS = ["no data available", "default"]
     MAP_CRS = ccrs.Miller()
 
-    def __init__(self, rtd: dd.DataFrame, logger=None, **kwargs):
-        self.logger = logger
+    def __init__(self, rtd, **kwargs):
+        super().__init__(**kwargs)
 
-        super().__init__()
-
-        try:
-            if 'use_cache' in kwargs and not kwargs['use_cache']:
-                raise FileNotFoundError
-            if self.logger:
-                self.logger.info("Reading data...")
-            self.data = cached_table_fetch('per_station_over_time', **kwargs)
-
-            if self.logger is not None:
-                self.logger.info("Done")
-            else:
-                print("Using cache")
-        except FileNotFoundError:
-            # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
-            from dask.distributed import Client
-            client = Client()
-
-            # Generate an index with self.FREQ for groupby over time and station
-            rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)
-            rtd = rtd.drop(columns=['ar_pt', 'dp_pt'])
-            rtd["single_index_for_groupby"] = rtd["stop_hour"].astype("str") + rtd[
-                "station"
-            ].astype("str")
-
-            self.data: pd.DataFrame = (
-                rtd.groupby("single_index_for_groupby", sort=False)
-                .agg({
-                    "ar_delay": ["mean"],
-                    "ar_happened": ["sum"],
-                    "dp_delay": ["mean"],
-                    "dp_happened": ["sum"],
-                    "stop_hour": ["first"],
-                    "station": ["first"],
-                    "lat": ['first'],
-                    "lon": ['first'],
-                })
-                .compute()
-            )
-
-            new_names = dict([(col, '_'.join(col)) if col[1] != 'first' else (col, col[0]) for col in self.data.columns.to_flat_index()])
-            self.data.columns = self.data.columns.to_flat_index()
-            self.data = self.data.rename(columns=new_names)
-            cached_table_push(self.data, 'per_station_over_time')
-
-        if self.logger:
-            self.logger.info("Generating base template...")
+        self.data = cached_table_fetch(
+            'per_station_over_time',
+            table_generator=lambda: self.generate_data(rtd),
+            push=True,
+            **kwargs
+        )
 
         # Setup Plot https://stackoverflow.com/questions/9401658/how-to-animate-a-scatter-plot
         self.fig, self.ax = dark_fig_ax_germany(crs=self.MAP_CRS)
@@ -223,18 +182,44 @@ class PerStationOverTime(StationPhillip):
         self.colorbar.ax.get_yaxis().labelpad = 15
         self.colorbar.ax.set_ylabel("Ø Verspätung in Minuten", rotation=270)
 
-        if self.logger:
-            self.logger.info("Done")
-            for plot_name in self.DEFAULT_PLOTS:
-                if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.webp"):
-                    if plot_name == 'default':
-                        self.ax.set_title('', fontsize=16)
-                    else:
-                        self.ax.set_title(plot_name, fontsize=16)
-                    self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
-                    image_to_webp(f"{CACHE_PATH}/plot_cache/{plot_name}.png")
+        for plot_name in self.DEFAULT_PLOTS:
+            if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.webp"):
+                if plot_name == 'default':
+                    self.ax.set_title('', fontsize=16)
+                else:
+                    self.ax.set_title(plot_name, fontsize=16)
+                self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
+                image_to_webp(f"{CACHE_PATH}/plot_cache/{plot_name}.png")
 
-                    self.logger.info(f"Generating {plot_name} plot")
+    def generate_data(self, rtd: dd.DataFrame) -> pd.DataFrame:
+        # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
+        from dask.distributed import Client
+        client = Client()
+
+        # Generate an index with self.FREQ for groupby over time and station
+        rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)
+        rtd = rtd.drop(columns=['ar_pt', 'dp_pt'])
+        rtd["single_index_for_groupby"] = rtd["stop_hour"].astype("str") + rtd[
+            "station"
+        ].astype("str")
+
+        data: pd.DataFrame = (
+            rtd.groupby("single_index_for_groupby", sort=False)
+            .agg({
+                "ar_delay": ["mean"],
+                "ar_happened": ["sum"],
+                "dp_delay": ["mean"],
+                "dp_happened": ["sum"],
+                "stop_hour": ["first"],
+                "station": ["first"],
+                "lat": ['first'],
+                "lon": ['first'],
+            })
+            .compute()
+        )
+
+        data = groupby_index_to_flat(data)
+        return data
 
     def limits(self):
         return {
@@ -353,13 +338,13 @@ if __name__ == "__main__":
             "lat",
             "lon",
         ],
-        # min_date=datetime.datetime(2021, 3, 1)
+        min_date=datetime.datetime(2021, 3, 1)
     )
 
     # per_station = PerStationAnalysis(rtd_df, use_cache=True)
     # per_station.plot(per_station.DELAY_PLOT)
 
-    per_station_time = PerStationOverTime(rtd_df, use_cache=False)
+    per_station_time = PerStationOverTime(rtd_df, generate=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )
