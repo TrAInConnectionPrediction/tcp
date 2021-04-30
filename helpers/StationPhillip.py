@@ -8,6 +8,10 @@ from typing import Tuple, Optional, Union, Any
 
 class StationPhillip:
     def __init__(self, **kwargs):
+        if 'generate' in kwargs:
+            kwargs['generate'] = False
+            print('StationPhillip does not support generate')
+        
         self.name_index_stations = cached_table_fetch('stations', index_col='name', **kwargs)
         self.name_index_stations['eva'] = self.name_index_stations['eva'].astype(int)
 

@@ -9,7 +9,11 @@ import igraph
 
 class StreckennetzSteffi(StationPhillip):
     def __init__(self, **kwargs):
-        super().__init__()
+        if 'generate' in kwargs:
+            kwargs['generate'] = False
+            print('StreckennetzSteffi does not support generate')
+
+        super().__init__(**kwargs)
 
         streckennetz_df = cached_table_fetch('minimal_streckennetz', **kwargs)
 
