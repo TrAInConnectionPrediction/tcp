@@ -23,6 +23,10 @@ def home(**kwargs):
     """
     return render_template("index.html")
 
+@index_blueprint.route("/robots.txt")
+def robots_txt():
+    return render_template("robots.txt")
+
 # @index_blueprint.app_errorhandler(404)
 # def not_found(e):
 #     """
