@@ -11,7 +11,9 @@
 FROM python:3.8.1 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libgeos-dev
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends gcc libproj-dev proj-data proj-bin  
+RUN apt-get install -y --no-install-recommends libgeos-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -24,8 +26,6 @@ COPY ./webserver/requirements.txt requirements.in
 RUN pip-compile requirements.in > requirements.txt && pip-sync
 RUN pip install -r requirements.txt
 
-# He needs special treatment
-RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
 
 # Complie website
 FROM node:14-alpine as node-image
@@ -77,4 +77,4 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 EXPOSE 5000
 
-CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:app", "-t 100"]
+CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:create_app()", "-t 100"]
