@@ -2,6 +2,9 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 basepath = os.path.dirname(os.path.realpath(__file__))
+if os.path.isfile("/mnt/config/config.py"):
+    sys.path.append("/mnt/config/")
+import config
 
 from flask import Flask
 # import logging
@@ -43,11 +46,6 @@ def create_app():
         static_folder="website/dist",
         static_url_path="",
     )
-
-    app.logger.info("Loading config...")
-    if os.path.isfile("/mnt/config/config.py"):
-        sys.path.append("/mnt/config/")
-    import config
 
     from webserverconfig import ProductionConfig, DevelopmentConfig
     if app.config["ENV"] == "production":
