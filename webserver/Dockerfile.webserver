@@ -12,8 +12,8 @@ FROM python:3.8.1 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends gcc libproj-dev proj-data proj-bin  
-RUN apt-get install -y --no-install-recommends libgeos-dev
+RUN apt-get install -y gcc libproj-dev proj-data proj-bin  
+RUN apt-get install -y libgeos-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
