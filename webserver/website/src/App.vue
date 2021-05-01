@@ -42,7 +42,7 @@
             </li>
           </ul>
           <div class="d-flex">
-            <a class="pretty_button" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank"
+            <a class="pretty_button" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank" rel="noopener"
               ><i class="tcp-github"></i>TCP auf GitHub</a
             >
           </div>
@@ -78,7 +78,7 @@
             <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
             <div>
               Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
-              <a href="https://github.com/TrAInConnectionPrediction/tcp/issues" class="warning_link" target="_blank"
+              <a href="https://github.com/TrAInConnectionPrediction/tcp/issues" class="warning_link" target="_blank" rel="noopener"
                 >GitHub</a
               >
             </div>
