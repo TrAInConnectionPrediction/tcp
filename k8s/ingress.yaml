@@ -8,6 +8,16 @@ spec:
   ports:
     - port: 5000 # Default port for image
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: next-webserver-service
+spec:
+  selector:
+    app: next-webserver
+  ports:
+    - port: 5000 # Default port for image
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -28,6 +38,7 @@ spec:
   tls:
   - hosts:
     - trainconnectionprediction.de
+    - next.trainconnectionprediction.de
     - qkhrecvu4nfgijjt.myfritz.net
     secretName: default-tls-secret
   rules:
@@ -39,6 +50,16 @@ spec:
           backend:
             service:
               name: webserver-service
+              port:
+                number: 5000
+  - host: "next.trainconnectionprediction.de"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: next-webserver-service
               port:
                 number: 5000
   - host: "qkhrecvu4nfgijjt.myfritz.net"

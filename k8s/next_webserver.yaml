@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: next-webserver
+  name: next-webserver
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: next-webserver
+  template:
+    metadata:
+      labels:
+        app: next-webserver
+    spec:
+      containers:
+      - image: trainconnectionprediction/next-webserver:latest
+        imagePullPolicy: Always
+        name: tcp
+        resources: {}
+        volumeMounts:
+        - mountPath: /mnt/config
+          name: config-pvc-storage
+        - mountPath: /usr/src/app/cache
+          name: cache-pvc-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config-pvc-storage
+        persistentVolumeClaim:
+          claimName: config-pvc
+      - name: cache-pvc-storage
+        persistentVolumeClaim:
+          claimName: cache-pvc
