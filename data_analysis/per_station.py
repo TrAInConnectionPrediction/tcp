@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 plt.style.use('dark_background')
 import cartopy.crs as ccrs
 import cartopy
+# Configure cache path in kubernetes
+if os.path.isdir("/usr/src/app/cache"):
+    cartopy.config['data_dir'] = '/usr/src/app/cache'
 # Cartopy requirements
 # apt-get install libproj-dev proj-data proj-bin  
 # apt-get install libgeos-dev 
