@@ -8,15 +8,11 @@
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
 ## Base image
-FROM python:3.8.1 AS compile-image
+FROM python:3.8 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update
 RUN apt-get install -y gcc libproj-dev proj-data proj-bin
-RUN apt-get install -y zlib1g-dev \
-	liblcms2-dev \
-	libwebp-dev  \
-	libgeos-dev
 RUN apt-get install -y libgeos-dev
 
 ## Virtualenv
@@ -26,6 +22,8 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ## Add and install requirements
 RUN pip install --upgrade pip && pip install pip-tools
+RUN pip install --no-binary shapely shapely
+RUN pip install numpy
 COPY ./webserver/requirements.txt requirements.in
 RUN pip-compile requirements.in > requirements.txt && pip-sync
 RUN pip install -r requirements.txt
@@ -40,14 +38,22 @@ COPY ./webserver/website/ .
 RUN npm run build
 
 ## Build-image
-FROM python:3.8.1-slim-buster AS runtime-image
+FROM python:3.8-slim-buster AS runtime-image
+
+## Install libgeos
+# TODO: Copy libgeos from build image
+RUN apt-get update
+RUN apt-get install -y gcc build-essential libproj-dev proj-data proj-bin
+RUN apt-get install -y libgeos-dev
+
+## Virtualenv
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ## Copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv
 
-## Install libgeos
-# TODO: Copy libgeos from build image
-RUN apt-get update && apt-get install -y --no-install-recommends libgeos-dev
 ## set working directory
 WORKDIR /usr/src/app
 
@@ -61,10 +67,7 @@ COPY ./webserver/ /usr/src/app/webserver/
 COPY ./helpers/ /usr/src/app/helpers/
 COPY ./database/ /usr/src/app/database/
 COPY ./data_analysis/ /usr/src/app/data_analysis
-# Cache should be mounted seperatly
-# COPY ./cache/ /usr/src/app/cache/
-# Don't leak our secrets, pls
-# COPY ./config.py /usr/src/server/config.py
+COPY ./webserverconfig.py /usr/src/app/webserverconfig.py
 
 ## Copy website
 COPY --from=node-image /app/dist /usr/src/app/webserver/website/dist/
@@ -78,6 +81,7 @@ USER tcp
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PATH="/opt/venv/bin:$PATH"
+ENV MPLCONFIGDIR="/usr/src/app/cache"
 
 EXPOSE 5000
 
