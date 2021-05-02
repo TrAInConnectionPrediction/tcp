@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
+import io
 import numpy as np
 from PIL import Image
 import datetime
@@ -24,12 +25,10 @@ from database import cached_table_fetch
 from config import CACHE_PATH
 
 
-def image_to_webp(path):
-    new_path = '.'.join(path.split('.')[:-1]) + '.webp'
-    image = Image.open(path)
+def image_to_webp(buffer: io.BytesIO, path: str) -> None:
+    image = Image.open(buffer)
     image = image.convert('RGBA')
-    image.save(new_path, 'webp')
-    return new_path
+    image.save(path, 'webp')
 
 def dark_fig_ax_germany(crs):
     # Bounding Box of Germany
@@ -151,6 +150,11 @@ class PerStationOverTime(StationPhillip):
     def __init__(self, rtd, **kwargs):
         super().__init__(**kwargs)
 
+        # The cache from an older version of this class on potentially older data should
+        # not be used. Thus, we create a random version that is attached to the filenames
+        # in the cache.
+        self.version = f'{id(self):x}'
+
         self.data = cached_table_fetch(
             'per_station_over_time',
             table_generator=lambda: self.generate_data(rtd),
@@ -191,8 +195,9 @@ class PerStationOverTime(StationPhillip):
                     self.ax.set_title('', fontsize=16)
                 else:
                     self.ax.set_title(plot_name, fontsize=16)
-                self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
-                image_to_webp(f"{CACHE_PATH}/plot_cache/{plot_name}.png")
+                memory_buffer = io.BytesIO()
+                self.fig.savefig(memory_buffer, dpi=300, transparent=True)
+                image_to_webp(memory_buffer, f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp")
 
     def generate_data(self, rtd: dd.DataFrame) -> pd.DataFrame:
         # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
@@ -314,14 +319,14 @@ class PerStationOverTime(StationPhillip):
             self.sc.set_array(color)
 
             self.ax.set_title(plot_name.replace("_", ":").replace('-', ' - '), fontsize=12)
-            self.fig.savefig(f"{CACHE_PATH}/plot_cache/{plot_name}.png", dpi=300, transparent=True)
-            image_to_webp(f"{CACHE_PATH}/plot_cache/{plot_name}.png")
+            memory_buffer = io.BytesIO()
+            self.fig.savefig(memory_buffer, dpi=300, transparent=True)
+            image_to_webp(memory_buffer, f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp")
         else:
             # This file and the error file must exist
-            # Or one could just gerate them using plt.title(plot_name) plt.savefig(f'cache/plot_cache/{plot_name}.png')
-            plot_name = "no data available"
+            plot_name = f"{CACHE_PATH}/plot_cache/{self.version}_no data available.webp"
 
-        return plot_name
+        return f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp"
 
 
 if __name__ == "__main__":
@@ -347,7 +352,7 @@ if __name__ == "__main__":
     # per_station = PerStationAnalysis(rtd_df, use_cache=True)
     # per_station.plot(per_station.DELAY_PLOT)
 
-    per_station_time = PerStationOverTime(rtd_df, generate=True)
+    per_station_time = PerStationOverTime(rtd_df, generate=False, prefer_cache=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )

@@ -169,20 +169,20 @@ def station_plot(date_range):
     """
 
     if date_range in per_station_time.DEFAULT_PLOTS:
-        plot_name = date_range
+        path_to_plot = f"{CACHE_PATH}/plot_cache/{per_station_time.version}_{date_range}.webp"
     else:
         date_range = date_range.split("-")
-        plot_name = per_station_time.generate_plot(
+        path_to_plot = per_station_time.generate_plot(
             datetime.strptime(date_range[0], "%d.%m.%Y"),
             datetime.strptime(date_range[1], "%d.%m.%Y"),
             use_cached_images=True,
         )
 
-    current_app.logger.info(f"Returning plot: cache/plot_cache/{plot_name}.webp")
+    current_app.logger.info(f"Returning plot: {path_to_plot}")
     # For some fucking reason flask searches the file from inside webserver so we have to go back a bit
     # even though os.path.isfile('cache/plot_cache/'+ plot_name + '.png') works
     return send_file(
-        f"{CACHE_PATH}/plot_cache/{plot_name}.webp", mimetype="image/webp"
+        path_to_plot, mimetype="image/webp"
     )
 
 @bp.route("/stationplot/limits")
