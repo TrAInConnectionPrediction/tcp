@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pangres
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float
+from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float, Boolean
 from sqlalchemy.dialects.postgresql import JSON, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -28,13 +28,13 @@ class Rtd(Base):
     ar_ct = Column(DateTime)
     ar_ps = Column(String(length=1))
     ar_cs = Column(String(length=1))
-    ar_hi = Column(Integer)
+    ar_hi = Column(Boolean)
     ar_clt = Column(DateTime)
     ar_wings = Column(Text)
     ar_tra = Column(Text)
     ar_pde = Column(Text)
     ar_cde = Column(Text)
-    ar_dc = Column(Integer)
+    ar_dc = Column(Boolean)
     ar_l = Column(Text)
     
     dp_pp = Column(Text)
@@ -43,13 +43,13 @@ class Rtd(Base):
     dp_ct = Column(DateTime)
     dp_ps = Column(String(length=1))
     dp_cs = Column(String(length=1))
-    dp_hi = Column(Integer)
+    dp_hi = Column(Boolean)
     dp_clt = Column(DateTime)
     dp_wings = Column(Text)
     dp_tra = Column(Text)
     dp_pde = Column(Text)
     dp_cde = Column(Text)
-    dp_dc = Column(Integer)
+    dp_dc = Column(Boolean)
     dp_l = Column(Text)
 
     f = Column(String(length=1))
@@ -117,13 +117,13 @@ sql_types = {
     'ar_ct': DateTime,
     'ar_ps': String(length=1),
     'ar_cs': String(length=1),
-    'ar_hi': Integer,
+    'ar_hi': Boolean,
     'ar_clt': DateTime,
     'ar_wings': Text,
     'ar_tra': Text,
     'ar_pde': Text,
     'ar_cde': Text,
-    'ar_dc': Integer,
+    'ar_dc': Boolean,
     'ar_l': Text,
     'ar_m_id': ARRAY(Text),
     'ar_m_t': ARRAY(String(length=1)),
@@ -138,13 +138,13 @@ sql_types = {
     'dp_ct': DateTime,
     'dp_ps': String(length=1),
     'dp_cs': String(length=1),
-    'dp_hi': Integer,
+    'dp_hi': Boolean,
     'dp_clt': DateTime,
     'dp_wings': Text,
     'dp_tra': Text,
     'dp_pde': Text,
     'dp_cde': Text,
-    'dp_dc': Integer,
+    'dp_dc': Boolean,
     'dp_l': Text,
     'dp_m_id': ARRAY(Text),
     'dp_m_t': ARRAY(String(length=1)),
