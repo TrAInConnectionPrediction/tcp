@@ -9,7 +9,7 @@ from rtd_crawler.SimplestDownloader import SimplestDownloader
 from rtd_crawler.hash64 import hash64
 import time
 import datetime
-from database import PlanManager
+from database import Plan
 from rtd_crawler.xml_parser import xml_to_json
 from concurrent.futures import ThreadPoolExecutor
 import traceback
@@ -31,7 +31,6 @@ if __name__ == '__main__':
     stations = StationPhillip()
     evas = stations.eva_index_stations.index.to_list()
     dd = SimplestDownloader()
-    db = PlanManager()
     hour = datetime.datetime.now().time().hour - 1
 
     while True:
@@ -45,11 +44,12 @@ if __name__ == '__main__':
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     plans = executor.map(lambda eva: get_plan(eva, str_date, hour), evas)
                     print(datetime.datetime.now(), 'getting plan')
-                for bhf, plan in zip(stations.sta_list, plans):
-                    if plan is not None:
-                        plan = preparse_plan(plan)
-                        db.add_plan(plan=plan, bhf=bhf, date=date, hour=hour)
-                db.commit()
+                with Plan() as db:
+                    for bhf, plan in zip(stations.sta_list, plans):
+                        if plan is not None:
+                            plan = preparse_plan(plan)
+                            db.add_plan(plan=plan, bhf=bhf, date=date, hour=hour)
+                    db.commit()
                 print(datetime.datetime.now(), 'uploaded plan to db')
 
             except Exception as ex:
