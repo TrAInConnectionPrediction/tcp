@@ -751,7 +751,6 @@ span.flatpickr-weekday,
   row-gap: 20px;
 }
 
-
 .stats {
   height: 100%;
   margin: 20px;
