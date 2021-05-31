@@ -233,6 +233,7 @@ def parse_station(station, start_date, end_date):
         # It than reappears in the planned timetable of the next hour.
         parsed = parsed.loc[~parsed.index.duplicated(keep='last')]
         parsed['station'] = station
+        parsed[['ar_dc', 'ar_hi', 'dp_dc', 'dp_hi']] = parsed[['ar_dc', 'ar_hi', 'dp_dc', 'dp_hi']] == '1'
         parsed = add_distance(parsed)
         current_array_cols = [col for col in RtdArrays.__table__.columns.keys() if col in parsed.columns]
         # There are many columns that contain arrays. These take up munch space and aren't
