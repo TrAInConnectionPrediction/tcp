@@ -194,27 +194,175 @@ class OperatorAnalysis(PerCategoryAnalysis):
 
         return data
 
+class fAnalysis(PerCategoryAnalysis):
+
+    category_name = 'f'
+
+    def __init__(self, rtd, **kwargs):
+        self.data = cached_table_fetch(
+            'per_f',
+            table_generator=lambda: self.generate_data(rtd),
+            push=True,
+            **kwargs
+        )
+
+        self.data = self.group_uncommon(self.data)
+
+    @staticmethod
+    def generate_data(rtd: dd.DataFrame) -> pd.DataFrame:
+        data = rtd.groupby('f', sort=False).agg({
+            'ar_delay': ['count', 'mean'],
+            'ar_happened': ['mean'],
+            'dp_delay': ['count', 'mean'],
+            'dp_happened': ['mean'],
+        }).compute()
+
+        data = groupby_index_to_flat(data)
+
+        return data
+
+    @staticmethod
+    def group_uncommon(data: pd.DataFrame) -> pd.DataFrame:
+        return data
+
+class tAnalysis(PerCategoryAnalysis):
+
+    category_name = 't'
+
+    def __init__(self, rtd, **kwargs):
+        self.data = cached_table_fetch(
+            'per_t',
+            table_generator=lambda: self.generate_data(rtd),
+            push=True,
+            **kwargs
+        )
+
+        self.data = self.group_uncommon(self.data)
+
+    @staticmethod
+    def generate_data(rtd: dd.DataFrame) -> pd.DataFrame:
+        data = rtd.groupby('t', sort=False).agg({
+            'ar_delay': ['count', 'mean'],
+            'ar_happened': ['mean'],
+            'dp_delay': ['count', 'mean'],
+            'dp_happened': ['mean'],
+        }).compute()
+
+        data = groupby_index_to_flat(data)
+
+        return data
+
+    @staticmethod
+    def group_uncommon(data: pd.DataFrame) -> pd.DataFrame:
+        return data
+
+class TrainNumberAnalysis(PerCategoryAnalysis):
+
+    category_name = 'Zugnummer'
+
+    def __init__(self, rtd, **kwargs):
+        self.data = cached_table_fetch(
+            'per_train_number',
+            table_generator=lambda: self.generate_data(rtd),
+            push=True,
+            **kwargs
+        )
+
+        self.data = self.group_uncommon(self.data)
+
+    @staticmethod
+    def generate_data(rtd: dd.DataFrame) -> pd.DataFrame:
+        data = rtd.groupby('n', sort=False).agg({
+            'ar_delay': ['count', 'mean'],
+            'ar_happened': ['mean'],
+            'dp_delay': ['count', 'mean'],
+            'dp_happened': ['mean'],
+        }).compute()
+
+        data = groupby_index_to_flat(data)
+
+        return data
+
+    @staticmethod
+    def group_uncommon(data: pd.DataFrame) -> pd.DataFrame:
+        return data
+
+class PlatformAnalysis(PerCategoryAnalysis):
+
+    category_name = 'Gleis'
+
+    def __init__(self, rtd, **kwargs):
+        self.data = cached_table_fetch(
+            'per_platform',
+            table_generator=lambda: self.generate_data(rtd),
+            push=True,
+            **kwargs
+        )
+
+        self.data = self.group_uncommon(self.data)
+
+    @staticmethod
+    def generate_data(rtd: dd.DataFrame) -> pd.DataFrame:
+        data = rtd.groupby('pp', sort=False).agg({
+            'ar_delay': ['count', 'mean'],
+            'ar_happened': ['mean'],
+            'dp_delay': ['count', 'mean'],
+            'dp_happened': ['mean'],
+        }).compute()
+
+        data = groupby_index_to_flat(data)
+
+        return data
+
+    @staticmethod
+    def group_uncommon(data: pd.DataFrame) -> pd.DataFrame:
+        return data
+
 
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     rtd_ray = RtdRay()
     rtd = rtd_ray.load_data(columns=[
-        'ar_pt',
-        'dp_pt',
         'c',
         'o',
+        'f',
+        't',
+        'n',
+        'pp',
+        'ar_pt',
+        'dp_pt',
         'ar_delay',
         'ar_happened',
         'dp_delay',
-        'dp_happened'
+        'dp_happened',
     ])
     rtd['c'] = rtd['c'].astype(str)
     rtd['o'] = rtd['o'].astype(str)
+    rtd['f'] = rtd['f'].astype(str)
+    rtd['t'] = rtd['t'].astype(str)
+    rtd['n'] = rtd['n'].astype(str)
+    rtd['pp'] = rtd['pp'].astype(str)
 
-    tta = TrainTypeAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
-    tta.plot_type_delay()
-    tta.plot_type_cancellations()
+    # tta = TrainTypeAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
+    # tta.plot_type_delay()
+    # tta.plot_type_cancellations()
 
-    oa = OperatorAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
-    oa.plot_type_delay()
-    oa.plot_type_cancellations()
+    # oa = OperatorAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
+    # oa.plot_type_delay()
+    # oa.plot_type_cancellations()
+
+    # fa = fAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
+    # fa.plot_type_delay()
+    # fa.plot_type_cancellations()
+
+    # ta = tAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
+    # ta.plot_type_delay()
+    # ta.plot_type_cancellations()
+
+    # tna = TrainNumberAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
+    # # tna.plot_type_delay()
+    # # tna.plot_type_cancellations()
+
+    pa = PlatformAnalysis(rtd=rtd, generate=False, prefer_cahce=True)
+    pa.plot_type_delay()
+    pa.plot_type_cancellations()
