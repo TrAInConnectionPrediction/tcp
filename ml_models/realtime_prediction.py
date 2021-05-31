@@ -3,61 +3,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
 import datetime
-from helpers.StationPhillip import StationPhillip
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import neighbors
-from sklearn.preprocessing import minmax_scale
 from sklearn.preprocessing import MinMaxScaler
 from sklearn import linear_model
-from data_analysis.delay import load_with_delay
-from helpers.RtdRay import RtdRay
-
-
-def add_lon(rtd, station_list):
-    stations = StationPhillip()
-    for station in station_list:
-        lon = stations.get_location(name=station)[0]
-        rtd.loc[rtd['station'] == station, 'lon'] = lon
-    return rtd['lon']
-
-
-def add_lat(rtd, station_list):
-    stations = StationPhillip()
-    for station in station_list:
-        lat = stations.get_location(name=station)[1]
-        rtd.loc[rtd['station'] == station, 'lat'] = lat
-    return rtd['lat']
+from helpers import RtdRay
 
 
 if __name__ == '__main__':
-    import fancy_print_tcp
+    import helpers.fancy_print_tcp
     from dask.distributed import Client
     client = Client()
     rtd_ray = RtdRay()
-    rtd = rtd_ray.load_data(columns=['station', 'date_id'])
-    # create needed data
-    # rtd = load_with_delay(columns=['station'])
-    
-    stations = StationPhillip()
-    unique_stations = rtd['station'].unique()
-    rtd['lat'] = 0.0
-    rtd['lat'] = rtd.map_partitions(add_lat, station_list=unique_stations, meta=rtd['lat'])
-    rtd['lon'] = 0.0
-    rtd['lon'] = rtd.map_partitions(add_lon, station_list=unique_stations, meta=rtd['lon'])
+    rtd = rtd_ray.load_data(columns=['station', 'date_id', 'lat', 'lon', 'ar_ct', 'ar_delay'])
 
-    # rtd = rtd[['lon', 'lat', 'ar_ct', 'ar_delay']]
-    rtd.to_parquet('cache/nn_rtd', engine='pyarrow', write_metadata_file=False)
-    print('saved parquet')
-    # rtd_da = rtd[['lon', 'lat', 'ar_ct', 'ar_delay']].to_dask_array()
-
-
-    # build model
-    df = dd.read_parquet('cache/nn_rtd', engine='pyarrow').compute()
-    df = df.loc[(df['ar_ct'] < datetime.datetime(2020, 11, 28)) & (df['ar_ct'] > datetime.datetime(2020, 11, 10)), :]
-    df['ar_ct'] = df['ar_ct'].astype(int)
-    data = df.to_numpy()
-    del df
+    rtd = rtd.loc[(rtd['ar_ct'] < datetime.datetime(2020, 11, 28)) & (rtd['ar_ct'] > datetime.datetime(2020, 11, 10)), :]
+    rtd['ar_ct'] = rtd['ar_ct'].astype(int)
+    data = rtd.to_numpy()
+    del rtd
     labels = data[:, 3]
     scaler = MinMaxScaler()
     scaler.fit(data[:, :3])

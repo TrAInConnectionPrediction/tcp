@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import datetime
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 
 from pyhafas import HafasClient
 from pyhafas.profile import DBProfile

@@ -16,7 +16,7 @@ from dask.distributed import Client
 # set up cluster and workers
 client = Client(n_workers=8, threads_per_worker=2, memory_limit='8GB')
 
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 rtd_ray = RtdRay()
 
 print("Done")
@@ -31,7 +31,7 @@ print("Done")
 print("Refreshing local Cache...")
 # If this doesn't work properly switch to 
 # TODO switch to rtd_ray.update_local_buffer()
-rtd_ray.refresh_local_buffer()
+rtd_ray.download_rtd()
 
 print("Done")
 
@@ -55,9 +55,9 @@ rtd_df = rtd_ray.load_data(
         "dp_pt",
         "station",
         "ar_delay",
-        "ar_cancellations",
+        "ar_happened",
         "dp_delay",
-        "dp_cancellations",
+        "dp_happened",
     ]
 )
 

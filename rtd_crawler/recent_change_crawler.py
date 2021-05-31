@@ -4,14 +4,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 import lxml.etree as etree
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 from rtd_crawler.SimplestDownloader import SimplestDownloader
 from rtd_crawler.hash64 import hash64
 import time
 import concurrent.futures
 from itertools import chain
 import datetime
-from database.change import ChangeManager
+from database import ChangeManager
 from rtd_crawler.xml_parser import xml_to_json
 from config import station_to_monitor_per_thread
 

@@ -5,7 +5,7 @@ import geopy.distance
 import pandas as pd
 import requests
 import json
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip
 
 def add_station(eva):
 
@@ -36,8 +36,8 @@ def add_station(eva):
 
     df = stations.name_index_stations.reset_index()
     df = df.drop('index', axis=1)
-    from database.engine import engine
-    df.to_sql('stations', con=engine, if_exists='replace')
+    from database import DB_CONNECT_STRING
+    df.to_sql('stations', con=DB_CONNECT_STRING, if_exists='replace')
 
 
 if __name__ == '__main__':
@@ -72,8 +72,8 @@ if __name__ == '__main__':
     # stations.name_index_stations.at['Postplatz, Aue', 'lon'] = 12.700374
     # df = stations.name_index_stations.reset_index()
     # df = df.drop('index', axis=1)
-    # from database.engine import engine
-    # df.to_sql('stations', con=engine, if_exists='replace')
+    # from database import DB_CONNECT_STRING
+    # df.to_sql('stations', con=DB_CONNECT_STRING, if_exists='replace')
 
     import helpers.fancy_print_tcp
     stations = StationPhillip()

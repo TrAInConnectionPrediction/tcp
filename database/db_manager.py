@@ -1,7 +1,4 @@
-from database.plan import Plan
-from database.change import Change
-from database.rtd import Rtd, sql_types
-from database.engine import get_engine
+from database import Plan, Change, Rtd, sql_types, get_engine
 from sqlalchemy.orm import sessionmaker
 import datetime
 import pangres
@@ -22,7 +19,6 @@ class DBManager:
     def __exit__(self, exc_type, exc_value, exc_traceback): 
         self.session.close()
         self.engine.dispose()
-
 
     def plan_of_station(self, station: str, date1: datetime.datetime, date2: datetime.datetime):
         """Return planed timetables for station

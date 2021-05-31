@@ -6,13 +6,11 @@ import discord
 from discord.ext import tasks, commands
 from config import discord_bot_token
 import datetime
-from database.change import ChangeManager
-from database.plan import PlanManager
+from database import ChangeManager, Plan
 
 client = discord.Client()
 
 changes = ChangeManager()
-plan = PlanManager()
 old_change_count = 0
 
 
@@ -34,7 +32,8 @@ async def monitor_hour(old_change_count):
 
     # Plan (hourly)
     try:
-        plan_row_count = plan.count_entries_at_date(date_to_check)
+        with Plan() as plan:
+            plan_row_count = plan.count_entries_at_date(date_to_check)
         if plan_row_count < 7000:
             message = '@everyone The plan gatherer is not working, as {} new entries where added to database at {}'\
                     .format(str(plan_row_count), str(date_to_check))

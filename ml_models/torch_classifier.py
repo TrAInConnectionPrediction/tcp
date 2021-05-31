@@ -1,6 +1,6 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 import matplotlib.pyplot as plt
 from config import CACHE_PATH, ENCODER_PATH
 import pandas as pd

@@ -9,6 +9,7 @@
 !helpers/
 !data_analysis/
 !fancy_print_tcp.py
+!webserverconfig.py
 
 # Ignore unnecessary files inside allowed directories
 # This should go after the allowed directories

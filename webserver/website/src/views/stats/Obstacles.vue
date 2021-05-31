@@ -81,10 +81,6 @@ export default {
         '.png'
       if (new_url !== this.plotURL) {
         this.$parent.start_progress()
-        document
-          .getElementById('prg_bar_anchor')
-          .scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
-        // this.progress.animate(60, { duration: 30000, easing: 'linear' })
         this.plotURL = new_url
       }
     },

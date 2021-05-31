@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pickle
 from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 import datetime
 import pandas as pd
 import numpy as np
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from config import MODEL_PATH, ENCODER_PATH, CACHE_PATH
 
 # CACHE_PATH = "cache/models/model_{}.pkl"
-CLASSES_TO_COMPUTE = [0, 2, 5, 8]  # range(10)
+CLASSES_TO_COMPUTE = [2, 5, 8]  # range(10)
 
 
 def train_model(train_x, train_y, **model_parameters):
@@ -93,7 +93,7 @@ def train_models(**load_parameters):
 def majority_baseline(x, y):
     clf = DummyClassifier(strategy="most_frequent", random_state=0)
     clf.fit(x, y)
-    return round(clf.score(x, y), 6)
+    return round((clf.predict(x) == y.to_numpy()).sum() / len(x), 6)
 
 def model_score(model, x, y):
     return model.score(x, y)
@@ -101,12 +101,12 @@ def model_score(model, x, y):
 
 def test_model(model, x_test, y_test, model_name):
     baseline = majority_baseline(x_test, y_test)
-    model_score = model.score(x_test, y_test)
+    model_score = (model.predict(x_test) == y_test).sum() / len(y_test)
     
     print("Model:", model_name)
     print("Majority baseline:\t", round(baseline * 100, 6))
     print("Model accuracy:\t\t", round(model_score * 100, 6))
-    print("Model improvement:\t", round((model_score - baseline), 6))
+    print("Model improvement:\t", round((model_score - baseline)*100, 6))
 
 
 def model_roc(model, x_test, y_test, model_name):
@@ -167,12 +167,12 @@ def model_roc(model, x_test, y_test, model_name):
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    # train_models(
-    #     max_date=datetime.datetime(2021, 2, 1),
-    #     min_date=datetime.datetime(2021, 2, 1) - datetime.timedelta(days=7 * 2),
-    #     long_distance_only=False,
-    #     return_status=True,
-    # )
+    train_models(
+        # max_date=datetime.datetime(2021, 2, 1),
+        min_date=datetime.datetime(2021, 3, 14), # datetime.datetime(2021, 2, 1) - datetime.timedelta(days=7 * 2),
+        long_distance_only=False,
+        return_status=True,
+    )
  
     status_encoder = {}
     status_encoder["ar"] = pickle.load(open(ENCODER_PATH.format(encoder="ar_cs"), "rb"))
@@ -180,8 +180,8 @@ if __name__ == "__main__":
 
     rtd_ray = RtdRay()
     test = rtd_ray.load_for_ml_model(
-        max_date=datetime.datetime(2021, 2, 1),
-        min_date=datetime.datetime(2021, 2, 1) - datetime.timedelta(days=7 * 2),
+        # max_date=datetime.datetime(2021, 2, 1),
+        min_date=datetime.datetime(2021, 3, 14), # datetime.datetime(2021, 2, 1) - datetime.timedelta(days=7 * 2),
         long_distance_only=False,
         return_status=True,
     ).compute()

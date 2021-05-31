@@ -1,6 +1,6 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database.engine import DB_CONNECT_STRING
+from database import DB_CONNECT_STRING
 import pandas as pd
 import matplotlib.pyplot as plt
 

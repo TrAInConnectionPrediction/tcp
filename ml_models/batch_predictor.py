@@ -46,7 +46,7 @@ class Predictor:
 
 if __name__ == "__main__":
     pred = Predictor()
-    from helpers.ConnectionRay import ConnectionRay
+    from helpers import ConnectionRay
     con_ray = ConnectionRay()
     ar_rtd = con_ray.load_ar(return_times=True)
     ar_rtd = ar_rtd.drop(columns=['dp_pt', 'dp_ct', 'ar_delay', 'dp_delay'], axis=0).head(10000).reset_index(drop=True)

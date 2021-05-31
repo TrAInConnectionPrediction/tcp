@@ -5,13 +5,12 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 from rtd_crawler.hash64 import hash64
-from database.rtd import RtdManager, sql_types, RtdArrays
-from helpers.ObstacleOlly import ObstacleOlly
+from database import RtdManager, sql_types, RtdArrays, DBManager
+from helpers import ObstacleOlly
 import json
 import re
 import concurrent.futures
 import numpy as np
-from database.db_manager import DBManager
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
@@ -153,8 +152,6 @@ def add_change_to_stop(stop: dict, change: dict) -> dict:
                         stop['m_' + msg_part].append(msg[msg_part])
     return stop    
 
-from helpers.profiler import profile
-
 
 def add_distance(rtd):
     for prefix in ('ar', 'dp'):
@@ -236,6 +233,7 @@ def parse_station(station, start_date, end_date):
         # It than reappears in the planned timetable of the next hour.
         parsed = parsed.loc[~parsed.index.duplicated(keep='last')]
         parsed['station'] = station
+        parsed[['ar_dc', 'ar_hi', 'dp_dc', 'dp_hi']] = parsed[['ar_dc', 'ar_hi', 'dp_dc', 'dp_hi']] == '1'
         parsed = add_distance(parsed)
         current_array_cols = [col for col in RtdArrays.__table__.columns.keys() if col in parsed.columns]
         # There are many columns that contain arrays. These take up munch space and aren't

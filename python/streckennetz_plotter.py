@@ -8,13 +8,11 @@ import datetime
 from shapely.geometry import Point, LineString, Polygon
 import pandas as pd
 import geopandas as gpd
-from helpers.StationPhillip import StationPhillip
+from helpers import StationPhillip, BetriebsstellenBill, ObstacleOlly
 import matplotlib.pyplot as plt
 import pickle
 import matplotlib.pyplot as plt
-from helpers.BetriebsstellenBill import BetriebsstellenBill
-from helpers.ObstacleOlly import ObstacleOlly
-from database.cached_table_fetch import cached_table_fetch
+from database import cached_table_fetch
 
 
 plt.style.use('dark_background')
@@ -47,10 +45,10 @@ def annotate_station_names(ax, names, station_gdf):
 
 
 stations = StationPhillip(prefer_cache=True)
-station_gdf = stations.get_geopandas()
+station_gdf = stations.to_gpd()
 
 betriebsstellen = BetriebsstellenBill(prefer_cache=True)
-betriebsstellen_gdf = betriebsstellen.get_geopandas()
+betriebsstellen_gdf = betriebsstellen.to_gdf()
 
 streckennetz = cached_table_fetch('full_streckennetz', prefer_cache=True).set_index(['u', 'v', 'key'])
 streckennetz['geometry'] = streckennetz['geometry'].apply(wkb_reverse_hexer)

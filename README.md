@@ -1,4 +1,4 @@
-# TrAIn_Connection_Prediction: TCP [TrAInConnectionPrediction.github.io](https://trainconnectionprediction.github.io)
+# TrAIn_Connection_Prediction: TCP [TrAInConnectionPrediction.github.io](https://trainconnectionprediction.de/)
 
 ```bash
                             ╔═══╗

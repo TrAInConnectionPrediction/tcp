@@ -2,14 +2,18 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import functools
 import geopy.distance
-from helpers.StationPhillip import StationPhillip
-from database.cached_table_fetch import cached_table_fetch
+from helpers import StationPhillip
+from database import cached_table_fetch
 import igraph
 
 
 class StreckennetzSteffi(StationPhillip):
     def __init__(self, **kwargs):
-        super().__init__()
+        if 'generate' in kwargs:
+            kwargs['generate'] = False
+            print('StreckennetzSteffi does not support generate')
+
+        super().__init__(**kwargs)
 
         streckennetz_df = cached_table_fetch('minimal_streckennetz', **kwargs)
 

@@ -1,12 +1,14 @@
 import datetime
-from webserver import db
+from flask_sqlalchemy import SQLAlchemy
+# from webserver import db
 from flask import json, request
 from functools import wraps
 from sqlalchemy.dialects.postgresql import JSON
 
+db = SQLAlchemy()
 
 class LogEntry(db.Model):
-    __tablename__ = "website_connect_log"
+    __tablename__ = 'website_connect_log'
 
     id = db.Column(db.Integer, primary_key=True)
 

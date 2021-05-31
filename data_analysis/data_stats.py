@@ -23,7 +23,7 @@ class Stats:
     stats = {'all': {}, 'new': {}}
 
     def __init__(self, max_date=datetime.now() - timedelta(hours=3)):
-        from helpers.RtdRay import RtdRay
+        from helpers import RtdRay
 
         min_date = max_date + timedelta(1)
         self._rtd_d = RtdRay().load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs"])

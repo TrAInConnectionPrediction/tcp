@@ -3,17 +3,15 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
-from database.engine import DB_CONNECT_STRING
+from database import DB_CONNECT_STRING, cached_table_fetch
 import json
 import datetime
 from pytz import timezone
-from helpers.StreckennetzSteffi import StreckennetzSteffi
-from helpers.BetriebsstellenBill import BetriebsstellenBill
+from helpers import StreckennetzSteffi, BetriebsstellenBill
 import networkx as nx
 import functools
 import re
 from tqdm import tqdm
-from database.cached_table_fetch import cached_table_fetch
 
 # From http://db-livemaps.hafas.de/bin/query.exe/dn?L=vs_baustellen& page source
 priorities_text = {

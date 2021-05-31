@@ -4,11 +4,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pangres
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float
+from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float, Boolean
 from sqlalchemy.dialects.postgresql import JSON, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from database.engine import engine
+from database import get_engine
 import datetime
 from sqlalchemy import exc
 from config import RTD_TABLENAME
@@ -28,13 +28,13 @@ class Rtd(Base):
     ar_ct = Column(DateTime)
     ar_ps = Column(String(length=1))
     ar_cs = Column(String(length=1))
-    ar_hi = Column(Integer)
+    ar_hi = Column(Boolean)
     ar_clt = Column(DateTime)
     ar_wings = Column(Text)
     ar_tra = Column(Text)
     ar_pde = Column(Text)
     ar_cde = Column(Text)
-    ar_dc = Column(Integer)
+    ar_dc = Column(Boolean)
     ar_l = Column(Text)
     
     dp_pp = Column(Text)
@@ -43,13 +43,13 @@ class Rtd(Base):
     dp_ct = Column(DateTime)
     dp_ps = Column(String(length=1))
     dp_cs = Column(String(length=1))
-    dp_hi = Column(Integer)
+    dp_hi = Column(Boolean)
     dp_clt = Column(DateTime)
     dp_wings = Column(Text)
     dp_tra = Column(Text)
     dp_pde = Column(Text)
     dp_cde = Column(Text)
-    dp_dc = Column(Integer)
+    dp_dc = Column(Boolean)
     dp_l = Column(Text)
 
     f = Column(String(length=1))
@@ -117,13 +117,13 @@ sql_types = {
     'ar_ct': DateTime,
     'ar_ps': String(length=1),
     'ar_cs': String(length=1),
-    'ar_hi': Integer,
+    'ar_hi': Boolean,
     'ar_clt': DateTime,
     'ar_wings': Text,
     'ar_tra': Text,
     'ar_pde': Text,
     'ar_cde': Text,
-    'ar_dc': Integer,
+    'ar_dc': Boolean,
     'ar_l': Text,
     'ar_m_id': ARRAY(Text),
     'ar_m_t': ARRAY(String(length=1)),
@@ -138,13 +138,13 @@ sql_types = {
     'dp_ct': DateTime,
     'dp_ps': String(length=1),
     'dp_cs': String(length=1),
-    'dp_hi': Integer,
+    'dp_hi': Boolean,
     'dp_clt': DateTime,
     'dp_wings': Text,
     'dp_tra': Text,
     'dp_pde': Text,
     'dp_cde': Text,
-    'dp_dc': Integer,
+    'dp_dc': Boolean,
     'dp_l': Text,
     'dp_m_id': ARRAY(Text),
     'dp_m_t': ARRAY(String(length=1)),
@@ -186,15 +186,12 @@ sql_types = {
     'obstacles_priority_80': Float,
 }
 
-try:
-    Base.metadata.create_all(engine)
-except sqlalchemy.exc.OperationalError:
-    print('database.rtd running offline!')
-
 
 class RtdManager:
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    def __init__(self) -> None:
+        self.engine = get_engine()
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
 
     def max_date(self) -> datetime.datetime:
         """
@@ -207,8 +204,7 @@ class RtdManager:
         """
         return self.session.query(sqlalchemy.func.max(Rtd.ar_pt)).scalar()
 
-    @staticmethod
-    def upsert(df: pd.DataFrame):
+    def upsert(self, df: pd.DataFrame):
         """
         Upsert dataframe to db using pangres
 
@@ -218,7 +214,7 @@ class RtdManager:
             Data to upsert
         """
         if not df.empty:
-            pangres.upsert(engine,
+            pangres.upsert(self.engine,
                         df,
                         if_row_exists='update',
                         table_name=Rtd.__tablename__,
@@ -228,8 +224,7 @@ class RtdManager:
                         adapt_dtype_of_empty_db_columns=False)
 
     
-    @staticmethod
-    def upsert_arrays(df: pd.DataFrame):
+    def upsert_arrays(self, df: pd.DataFrame):
         """
         Upsert dataframe to db using pangres
 
@@ -239,7 +234,7 @@ class RtdManager:
             Arrays to upsert
         """
         if not df.empty:
-            pangres.upsert(engine,
+            pangres.upsert(self.engine,
                         df,
                         if_row_exists='update',
                         table_name=RtdArrays.__tablename__,
@@ -247,3 +242,11 @@ class RtdManager:
                         create_schema=False,
                         add_new_columns=False,
                         adapt_dtype_of_empty_db_columns=False)
+
+if __name__ == '__main__':
+    try:
+        engine = get_engine()
+        Base.metadata.create_all(engine)
+        engine.dispose()
+    except sqlalchemy.exc.OperationalError:
+        print('database.rtd running offline!')

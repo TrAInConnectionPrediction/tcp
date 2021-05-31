@@ -1,5 +1,5 @@
 <template>
-  <div id="about">
+  <div id="about" class="text_content">
     <h1 class="text-center">TrAIn_Connection_Prediction</h1>
     <div>
       TrAIn_Connection_Prediction ist ein Rankingsystem für Zugverbindungen.

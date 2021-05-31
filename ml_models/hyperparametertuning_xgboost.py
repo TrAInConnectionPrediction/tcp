@@ -6,13 +6,13 @@ if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 from xgboost import XGBClassifier
 import xgboost
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 import datetime
 import pandas as pd
 import optuna
 import pickle
 import dask.dataframe as dd
-from database.engine import engine
+from database import DB_CONNECT_STRING
 from config import ENCODER_PATH
 
 
@@ -213,4 +213,4 @@ if __name__ == "__main__":
             pd.DataFrame(
                 {**trial.params, "value": trial.value, "trials": len(study.trials)},
                 index=[str(threshhold) + "_" + ar_or_dp],
-            ).to_sql("hyperparametertuning_2", con=engine, if_exists="append")
+            ).to_sql("hyperparametertuning_2", con=DB_CONNECT_STRING, if_exists="append")

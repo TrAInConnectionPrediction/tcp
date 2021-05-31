@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker
 import datetime
-from helpers.RtdRay import RtdRay
+from helpers import RtdRay
 
 
 def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:
@@ -105,11 +105,11 @@ def plot(data,
     elif kind == 'cancellations':
         ax2.set_ylabel('Relative non-cancellations', color="orange", fontsize=30)
       
-        ax2.plot(data[('ar_cancellations', 'mean_rolling_mean')],
+        ax2.plot(data[('ar_happened', 'mean_rolling_mean')],
                     color="red",
                     linewidth=3,
                     label='Arrival non-cancellations')
-        ax2.plot(data[('dp_cancellations', 'mean_rolling_mean')],
+        ax2.plot(data[('dp_happened', 'mean_rolling_mean')],
                     color="orange",
                     linewidth=3,
                     label='Departure non-cancellations')
@@ -140,18 +140,18 @@ class OverHour:
             rtd_df = rtd_df.loc[~rtd_df['minute'].isna(), :]
             self.data = rtd_df.groupby('minute').agg({
                         'ar_delay': ['count', 'mean'],
-                        'ar_cancellations': ['mean'],
+                        'ar_happened': ['mean'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_cancellations': ['mean'],
+                        'dp_happened': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
             self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
                                                  ('ar_delay', 'count'),
-                                                 ('ar_cancellations', 'mean'),
+                                                 ('ar_happened', 'mean'),
                                                  ('dp_delay', 'mean'),
                                                  ('dp_delay', 'count'),
-                                                 ('dp_cancellations', 'mean')], window=5)
+                                                 ('dp_happened', 'mean')], window=5)
             self.data.to_csv(self.CACHE_PATH)
 
         self.plot = lambda: plot(self.data,
@@ -197,18 +197,18 @@ class OverDay:
             rtd_df = rtd_df.loc[~rtd_df['daytime'].isna(), :]
             self.data = rtd_df.groupby('daytime').agg({
                         'ar_delay': ['count', 'mean'],
-                        'ar_cancellations': ['mean'],
+                        'ar_happened': ['mean'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_cancellations': ['mean'],
+                        'dp_happened': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
             self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
                                                  ('ar_delay', 'count'),
-                                                 ('ar_cancellations', 'mean'),
+                                                 ('ar_happened', 'mean'),
                                                  ('dp_delay', 'mean'),
                                                  ('dp_delay', 'count'),
-                                                 ('dp_cancellations', 'mean')], window=21)
+                                                 ('dp_happened', 'mean')], window=21)
             self.data.to_csv(self.CACHE_PATH)
 
         self.plot = lambda: plot(self.data,
@@ -256,18 +256,18 @@ class OverWeek:
             rtd_df['weektime'] = rtd_df.map_partitions(self.weektime, meta=rtd_df['daytime'])
             self.data = rtd_df.groupby(['weektime']).agg({
                         'ar_delay': ['count', 'mean'],
-                        'ar_cancellations': ['mean'],
+                        'ar_happened': ['mean'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_cancellations': ['mean'],
+                        'dp_happened': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
             self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
                                                  ('ar_delay', 'count'),
-                                                 ('ar_cancellations', 'mean'),
+                                                 ('ar_happened', 'mean'),
                                                  ('dp_delay', 'mean'),
                                                  ('dp_delay', 'count'),
-                                                 ('dp_cancellations', 'mean')], window=41)
+                                                 ('dp_happened', 'mean')], window=41)
             self.data.to_csv(self.CACHE_PATH)
         self.plot = lambda: plot(self.data,
                                  title='Delay within one week',
@@ -315,9 +315,9 @@ class OverYear:
             rtd_df['floating_yeartime'] = rtd_df.map_partitions(self.floating_yeartime, meta=rtd_df['ar_pt'])
             self.data = rtd_df.groupby(['floating_yeartime']).agg({
                         'ar_delay': ['count', 'mean'],
-                        'ar_cancellations': ['mean'],
+                        'ar_happened': ['mean'],
                         'dp_delay': ['count', 'mean'],
-                        'dp_cancellations': ['mean'],
+                        'dp_happened': ['mean'],
                     }).compute()
             self.data = self.data.loc[~self.data.index.isna(), :]
             self.data = self.data.sort_index()
@@ -329,10 +329,10 @@ class OverYear:
             # Calculate rolling mean
             for col in [('ar_delay', 'mean'),
                         ('ar_delay', 'count'),
-                        ('ar_cancellations', 'mean'),
+                        ('ar_happened', 'mean'),
                         ('dp_delay', 'mean'),
                         ('dp_delay', 'count'),
-                        ('dp_cancellations', 'mean')]:
+                        ('dp_happened', 'mean')]:
                 new_col_name = (col[0], col[1] + '_rolling_mean')
                 self.data[new_col_name] = self.data[col].rolling(3, center=True).mean()
             self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
@@ -371,13 +371,10 @@ if __name__ == '__main__':
     rtd_df = rtd_ray.load_data(columns=['ar_pt',
                                         'dp_pt',
                                         'ar_delay',
-                                        'ar_cancellations',
+                                        'ar_happened',
                                         'dp_delay',
-                                        'dp_cancellations'])
+                                        'dp_happened'])
 
-    # legacy code to plot older data
-    # from data_analysis.delay import load_with_delay
-    # rtd_df = load_with_delay(columns=['station', 'c', 'f'])
     
     print('grouping over hour')
     time = OverHour(rtd_df, use_cache=True)
