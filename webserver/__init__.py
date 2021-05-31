@@ -53,8 +53,6 @@ def create_app():
     else:
         app.config.from_object(DevelopmentConfig)
 
-    app.logger.info("Done")
-
     app.logger.info("DB init...")
     db.init_app(app)
     db.create_all(app=app)
