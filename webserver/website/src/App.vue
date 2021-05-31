@@ -20,16 +20,16 @@
               <router-link class="nav-link" to="/">Home</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" :to="{ path: '/about', hash: '#about' }">Über TCP</router-link>
+              <router-link class="nav-link" :to="{ path: '/about', hash: '#content' }">Über TCP</router-link>
             </li>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
               <ul class="dropdown-menu">
                 <li>
-                  <router-link class="dropdown-item" :to="{ path: '/data', hash: '#stats' }">Übersicht</router-link>
+                  <router-link class="dropdown-item" :to="{ path: '/data', hash: '#content' }">Übersicht</router-link>
                 </li>
                 <li>
-                  <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#stats' }"
+                  <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#content' }"
                     >Stationen</router-link
                   >
                 </li>
@@ -49,55 +49,57 @@
         </div>
       </div>
     </nav>
-
-    <div id="intro" class="view">
-      <div class="d-flex justify-content-center align-items-center mask" style="height: 100%">
-        <div class="row" style="justify-content: center; min-width: 0; width: 100%">
-          <div class="col white-text text-center">
-            <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br /></h2>
-            <hr class="hr-light" />
-            <p>
-              <strong> Ihre Verbindungsvorhersage </strong>
-            </p>
-          </div>
-          <div class="col">
-            <searchform class="hover"> </searchform>
-          </div>
-        </div>
-      </div>
+    <div id="prg_bar_anchor" class="fixed-top">
+      <div id="pgr_bar" class="fixed-top"></div>
     </div>
-    <div class="main_background">
-      <div id="prg_bar_anchor">
-        <section id="pgr_bar" class="p-5"></section>
-      </div>
-      <main id="main">
-        <div id="error_box">
-          <div v-if="error" class="error_box m-1 p-5">
-            <div class="close-x" @click="error = null" style="position: absolute; top: 10px; right: 10px"></div>
-            <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
-            <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
-            <div>
-              Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
-              <a href="https://github.com/TrAInConnectionPrediction/tcp/issues" class="warning_link" target="_blank" rel="noopener"
-                >GitHub</a
-              >
+      <div id="intro" class="view">
+        <div class="d-flex justify-content-center align-items-center mask" style="height: 100%">
+          <div class="row" style="justify-content: center; min-width: 0; width: 100%">
+            <div class="col white-text text-center">
+              <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br /></h2>
+              <hr class="hr-light" />
+              <p>
+                <strong> Ihre Verbindungsvorhersage </strong>
+              </p>
+            </div>
+            <div class="col">
+              <searchform class="hover"> </searchform>
             </div>
           </div>
         </div>
-        <router-view class="m-5" />
-      </main>
-    </div>
-    <footer class="text-center p-3">
-      <div class="fw-bold">
-        <router-link class="footer_link" to="/imprint">Impressum</router-link> /
-        <router-link class="footer_link" to="/privacy">Datenschutz</router-link>
       </div>
-      <br />
-      <span
-        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
-        Deutschen Bahn und ihren Tochter-Unternehmen.
-      </span>
-    </footer>
+      <div class="main_background">
+        <!-- <div id="prg_bar_anchor">
+          <section id="pgr_bar" class="p-5"></section>
+        </div> -->
+        <main id="main">
+          <div id="error_box">
+            <div v-if="error" class="error_box m-1 p-5">
+              <div class="close-x" @click="error = null" style="position: absolute; top: 10px; right: 10px"></div>
+              <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
+              <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
+              <div>
+                Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
+                <a href="https://github.com/TrAInConnectionPrediction/tcp/issues" class="warning_link" target="_blank" rel="noopener"
+                  >GitHub</a
+                >
+              </div>
+            </div>
+          </div>
+          <router-view class="m-5" id="content"/>
+        </main>
+      </div>
+      <footer class="text-center p-3">
+        <div class="fw-bold">
+          <router-link class="footer_link" to="/imprint">Impressum</router-link> /
+          <router-link class="footer_link" to="/privacy">Datenschutz</router-link>
+        </div>
+        <br />
+        <span
+          >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
+          Deutschen Bahn und ihren Tochter-Unternehmen.
+        </span>
+      </footer>
   </body>
 </template>
 
@@ -138,7 +140,7 @@ TrAIn_Connection_Prediction ║   ║
       `)
     // Progressbar init
     this.progress = new ProgressBar.Line('#pgr_bar', {
-      strokeWidth: 0.5,
+      strokeWidth: 0.3,
       color: '#3f51b5',
       trailColor: 'transparent',
       trailWidth: 0
@@ -195,7 +197,6 @@ TrAIn_Connection_Prediction ║   ║
       // remove current connections
       this.$store.commit('set_connections', [])
       this.start_progress()
-      document.getElementById('prg_bar_anchor').scrollIntoView({ behavior: 'smooth' })
 
       fetch(window.location.protocol + '//' + window.location.host + '/api/trip', {
         method: 'POST',
@@ -213,6 +214,7 @@ TrAIn_Connection_Prediction ║   ║
           if (this.$route.path !== '/') {
             this.$router.push('/')
           }
+          document.getElementById('content').scrollIntoView({ behavior: 'smooth' })
         })
     }
   }
@@ -325,18 +327,18 @@ h5 {
 
 html,
 body,
-header,
-.view {
+#intro {
   height: 100%;
 }
 
 body {
-  background-image: url(./assets/img/ice.webp);
-  background-position: center;
+  background-image: url(./assets/img/neu.webp);
+  background-position-x: center;
+  background-position-y: 70px;
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: contain;
   background-attachment: fixed;
-  // background-color: $page_background;
+  background-color: $page_background;
   overflow: auto;
   color: $page_light_text;
 }
@@ -355,10 +357,10 @@ body {
 }
 
 /* NAVBAR BEGIN */
-
 .navbar {
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(5px);
+  background-color: $page_lighter_gray; // rgba(255, 255, 255, 0.281);
+  border-bottom: 2px solid $page_background;
+  // backdrop-filter: blur(5px);
 }
 
 .top-nav-collapse {
@@ -403,7 +405,6 @@ body {
   background-color: $page_accent;
   border-color: $page_accent;
 }
-
 /* NAVBAR END */
 
 /* FOOTER BEGIN */
@@ -414,7 +415,6 @@ footer {
 /* FOOTER END */
 
 /* SHADOW STUFF BEGIN */
-
 .hover:hover {
   position: relative;
   box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
@@ -433,7 +433,6 @@ footer {
 .shadowheader {
   text-shadow: 1px 1px #000, 2px 2px #000;
 }
-
 /* SHADOW STUFF END */
 
 .invalid {
@@ -743,7 +742,7 @@ span.flatpickr-weekday,
   margin: 10px 5px;
 }
 
-#impressum {
+.text_content {
   max-width: 800px;
   width: 90%;
   margin: auto !important;
@@ -752,23 +751,6 @@ span.flatpickr-weekday,
   row-gap: 20px;
 }
 
-#about {
-  max-width: 800px;
-  width: 90%;
-  margin: auto !important;
-  margin-bottom: 80px !important;
-  display: grid;
-  row-gap: 20px;
-}
-
-#privacy {
-  max-width: 800px;
-  width: 90%;
-  margin: auto !important;
-  margin-bottom: 80px !important;
-  display: grid;
-  row-gap: 20px;
-}
 
 .stats {
   height: 100%;
@@ -858,7 +840,7 @@ th {
 }
 
 .sort_col:hover {
-  outline: solid 1px #3f51b5;
+  outline: solid 1px $page_accent;
   z-index: 1;
 }
 
