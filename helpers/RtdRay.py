@@ -261,14 +261,14 @@ class RtdRay(Rtd):
                 rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
                 rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
             print('categorizing')
-            # rtd = self._categorize(rtd)
+            rtd = self._categorize(rtd)
             print('adding delays')
             rtd = self._get_delays(rtd)
             print('adding station coordinates')
-            # rtd = self._add_station_coordinates(rtd)
+            rtd = self._add_station_coordinates(rtd)
         return rtd
 
-    def refresh_local_buffer(self):
+    def download_rtd(self):
         """
         Pull the Rtd.__tablename__ table from db, parse it and save it on disk.
         """
@@ -285,7 +285,7 @@ class RtdRay(Rtd):
             rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', schema='infer')
 
 
-    def update_local_buffer(self):
+    def upgrade_rtd(self):
         """
         Pull data from database, that is not yet in the local cache.
         This function seems to work but is not properly tested.
@@ -394,7 +394,7 @@ class RtdRay(Rtd):
             rtd = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', **kwargs)
         except FileNotFoundError:
             print('There was no cache found. New data will be downloaded from the db. This will take a while.')
-            self.refresh_local_buffer()
+            self.download_rtd()
             rtd = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', **kwargs)
 
         # Filter data if min_date and / or max_date is given
@@ -503,27 +503,34 @@ class RtdRay(Rtd):
 
 
 if __name__ == "__main__":
-    from helpers import fancy_print_tcp
-    from dask.distributed import Client
-    client = Client()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--download_rtd", help="downlaod all rtd from database", action="store_true")
+    parser.add_argument("--upgrade_rtd", help="downlaod newer rtd from database and append it to rtd cache", action="store_true")
+    parser.add_argument("--local_cluster", help="use dask local cluster / client", action="store_true")
+    args = parser.parse_args()
 
-    import time
+    from helpers import fancy_print_tcp
+
+    if args.local_cluster:
+        from dask.distributed import Client
+        client = Client()
+
+    # import time
 
     rtd_ray = RtdRay()
     # start = time.time()
     # rtd = rtd_ray.load_data(load_categories=False)
     # rtd = rtd_ray._parse(rtd)
-    # rtd['pp'] = rtd['ar_pp'].fillna(value=rtd['dp_pp'])
-    # rtd = rtd.drop(columns=['ar_pp', 'dp_pp'], axis=0)
-    # rtd = rtd_ray._get_delays(rtd)
-    # rtd = rtd_ray._categorize(rtd)
-    # rtd = rtd_ray._add_station_coordinates(rtd)
     # rtd.to_parquet(rtd_ray.DATA_CACHE_PATH + '_2', engine='pyarrow') # , schema='infer')
     # print('took', time.time() - start)
     # rtd_ray._save_encoders(rtd)
 
-    # rtd_ray.refresh_local_buffer()
-    # rtd_ray.update_local_buffer()
+    if args.download_rtd:
+        rtd_ray.download_rtd()
+
+    if args.upgrade_rtd:
+        rtd_ray.upgrade_rtd()
 
     rtd = rtd_ray.load_data(columns=['ar_pt'])
     print('max pt:', rtd['ar_pt'].max().compute())
