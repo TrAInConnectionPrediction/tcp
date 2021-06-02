@@ -47,6 +47,6 @@ texttable==1.6.3
 threadpoolctl==2.1.0
 toolz==0.11.1
 tqdm==4.60.0
-urllib3==1.26.4
+urllib3==1.26.5
 Werkzeug==1.0.1
 xgboost==1.4.1
