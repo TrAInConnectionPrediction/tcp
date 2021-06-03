@@ -6,6 +6,7 @@ import discord
 from discord.ext import tasks, commands
 from config import discord_bot_token
 import datetime
+import requests
 from database import ChangeManager, Plan
 
 client = discord.Client()
@@ -63,6 +64,44 @@ async def monitor_hour(old_change_count):
 
     return old_change_count
 
+@client.event
+async def monitor_website():
+    channel = client.get_channel(720671295129518232)
+    try:
+        print('testing https://trainconnectionprediction.de...')
+        page = requests.get('https://trainconnectionprediction.de')
+        if page.ok:
+            print('ok')
+        else:
+            message = str(datetime.datetime.now()) \
+                + ': @everyone Somthing not working on the website:\n{}'.format(str(page))
+            print(message)
+            # await channel.send(message)
+    except Exception as ex:
+        message = str(datetime.datetime.now()) + ': @everyone Error on the website:\n{}'.format(str(ex))
+        print(message)
+        # await channel.send(message)
+
+    try:
+        print('testing https://trainconnectionprediction.de/api/trip from Tübingen Hbf to Köln Hbf...')
+        search = {
+            'start': 'Tübingen Hbf',
+            'destination': 'Köln Hbf',
+            'date': (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%d.%m.%Y %H:%M')
+        }
+        trip = requests.post('https://trainconnectionprediction.de/api/trip', json=search)
+        if trip.ok:
+                print('ok')
+        else:
+            message = str(datetime.datetime.now()) \
+                + ': @everyone Somthing not working on the website:\n{}'.format(str(trip))
+            print(message)
+            await channel.send(message)
+    except Exception as ex:
+        message = str(datetime.datetime.now()) + ': @everyone Somthing not working on the website:\n{}'.format(str(ex))
+        print(message)
+        await channel.send(message)
+
 
 class Monitor(commands.Cog):
     def __init__(self):
@@ -76,9 +115,11 @@ class Monitor(commands.Cog):
     async def monitor(self):
         await client.wait_until_ready()
         self.old_change_count = await monitor_hour(self.old_change_count)
+        await monitor_website()
 
 
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
+
     m = Monitor()
     client.run(discord_bot_token)
