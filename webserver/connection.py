@@ -89,6 +89,11 @@ def datetimes_to_text(connection):
 def parse_connection(connection):
     summary = {}
     segments = []
+    # If the first segment is a WALK, we remove it and let the connection start
+    # from the next segment
+    if connection['segments'][0]['type'] == 'WALK':
+        del connection['segments'][0]
+
     try:
         summary['dp_station'] = streckennetz.get_name(
             eva=int(connection['segments'][0]['segmentStart']['id'])
@@ -96,8 +101,8 @@ def parse_connection(connection):
     except KeyError:
         summary['dp_station'] = ''
     summary['dp_station_display_name'] = connection['segments'][0]['segmentStart']['title']
-    summary['dp_pt'] = from_utc(connection['departure']['scheduledTime'])
-    summary['dp_ct'] = from_utc(connection['departure']['time'])
+    summary['dp_pt'] = from_utc(connection['segments'][0]['departure']['scheduledTime'])
+    summary['dp_ct'] = from_utc(connection['segments'][0]['departure']['time'])
     try:
         summary['ar_station'] = streckennetz.get_name(
             eva=int(connection['segments'][-1]['segmentDestination']['id'])
@@ -105,13 +110,12 @@ def parse_connection(connection):
     except KeyError:
         summary['ar_station'] = ''
     summary['ar_station_display_name'] = connection['segments'][-1]['segmentDestination']['title']
-    summary['ar_pt'] = from_utc(connection['arrival']['scheduledTime'])
-    summary['ar_ct'] = from_utc(connection['arrival']['time'])
+    summary['ar_pt'] = from_utc(connection['segments'][-1]['arrival']['scheduledTime'])
+    summary['ar_ct'] = from_utc(connection['segments'][-1]['arrival']['time'])
     summary['transfers'] = len(connection['segments']) - 1
-    summary['train_categories'] = list(set(connection['segmentTypes'])) # get unique categories
+    summary['train_categories'] = list(set(connection['segmentTypes'])) # set to get unique categories
     summary['duration'] = str(summary['ar_ct'] - summary['dp_ct'])[:-3]
     summary['price'] = connection['tarifSet'][0]['fares'][0]['price'] if 'tarifSet' in connection else -1
-    segments = []
     for segment in connection['segments']:
         if segment['type'] == 'WALK':
             # Add walking time to last segment and skip walk segment
