@@ -1,105 +1,110 @@
 <template>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-      <div class="container-fluid">
-        <router-link class="navbar-brand" to="/">TCP</router-link>
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <router-link class="nav-link" to="/">Home</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" :to="{ path: '/about', hash: '#content' }">Über TCP</router-link>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
-              <ul class="dropdown-menu">
-                <li>
-                  <router-link class="dropdown-item" :to="{ path: '/data', hash: '#content' }">Übersicht</router-link>
-                </li>
-                <li>
-                  <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#content' }"
-                    >Stationen</router-link
-                  >
-                </li>
-                <!-- <li>
+    <div class="fixed-top">
+      <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+          <router-link class="navbar-brand" to="/">TCP</router-link>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <router-link class="nav-link" to="/">Home</router-link>
+              </li>
+              <li class="nav-item">
+                <router-link class="nav-link" :to="{ path: '/about', hash: '#content' }">Über TCP</router-link>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <router-link class="dropdown-item" :to="{ path: '/data', hash: '#content' }">Übersicht</router-link>
+                  </li>
+                  <li>
+                    <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#content' }"
+                      >Stationen</router-link
+                    >
+                  </li>
+                  <!-- <li>
                   <router-link class="dropdown-item" :to="{ path: '/data/obstacles', hash: '#stats' }"
                     >Zug-Hindernisse</router-link
                   >
                 </li> -->
-              </ul>
-            </li>
-          </ul>
-          <div class="d-flex">
-            <a class="pretty_button" href="https://github.com/TrAInConnectionPrediction/tcp" target="_blank" rel="noopener"
-              ><i class="tcp-github"></i>TCP auf GitHub</a
-            >
+                </ul>
+              </li>
+            </ul>
+            <div class="d-flex">
+              <a
+                class="pretty_button"
+                href="https://github.com/TrAInConnectionPrediction/tcp"
+                target="_blank"
+                rel="noopener"
+                ><i class="tcp-github"></i>TCP auf GitHub</a
+              >
+            </div>
           </div>
         </div>
-      </div>
-    </nav>
-    <div id="prg_bar_anchor" class="fixed-top">
-      <div id="pgr_bar" class="fixed-top"></div>
+      </nav>
+      <div id="pgr_bar"></div>
     </div>
-      <div id="intro" class="view">
-        <div class="d-flex justify-content-center align-items-center mask" style="height: 100%">
-          <div class="row" style="justify-content: center; min-width: 0; width: 100%">
-            <div class="col white-text text-center">
-              <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br /></h2>
-              <hr class="hr-light" />
-              <p>
-                <strong> Ihre Verbindungsvorhersage </strong>
-              </p>
-            </div>
-            <div class="col">
-              <searchform class="hover"> </searchform>
-            </div>
+    <div id="intro" class="view">
+      <div class="d-flex justify-content-center align-items-center mask" style="height: 100%">
+        <div class="row" style="justify-content: center; min-width: 0; width: 100%">
+          <div class="col white-text text-center">
+            <h2 id="midheader" class="shadowheader">TrAIn_Connection_Prediction: TCP<br /></h2>
+            <hr class="hr-light" />
+            <p>
+              <strong> Ihre Verbindungsvorhersage </strong>
+            </p>
+          </div>
+          <div class="col">
+            <searchform class="hover"> </searchform>
           </div>
         </div>
       </div>
-      <div class="main_background">
-        <!-- <div id="prg_bar_anchor">
-          <section id="pgr_bar" class="p-5"></section>
-        </div> -->
-        <main id="main">
-          <div id="error_box">
-            <div v-if="error" class="error_box m-1 p-5">
-              <div class="close-x" @click="error = null" style="position: absolute; top: 10px; right: 10px"></div>
-              <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
-              <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
-              <div>
-                Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
-                <a href="https://github.com/TrAInConnectionPrediction/tcp/issues" class="warning_link" target="_blank" rel="noopener"
-                  >GitHub</a
-                >
-              </div>
+    </div>
+    <div class="main_background">
+      <main id="main">
+        <div id="error_box">
+          <div v-if="error" class="error_box m-1 p-5">
+            <div class="close-x" @click="error = null" style="position: absolute; top: 10px; right: 10px"></div>
+            <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
+            <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
+            <div>
+              Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
+              <a
+                href="https://github.com/TrAInConnectionPrediction/tcp/issues"
+                class="warning_link"
+                target="_blank"
+                rel="noopener"
+                >GitHub</a
+              >
             </div>
           </div>
-          <router-view class="m-5" id="content"/>
-        </main>
-      </div>
-      <footer class="text-center p-3">
-        <div class="fw-bold">
-          <router-link class="footer_link" to="/imprint">Impressum</router-link> /
-          <router-link class="footer_link" to="/privacy">Datenschutz</router-link>
         </div>
-        <br />
-        <span
-          >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
-          Deutschen Bahn und ihren Tochter-Unternehmen.
-        </span>
-      </footer>
+        <router-view class="m-5" id="content" />
+      </main>
+    </div>
+    <footer class="text-center p-3">
+      <div class="fw-bold">
+        <router-link class="footer_link" to="/imprint">Impressum</router-link> /
+        <router-link class="footer_link" to="/privacy">Datenschutz</router-link>
+      </div>
+      <br />
+      <span
+        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
+        Deutschen Bahn und ihren Tochter-Unternehmen.
+      </span>
+    </footer>
   </body>
 </template>
 
@@ -140,7 +145,7 @@ TrAIn_Connection_Prediction ║   ║
       `)
     // Progressbar init
     this.progress = new ProgressBar.Line('#pgr_bar', {
-      strokeWidth: 0.3,
+      strokeWidth: 0.8,
       color: '#3f51b5',
       trailColor: 'transparent',
       trailWidth: 0
@@ -406,6 +411,11 @@ body {
   border-color: $page_accent;
 }
 /* NAVBAR END */
+
+#pgr_bar {
+ position: relative;
+ top: -5px;
+}
 
 /* FOOTER BEGIN */
 footer {

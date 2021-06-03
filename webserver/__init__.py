@@ -22,11 +22,11 @@ matplotlib.use('Agg')
 client = pyhafas.HafasClient(pyhafas.profile.DBProfile())
 
 logging.info('Initialising streckennetz')
-streckennetz = StreckennetzSteffi(prefer_cache=True)
+streckennetz = StreckennetzSteffi(prefer_cache=False)
 logging.info('Done!')
 
 logging.info('Initialising per_station_time')
-per_station_time = PerStationOverTime(None, prefer_cache=True)
+per_station_time = PerStationOverTime(None, prefer_cache=False)
 logging.info('Done!')
 
 from webserver.predictor import Predictor
