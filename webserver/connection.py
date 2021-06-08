@@ -172,7 +172,14 @@ def parse_connection(connection):
         try:
             parsed_segment['dp_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station'])
         except ValueError:
-            parsed_segment['dp_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station_display_name'])
+            try:
+                parsed_segment['dp_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['dp_station_display_name'])
+            except ValueError:
+                # Sometimes, none of the stations is in the trip and we have no clue why
+                print('Did not find station in trip')
+                print('trip', parsed_segment['full_trip'])
+                print('station', parsed_segment['dp_station_display_name'])
+                parsed_segment['dp_stop_id'] = -1
         try:
             parsed_segment['ar_stop_id'] = parsed_segment['full_trip'].index(parsed_segment['ar_station'])
         except ValueError:
