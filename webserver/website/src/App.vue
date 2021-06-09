@@ -74,23 +74,6 @@
     </div>
     <div class="main_background">
       <main id="main">
-        <div id="error_box">
-          <div v-if="error" class="error_box m-1 p-5">
-            <div class="close-x" @click="error = null" style="position: absolute; top: 10px; right: 10px"></div>
-            <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
-            <a class="warning_link" @click="hard_reload">Es könnte helfen, die Seite neu zu laden</a>
-            <div>
-              Falls der Fehler weiterhin auftritt, verfassen Sie bitte ein Issue auf
-              <a
-                href="https://github.com/TrAInConnectionPrediction/tcp/issues"
-                class="warning_link"
-                target="_blank"
-                rel="noopener"
-                >GitHub</a
-              >
-            </div>
-          </div>
-        </div>
         <router-view class="m-5" id="content" />
       </main>
     </div>
@@ -105,11 +88,36 @@
         Deutschen Bahn und ihren Tochter-Unternehmen.
       </span>
     </footer>
+    <!-- Update Service worker -->
+    <snackbar v-if="updateExists">
+      Ein Update ist verfügbar
+      <template v-slot:action>
+        <div @click="refreshApp" class="click_text">UPDATE</div>
+      </template>
+    </snackbar>
+    <!-- Error box -->
+    <snackbar v-if="error" :timeout="5000" :layout="'multiline'" :style_class="'error_box'">
+      <div>
+        <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
+        <div>
+          Falls der Fehler weiterhin auftritt, verfassen Sie bitte einen Bugreport auf
+          <a
+            href="https://github.com/TrAInConnectionPrediction/tcp/issues"
+            class="warning_link"
+            target="_blank"
+            rel="noopener"
+            >GitHub</a
+          >
+        </div>
+      </div>
+    </snackbar>
   </body>
 </template>
 
 <script>
 import searchform from './components/searchform.vue'
+import update from './assets/js/update.js'
+import snackbar from './components/snackbar.vue'
 const ProgressBar = require('progressbar.js')
 const dayjs = require('dayjs')
 
@@ -123,8 +131,9 @@ export default {
     }
   },
   components: {
-    searchform
+    searchform, snackbar
   },
+  mixins: [update],
   mounted () {
     console.log(`
                             ╔═══╗                           
@@ -158,7 +167,6 @@ TrAIn_Connection_Prediction ║   ║
         this.error = Error(response.statusText)
         console.log(response.url)
         console.log(this.error)
-        document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
       }
       return response
     },
@@ -167,7 +175,6 @@ TrAIn_Connection_Prediction ║   ║
       this.error = Error('Failed to load image')
       console.log(event)
       console.log(this.error)
-      document.getElementById('error_box').scrollIntoView({ behavior: 'smooth' })
     },
     hard_reload () {
       window.location.reload()
@@ -227,16 +234,7 @@ TrAIn_Connection_Prediction ║   ║
 </script>
 
 <style lang="scss">
-$page_background: black;
-$page_gray: #212529;
-$page_lighter_gray: #2d2f31;
-$page_accent: #3f51b5;
-$page_accent_darker: #344295;
-$page_light_text: lightgray;
-$page_gray_text: gray;
-$page_dark_text: black;
-$page_outdated_text: #686868;
-$page_warning: #bb0000;
+@import 'src/assets/scss/variables';
 
 // Custom font (https://icomoon.io/app/#/select)
 @font-face {
@@ -337,7 +335,7 @@ body,
 }
 
 body {
-  background-image: url(./assets/img/neu.webp);
+  background-image: url(./assets/img/background.webp);
   background-position-x: center;
   background-position-y: 70px;
   background-repeat: no-repeat;
@@ -530,56 +528,6 @@ span.flatpickr-weekday,
 .error_box {
   color: $page_dark_text;
   background-color: $page_warning;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.close-x {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  background: linear-gradient(
-      45deg,
-      transparent 0%,
-      transparent 43%,
-      $page_dark_text 45%,
-      $page_dark_text 55%,
-      transparent 57%,
-      transparent 100%
-    ),
-    linear-gradient(
-      135deg,
-      transparent 0%,
-      transparent 43%,
-      $page_dark_text 45%,
-      $page_dark_text 55%,
-      transparent 57%,
-      transparent 100%
-    );
-}
-
-.close-x:hover {
-  background: linear-gradient(
-      45deg,
-      transparent 0%,
-      transparent 43%,
-      lighten($page_dark_text, 40%) 45%,
-      lighten($page_dark_text, 40%) 55%,
-      transparent 57%,
-      transparent 100%
-    ),
-    linear-gradient(
-      135deg,
-      transparent 0%,
-      transparent 43%,
-      lighten($page_dark_text, 40%) 45%,
-      lighten($page_dark_text, 40%) 55%,
-      transparent 57%,
-      transparent 100%
-    );
 }
 
 .card_header {
@@ -802,16 +750,8 @@ span.flatpickr-weekday,
   width: 100% !important;
 }
 
-th {
-  padding-left: 20px !important;
-}
-
 .light_text {
   color: $page_light_text !important;
-}
-
-.connections-move {
-  transition: transform 1s;
 }
 
 .arrow {

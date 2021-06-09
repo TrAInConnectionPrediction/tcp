@@ -19,8 +19,11 @@ if (process.env.NODE_ENV === 'production') {
     updatefound () {
       console.log('New content is downloading.')
     },
-    updated () {
+    updated (registration) {
       console.log('New content is available; please refresh.')
+      document.dispatchEvent(
+        new CustomEvent('sw_updated', { detail: registration })
+      )
     },
     offline () {
       console.log(
@@ -32,3 +35,9 @@ if (process.env.NODE_ENV === 'production') {
     }
   })
 }
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
