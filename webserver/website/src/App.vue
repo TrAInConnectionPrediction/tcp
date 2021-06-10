@@ -1,7 +1,7 @@
 <template>
   <body>
     <div class="fixed-top">
-      <nav class="navbar navbar-expand-lg navbar-dark">
+      <nav class="navbar navbar-expand-lg navbar-dark pretty_shadow">
         <div class="container-fluid">
           <router-link class="navbar-brand" to="/">TCP</router-link>
           <button
@@ -77,7 +77,7 @@
         <router-view class="m-5" id="content" />
       </main>
     </div>
-    <footer class="text-center p-3">
+    <footer class="text-center p-3 pretty_shadow">
       <div class="fw-bold">
         <router-link class="footer_link" to="/imprint">Impressum</router-link> /
         <router-link class="footer_link" to="/privacy">Datenschutz</router-link>
@@ -96,7 +96,7 @@
       </template>
     </snackbar>
     <!-- Error box -->
-    <snackbar v-if="error" :timeout="5000" :layout="'multiline'" :style_class="'error_box'">
+    <snackbar v-if="error" :timeout="15000" :layout="'multiline'" :style_class="'error_box'">
       <div>
         <div><b>Holy Guacamole!</b> {{ error.toString() }}</div>
         <div>
@@ -361,9 +361,7 @@ body {
 
 /* NAVBAR BEGIN */
 .navbar {
-  background-color: $page_lighter_gray; // rgba(255, 255, 255, 0.281);
-  border-bottom: 2px solid $page_background;
-  // backdrop-filter: blur(5px);
+  background-color: $page_lighter_gray;
 }
 
 .top-nav-collapse {
@@ -422,26 +420,9 @@ footer {
 }
 /* FOOTER END */
 
-/* SHADOW STUFF BEGIN */
-.hover:hover {
-  position: relative;
-  box-shadow: 10px 10px 50px 5px black, 11px 11px 50px 5px black;
-}
-
-.shadow {
-  -webkit-box-shadow: 0 -140px 70px -70px black inset !important;
-  box-shadow: 0 -140px 70px -70px black inset !important;
-}
-
-.shadow .card {
-  -webkit-box-shadow: 10px 10px 50px 5px black;
-  box-shadow: 10px 10px 50px 5px black;
-}
-
 .shadowheader {
   text-shadow: 1px 1px #000, 2px 2px #000;
 }
-/* SHADOW STUFF END */
 
 .invalid {
   border-left: solid 3px $page_warning;
@@ -796,5 +777,9 @@ span.flatpickr-weekday,
 .sort_col:active {
   position: relative;
   top: 2px;
+}
+
+.pretty_shadow {
+  box-shadow: 0px 0px 20px $page_background;
 }
 </style>

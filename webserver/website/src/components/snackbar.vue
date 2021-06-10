@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div v-if="show" class="snackbar-center">
-      <div id="snackbar">
+      <div id="snackbar" class="pretty_shadow">
         <div :class="[{ 'layout small': layout === 'small', 'layout multiline': layout === 'multiline'}, style_class ]">
           <div>
             <slot></slot>
@@ -71,8 +71,7 @@ export default Vue.extend({
 #snackbar {
   width: 95%;
   max-width: 600px;
-  background-color: $page_accent;
-  box-shadow: 0px 0px 20px $page_background;
+  background-color: $page_lighter_gray;
 
   .layout {
     padding: 20px 30px;
@@ -95,11 +94,11 @@ export default Vue.extend({
   font-size: 1.3em;
   font-weight: bold;
   cursor: pointer;
-  color: $page_dark_text;
+  color: $page_accent;
 }
 
 .click_text:hover {
-  color: lighten($page_dark_text, 10)
+  color: lighten($page_accent, 10)
 }
 
 .click_text:active {
