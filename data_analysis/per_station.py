@@ -190,7 +190,7 @@ class PerStationOverTime(StationPhillip):
         self.colorbar.ax.set_ylabel("Ø Verspätung in Minuten", rotation=270)
 
         for plot_name in self.DEFAULT_PLOTS:
-            if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{plot_name}.webp"):
+            if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp"):
                 if plot_name == 'default':
                     self.ax.set_title('', fontsize=16)
                 else:
@@ -250,7 +250,7 @@ class PerStationOverTime(StationPhillip):
         Returns
         -------
         str
-            The `plot_name` of the file that is generated without `.webp`
+            Path to the generated plot
         """
 
         if start_time + datetime.timedelta(hours=48) > end_time:
@@ -263,13 +263,13 @@ class PerStationOverTime(StationPhillip):
             + end_time.strftime("%d.%m.%Y")
         )
 
-        if use_cached_images and os.path.isfile(
-            f"{CACHE_PATH}/plot_cache/{plot_name}.webp"
-        ):
-            # Return cached images, after the start-, end-time change
-            return plot_name
+        plot_path = f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp"
 
-        # Filter data that is between start_time and end_time
+        if use_cached_images and os.path.isfile(plot_path):
+            # Return cached image
+            return plot_path
+
+        # Extract data that is between start_time and end_time
         current_data = self.data.loc[
             (start_time <= self.data["stop_hour"])
             & (self.data["stop_hour"] < end_time)
@@ -278,17 +278,23 @@ class PerStationOverTime(StationPhillip):
         if not current_data.empty:
             # As self.data is already preaggregated we need to compute the weighted
             # mean of the delays. This requires several steps with pandas.
+            # Get the number of datapoints in each preaggregated datapoint
             group_sizes = current_data.groupby("station").agg(
                 {
                     "ar_happened_sum": "sum",
                     "dp_happened_sum": "sum",
                 }
             )
+            # For each preaggregated datapoint of each station, calculate its fraction of stops
+            # compared to the total stops at the station
             group_sizes = current_data.set_index('station')[['ar_happened_sum', 'dp_happened_sum']] / group_sizes
+            # rename columns in order to mulptiply them with the mean delays
             group_sizes.rename(columns={'ar_happened_sum': 'ar_delay_mean', 'dp_happened_sum': 'dp_delay_mean'}, inplace=True)
             group_sizes.reset_index(drop=True, inplace=True)
+            # calculate the minutes of delay from each preaggregated datapoint of each station
             weighted_mean = (current_data.reset_index()[['ar_delay_mean', 'dp_delay_mean']] * group_sizes)
             weighted_mean.index = current_data.index
+            # re-insert it into the original preagregated datapoint in order to aggregate it
             current_data.loc[:, ['ar_delay_mean', 'dp_delay_mean']] = weighted_mean[['ar_delay_mean', 'dp_delay_mean']]
 
             current_data = current_data.groupby("station").agg(
@@ -321,12 +327,11 @@ class PerStationOverTime(StationPhillip):
             self.ax.set_title(plot_name.replace("_", ":").replace('-', ' - '), fontsize=12)
             memory_buffer = io.BytesIO()
             self.fig.savefig(memory_buffer, dpi=300, transparent=True)
-            image_to_webp(memory_buffer, f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp")
+            image_to_webp(memory_buffer, plot_path)
         else:
-            # This file and the error file must exist
-            plot_name = f"{CACHE_PATH}/plot_cache/{self.version}_no data available.webp"
+            plot_path = f"{CACHE_PATH}/plot_cache/{self.version}_no data available.webp"
 
-        return f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp"
+        return plot_path
 
 
 if __name__ == "__main__":
