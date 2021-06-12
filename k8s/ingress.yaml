@@ -39,7 +39,6 @@ spec:
   - hosts:
     - trainconnectionprediction.de
     - next.trainconnectionprediction.de
-    - qkhrecvu4nfgijjt.myfritz.net
     secretName: default-tls-secret
   rules:
   - host: "trainconnectionprediction.de"
@@ -72,4 +71,3 @@ spec:
               name: webserver-service
               port:
                 number: 5000
-  
