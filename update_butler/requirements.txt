@@ -27,7 +27,7 @@ packaging==20.9
 pandas==1.2.3
 pangres==2.2.3
 partd==1.1.0
-Pillow==8.1.2
+Pillow==8.2.0
 psutil==5.8.0
 psycopg2-binary==2.8.6
 pyarrow==3.0.0
