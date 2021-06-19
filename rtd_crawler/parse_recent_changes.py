@@ -11,6 +11,10 @@ import json
 import re
 import concurrent.futures
 import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser(description='Parse train delay data')
+parser.add_argument('--parse_all', help='Parse the full data and not only new one')
 
 empty_rtd = {key: None for key in sql_types.keys()}
 
@@ -236,7 +240,7 @@ def parse_station(station, start_date, end_date):
         parsed[['ar_dc', 'ar_hi', 'dp_dc', 'dp_hi']] = parsed[['ar_dc', 'ar_hi', 'dp_dc', 'dp_hi']] == '1'
         parsed = add_distance(parsed)
         current_array_cols = [col for col in RtdArrays.__table__.columns.keys() if col in parsed.columns]
-        # There are many columns that contain arrays. These take up munch space and aren't
+        # There are many columns that contain arrays. These take up a lot of space and aren't
         # used after parsing, so we currently don't store them in the database
         # rtd_arrays_df = parsed.loc[:, current_array_cols]
         # rtd.upsert_arrays(rtd_arrays_df)
@@ -264,5 +268,9 @@ def parse(only_new=True):
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    # parse(only_new=False)
-    parse(only_new=input('Do you wish to only parse new data? ([y]/n)') != 'n')
+    args = parser.parse_args()
+    if args.parse_all:
+        parse(only_new=True)
+    else:
+        parse(only_new=False)
+
