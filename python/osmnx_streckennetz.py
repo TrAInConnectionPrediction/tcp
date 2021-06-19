@@ -16,11 +16,11 @@ import geopandas as gpd
 from helpers import StationPhillip, BetriebsstellenBill
 import matplotlib.pyplot as plt
 import pickle
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 
 
-def get_streckennetz_from_osm(point_cloud=None, place=None, cache=True) -> nx.MultiDiGraph:
+def get_streckennetz_from_osm(point_cloud=None, place=None, cache=True) -> nx.MultiGraph:
     """
     Load Streckennetz from OpenStreetMap.
 
@@ -101,6 +101,40 @@ def length_of_line(line) -> float:
         return sum((geopy.distance.distance(p1, p2).meters for p1, p2 in pairwise(tuple(zip(line.xy[0], line.xy[1])))))
     else:
         return None
+
+
+def simplify(streckennetz: nx.MultiGraph) -> nx.MultiGraph:
+    print('simplifying...')
+    
+    # Remove the shorter edge of two parallel edges
+    edges_to_remove = []
+    for edges_index in streckennetz.edges():
+        edges = streckennetz[edges_index[0]][edges_index[1]]
+        if len(edges) > 1:
+            min_length = edges[0]['length']
+            min_length_index = 0
+            for i in edges:
+                if edges[i]['length'] < min_length:
+                    min_length = edges[i]['length']
+                    min_length_index = i
+            edges_to_remove.append(list(edges_index) + [min_length_index])
+    print('found', len(edges_to_remove), 'parallel edges')
+    streckennetz.remove_edges_from(edges_to_remove)
+
+    # Remove nodes, that only have a single edge
+    while True:
+        nodes_to_remove = []
+        for node in streckennetz.nodes():
+            if streckennetz.degree(node) < 2 and 'type' not in streckennetz.nodes[node]:
+                nodes_to_remove.append(node)
+        if nodes_to_remove:
+            print('found', len(nodes_to_remove), 'deadend nodes')
+            streckennetz.remove_nodes_from(nodes_to_remove)
+            nodes_to_remove = []
+        else:
+            break
+    return streckennetz
+
 
 
 def upload_minimal(streckennetz):
@@ -220,7 +254,6 @@ def split_geom(geom, line, line_exterior):
             angle = 0
         except NotImplementedError:
             angle = 0
-        # print(angle)
         if 70 < angle < 110:
             return {
                 'intersection': intersection,
@@ -310,7 +343,6 @@ def insert_station(name, station, edges, nodes, plot=False):
 
     if not close_edges.empty:
         multipoint = close_edges['geometry'].unary_union
-        # queried_geom, nearest_geom = nearest_points(point, multipoint)
         for i in range(2):
             if i == 1:
                 # Move station close to closest edge in order to get a split
@@ -409,10 +441,13 @@ if __name__ == '__main__':
     stations_gdf = pd.concat([stations_gdf, betriebsstellen_gdf])
     stations_gdf = stations_gdf.loc[~stations_gdf.index.duplicated(keep='first')]
 
+    stations_gdf['x'] = stations_gdf.geometry.x
+    stations_gdf['y'] = stations_gdf.geometry.y
+
     ox.config(log_console=True, use_cache=True)
     streckennetz = get_streckennetz_from_osm(
         point_cloud=np.array(list(zip(stations_gdf['geometry'].x, stations_gdf['geometry'].y))),
-        cache=False,
+        cache=True,
     )
     nodes, edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
 
@@ -449,7 +484,9 @@ if __name__ == '__main__':
                         add_edges['geometry'].append(geom[i])
                     add_nodes[name] = {
                         'geometry': MultiPoint(intersections),
-                        'type': stations_gdf.loc[name, 'type']
+                        'type': stations_gdf.loc[name, 'type'],
+                        'x': stations_gdf.loc[name, 'x'],
+                        'y': stations_gdf.loc[name, 'y']
                     }
             else:
                 pass
@@ -479,8 +516,10 @@ if __name__ == '__main__':
     # edges['length'] = lengths
 
     streckennetz = ox.graph_from_gdfs(nodes, edges)
+    streckennetz = simplify(streckennetz)
+    nodes, edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
 
     print('Uploading minimal')
     upload_minimal(streckennetz)
+    print('Uploading full')
     upload_full(nodes, edges)
-
