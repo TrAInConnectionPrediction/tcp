@@ -6,7 +6,8 @@
     </h1>
     <div v-if="connections.length !== 0" class="custom_card">
       <div class="connections_header">
-        <div class="col1 sort_col" @click="sort_time()">Zeit
+        <div class="col1 sort_col" @click="sort_time()">
+          Zeit
           <span v-if="last_sort === 'dp_ct' || last_sort === 'ar_ct'">
             <span v-if="last_sort === 'dp_ct'">Ab </span>
             <span v-if="last_sort === 'ar_ct'">An </span>
@@ -28,16 +29,14 @@
             <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
           </span>
         </div>
-        <div class="col4">
-          Produkte
-        </div>
+        <div class="col4">Produkte</div>
         <div class="col5 sort_col" @click="sort_by_key('score')">
           Score
           <span v-if="last_sort === 'score'">
             <i v-if="asc_sort[last_sort]" class="arrow up"></i>
             <i v-else-if="!asc_sort[last_sort]" class="arrow down"></i>
           </span>
-          </div>
+        </div>
         <div class="col6 sort_col" @click="sort_by_key('price')">
           Ticket
           <span v-if="last_sort === 'price'">
@@ -122,3 +121,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss">
+.connections-move {
+  transition: transform 1s;
+}
+</style>

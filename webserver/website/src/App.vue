@@ -67,7 +67,7 @@
             </p>
           </div>
           <div class="col">
-            <searchform class="hover"> </searchform>
+            <searchform class="hover pretty_shadow"> </searchform>
           </div>
         </div>
       </div>
