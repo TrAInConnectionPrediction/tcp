@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     from dask.distributed import Client
 
-    client = Client()
+    client = Client(n_workers=min(16, os.cpu_count()))
     datasets = Datasets()
     print("created datasets")
 

@@ -19,7 +19,7 @@ class DelayAnalysis:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client()
+            client = Client(n_workers=min(16, os.cpu_count()))
 
             self.data = rtd_df.groupby('ar_delay').agg({
                         'ar_pt': ['count'],

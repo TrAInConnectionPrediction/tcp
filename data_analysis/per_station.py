@@ -78,7 +78,7 @@ class PerStationAnalysis(StationPhillip):
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client()
+            client = Client(n_workers=min(16, os.cpu_count()))
 
             # Group data by stations and calculatate the mean delay and the percentage of cacellations
             self.data = (
@@ -202,7 +202,7 @@ class PerStationOverTime(StationPhillip):
     def generate_data(self, rtd: dd.DataFrame) -> pd.DataFrame:
         # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
         from dask.distributed import Client
-        client = Client()
+        client = Client(n_workers=min(16, os.cpu_count()))
 
         # Generate an index with self.FREQ for groupby over time and station
         rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)
