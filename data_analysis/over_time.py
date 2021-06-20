@@ -340,8 +340,8 @@ class OverYear:
         self.plot = lambda kind='delay': plot(self.data,
                                  title='Delay over the years',
                                  x_label='Time',
-                                 formatter=mdates.DateFormatter("%D"),
-                                 locator=mdates.HourLocator(interval=24*7),
+                                 formatter=mdates.DateFormatter("%b %Y"),
+                                 locator=mdates.MonthLocator(),
                                  ax1_ylim_bottom=0,
                                  ax2_ylim_bottom=0,
                                  kind=kind)
