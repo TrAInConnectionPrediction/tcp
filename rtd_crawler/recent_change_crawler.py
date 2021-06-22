@@ -11,7 +11,7 @@ import time
 import concurrent.futures
 from itertools import chain
 import datetime
-from database import ChangeManager
+from database import Change
 from rtd_crawler.xml_parser import xml_to_json
 from config import station_to_monitor_per_thread
 
@@ -40,11 +40,10 @@ if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
 
-    db = ChangeManager()
+    # db = ChangeManager()
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
     eva_list = [eva_list[i:i + station_to_monitor_per_thread] for i in range(0, len(eva_list), station_to_monitor_per_thread)]
-    # monitor_recent_change([8000207], dd)
     while True:
         stats = {
             'count': 0,
@@ -65,7 +64,8 @@ if __name__ == '__main__':
                     upload_start = time.time()
                     # Concat list of dicts to single dict
                     new_changes = dict(chain.from_iterable(d.items() for d in new_changes))
-                    db.add_changes(new_changes)
+                    with Change() as db:
+                        db.add_changes(new_changes)
                     stats['upload_time'] += time.time() - upload_start
 
                     stats['count'] += 1

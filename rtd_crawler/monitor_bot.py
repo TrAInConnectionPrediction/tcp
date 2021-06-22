@@ -7,11 +7,10 @@ from discord.ext import tasks, commands
 from config import discord_bot_token
 import datetime
 import requests
-from database import ChangeManager, Plan
+from database import Change, Plan
 
 client = discord.Client()
 
-changes = ChangeManager()
 old_change_count = 0
 
 
@@ -48,7 +47,8 @@ async def monitor_hour(old_change_count):
     # Recent changed (crawled every two minutes but only checked once a day)
     if hour == 6:
         try:
-            new_change_count = changes.count_entries()
+            with Change() as changes:
+                new_change_count = changes.count_entries()
             count_delta = new_change_count - old_change_count
             if count_delta < 50000:
                 message = '''@everyone The recent change gatherer is not working, as {} 

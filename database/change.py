@@ -17,17 +17,35 @@ class Change(Base):
     hash_id = Column(BIGINT, primary_key=True)
     change = Column(JSON)
 
-
-class ChangeManager:
     def __init__(self) -> None:
-        self.engine = get_engine()
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        try:
+            engine = get_engine()
+            Base.metadata.create_all(engine)
+            engine.dispose()
+        except sqlalchemy.exc.OperationalError:
+            print('database.change running offline!')
+
+        self.engine = None
+        self.session = None
 
         self.queue = []
         self.changes = {}
 
+    def __enter__(self):
+        self.engine = get_engine()
+        self.session = sessionmaker(bind=self.engine)()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, exc_traceback): 
+        self.session.close()
+        self.engine.dispose()
+
+        self.engine = None
+        self.session = None
+
     def upsert(self, rows: list):
+        if self.session is None:
+            raise ValueError('upsert only works within a with')
         table = Change.__table__
 
         stmt = insert(table).values(rows)
@@ -41,11 +59,15 @@ class ChangeManager:
         self.session.execute(on_conflict_stmt)
 
     def add_change(self, hash_id: int, change: dict):
+        if self.session is None:
+            raise ValueError('add only works within a with')
         self.queue.append({'hash_id': hash_id, 'change': change})
         if len(self.queue) > 10000:
             self.commit()
 
     def add_changes(self, changes: dict):
+        if self.session is None:
+            raise ValueError('add only works within a with')
         self.changes.update(changes)
         # self.queue.extend(changes)
         if len(self.changes) > 10000:
@@ -57,6 +79,8 @@ class ChangeManager:
             self.commit()
 
     def commit(self):
+        if self.session is None:
+            raise ValueError('add only works within a with')
         self.upsert(self.queue)
         self.queue = []
         self.session.commit()
@@ -74,6 +98,8 @@ class ChangeManager:
         -------
         Sqlalchemy query with the results.
         """
+        if self.session is None:
+            raise ValueError('get only works within a with')
         return self.session.query(Change).filter(Change.hash_id.in_(hash_ids)).all()
 
     def count_entries(self) -> int:
@@ -85,6 +111,8 @@ class ChangeManager:
         int
             Number of Rows.
         """
+        if self.session is None:
+            raise ValueError('count only works within a with')
         return self.session.query(Change).count()
 
 
