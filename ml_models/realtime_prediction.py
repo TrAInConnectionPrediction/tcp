@@ -14,7 +14,7 @@ from helpers import RtdRay
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     from dask.distributed import Client
-    client = Client()
+    client = Client(n_workers=min(16, os.cpu_count()))
     rtd_ray = RtdRay()
     rtd = rtd_ray.load_data(columns=['station', 'date_id', 'lat', 'lon', 'ar_ct', 'ar_delay'])
 

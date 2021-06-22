@@ -78,7 +78,7 @@ class ConnectionRay(Rtd):
 if __name__ == "__main__":
     import fancy_print_tcp
     from dask.distributed import Client
-    client = Client()
+    client = Client(n_workers=min(16, os.cpu_count()))
 
     connection_ray = ConnectionRay()
     rtd = connection_ray.load_ar()

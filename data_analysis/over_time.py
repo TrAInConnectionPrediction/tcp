@@ -133,7 +133,7 @@ class OverHour:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client()
+            client = Client(n_workers=min(16, os.cpu_count()))
             rtd_df['minute'] = rtd_df['ar_pt'].dt.minute
             rtd_df['minute'] = rtd_df['minute'].fillna(value=rtd_df['dp_pt'].dt.minute).astype(int)
             rtd_df['minute'] = rtd_df.map_partitions(self.minutetime, meta=rtd_df['ar_pt'])
@@ -190,7 +190,7 @@ class OverDay:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client()
+            client = Client(n_workers=min(16, os.cpu_count()))
             rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
             rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'].dt.time)
             rtd_df['daytime'] = rtd_df.map_partitions(self.daytime, meta=rtd_df['daytime'])
@@ -248,7 +248,7 @@ class OverWeek:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client()
+            client = Client(n_workers=min(16, os.cpu_count()))
             rtd_df['weekday'] = rtd_df['ar_pt'].dt.dayofweek
             rtd_df['weekday'] = rtd_df['weekday'].fillna(value=rtd_df['dp_pt'].dt.dayofweek)
             rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
@@ -307,7 +307,7 @@ class OverYear:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client()
+            client = Client(n_workers=min(16, os.cpu_count()))
             rtd_df['floating_hour'] = rtd_df['ar_pt'].dt.hour // 24 * 24
             rtd_df['floating_hour'] = rtd_df['floating_hour'].fillna(value=rtd_df['dp_pt'].dt.hour // 24 * 24)
             rtd_df['date'] = rtd_df['ar_pt'].dt.date

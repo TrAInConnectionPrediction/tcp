@@ -514,7 +514,7 @@ if __name__ == "__main__":
 
     if args.local_cluster:
         from dask.distributed import Client
-        client = Client()
+        client = Client(n_workers=min(16, os.cpu_count()))
 
     # import time
 

@@ -77,7 +77,7 @@ def save_connecting_trains(part):
 if __name__ == "__main__":
     from helpers import fancy_print_tcp
     from dask.distributed import Client
-    client = Client()
+    client = Client(n_workers=min(16, os.cpu_count()))
 
     separate_stations()
 
