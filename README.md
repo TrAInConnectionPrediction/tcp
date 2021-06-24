@@ -1,4 +1,4 @@
-# TrAIn_Connection_Prediction: TCP [TrAInConnectionPrediction.github.io](https://trainconnectionprediction.de/)
+# TrAIn_Connection_Prediction: TCP [https://trainconnectionprediction.de/](https://trainconnectionprediction.de/)
 
 ```bash
                             ╔═══╗
@@ -19,7 +19,7 @@ TrAIn_Connection_Prediction ║   ║
 ```
 
 Winning project of the German National Artificial Intelligence Competition 2019 called [BWKI](https://bw-ki.de).
-Visit this project on our website at [TrAInConnectionPrediction.github.io](https://trainconnectionprediction.github.io).
+Visit this project on our website at [https://trainconnectionprediction.de/](https://trainconnectionprediction.de/).
 
 For the youth competition [Jugend Forscht](https://www.jugend-forscht.de/) (JuFo) in Germany we have written a paper (in german) about our project,  
 which can be found in our repository under [docs/langfassung_tcp.pdf](https://github.com/TrAInConnectionPrediction/tcp/blob/master/docs/langfassung_tcp.pdf).
