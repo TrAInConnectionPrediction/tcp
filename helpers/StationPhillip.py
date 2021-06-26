@@ -268,6 +268,6 @@ class StationPhillip:
 
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
-    stations = StationPhillip(prefer_cache=True)
+    stations = StationPhillip(prefer_cache=False)
 
     print('len:', len(stations))
