@@ -1,7 +1,9 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 from config import db_database, db_password, db_server, db_username
 
 
@@ -13,3 +15,5 @@ def get_engine():
         pool_pre_ping=True,
         pool_recycle=3600
     )
+
+Session = sessionmaker(bind=get_engine())
