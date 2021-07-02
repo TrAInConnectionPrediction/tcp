@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
@@ -192,7 +193,7 @@ class ObstacleOlly(StreckennetzSteffi):
         self.obstacles.to_sql('parsed_obstacles', DB_CONNECT_STRING, if_exists='replace', method='multi')
         self.simpler_obstacles.to_sql('simpler_obstacles', DB_CONNECT_STRING, if_exists='replace', method='multi')
 
-    def obstacles_of_path(self, path, time):
+    def obstacles_of_path(self, path: List[str], time: datetime.datetime) -> dict:
         waypoints = []
         for i in range(len(path) - 1):
             waypoints_part = self.get_edge_path(path[i], path[i+1])
@@ -209,7 +210,7 @@ class ObstacleOlly(StreckennetzSteffi):
             ]
             if obstacles_on_path.size:
                 # Group by priority and sum the length of the obstacles
-                agg = {
+                return {
                     'priority_24': obstacles_on_path[obstacles_on_path[:, 0] == 24, 1].sum(),
                     'priority_37': obstacles_on_path[obstacles_on_path[:, 0] == 37, 1].sum(),
                     'priority_63': obstacles_on_path[obstacles_on_path[:, 0] == 63, 1].sum(),
@@ -217,10 +218,14 @@ class ObstacleOlly(StreckennetzSteffi):
                     'priority_70': obstacles_on_path[obstacles_on_path[:, 0] == 70, 1].sum(),
                     'priority_80': obstacles_on_path[obstacles_on_path[:, 0] == 80, 1].sum(),
                 }
-                return agg
-            else:
-                return None
-        return None
+        return {
+            'priority_24': 0.0,
+            'priority_37': 0.0,
+            'priority_63': 0.0,
+            'priority_65': 0.0,
+            'priority_70': 0.0,
+            'priority_80': 0.0,
+        }
 
 
 def from_hafas_time(hafas_time):
