@@ -69,7 +69,7 @@ class StreckennetzSteffi(StationPhillip):
                 pass
         return length
 
-    @functools.lru_cache(maxsize=1000)
+    @functools.lru_cache(maxsize=30000)
     def get_edge_path(self, source, target):
         try:
             return self.streckennetz_igraph.get_shortest_paths(
@@ -78,7 +78,7 @@ class StreckennetzSteffi(StationPhillip):
         except ValueError:
             return None
 
-    @functools.lru_cache(maxsize=800)
+    @functools.lru_cache(maxsize=30000)
     def distance(self, u: str, v: str) -> float:
         """
         Calculate approx distance between two stations. Uses the Streckennetz if u and v are part of it,
