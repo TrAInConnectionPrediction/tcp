@@ -46,8 +46,8 @@ class Plan(Base):
     def plan_of_station(
         session: sqlalchemy.orm.Session,
         bhf: str,
-        date1: datetime.datetime,
-        date2: datetime.datetime
+        date1: datetime.datetime = None,
+        date2: datetime.datetime = None
     ) -> List:
         if date1 is None:
             return session.query(Plan).filter((Plan.bhf == bhf)).all()
