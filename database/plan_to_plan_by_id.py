@@ -32,14 +32,4 @@ if __name__ == '__main__':
         futures = {executor.submit(station_to_by_id, station): station for station in stations}
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(stations)):
             future.result()
-    # for station in tqdm(stations, total=len(stations)):
-    #     session: sqlalchemy.orm.Session
-    #     with Session() as session:
-    #         plans = Plan.plan_of_station(session, station)
-    #         plans = [plan_to_stops(plan.plan, station) for plan in plans if plan.plan]
-    #         parsed = {}
-    #         for plan in plans:
-    #             parsed.update(plan)
-    #         PlanById.add_plan(session, parsed)
-    #         session.commit()
             

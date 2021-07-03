@@ -5,7 +5,7 @@ import sqlalchemy
 from sqlalchemy import Column, BIGINT
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.declarative import declarative_base
-from typing import List
+from typing import Dict, List
 from database import get_engine, upsert_base
 import json
 
@@ -36,7 +36,7 @@ class Change(Base):
         Change.upsert(session, new_changes)
 
     @staticmethod
-    def get_changes(session: sqlalchemy.orm.Session, hash_ids: List) -> List:
+    def get_changes(session: sqlalchemy.orm.Session, hash_ids: List[int]) -> Dict[int, dict]:
         """
         Get changes that have a given hash_id
 
@@ -49,7 +49,8 @@ class Change(Base):
         -------
         Sqlalchemy query with the results.
         """
-        return session.query(Change).filter(Change.hash_id.in_(hash_ids)).all()
+        changes = session.query(Change).filter(Change.hash_id.in_(hash_ids)).all()
+        return {change.hash_id: json.loads(change.change) for change in changes}
 
     @staticmethod
     def count_entries(session: sqlalchemy.orm.Session) -> int:
