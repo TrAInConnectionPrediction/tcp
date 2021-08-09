@@ -4,16 +4,18 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 import lxml.etree as etree
-from helpers import StationPhillip
-from rtd_crawler.SimplestDownloader import SimplestDownloader
-from rtd_crawler.hash64 import hash64
 import time
 import concurrent.futures
 from itertools import chain
 import datetime
-from database import Change
+from helpers import StationPhillip
+from rtd_crawler.SimplestDownloader import SimplestDownloader
+from rtd_crawler.hash64 import hash64
+from database import Change, UnparsedChange, sessionfactory
 from rtd_crawler.xml_parser import xml_to_json
 from config import station_to_monitor_per_thread
+
+engine, Session = sessionfactory()
 
 
 def preparse_changes(changes):
@@ -39,8 +41,6 @@ dd = SimplestDownloader()
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
-
-    # db = ChangeManager()
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
     eva_list = [eva_list[i:i + station_to_monitor_per_thread] for i in range(0, len(eva_list), station_to_monitor_per_thread)]
@@ -64,8 +64,10 @@ if __name__ == '__main__':
                     upload_start = time.time()
                     # Concat list of dicts to single dict
                     new_changes = dict(chain.from_iterable(d.items() for d in new_changes))
-                    with Change() as db:
-                        db.add_changes(new_changes)
+                    with Session() as session:
+                        Change.add_changes(session, new_changes)
+                        UnparsedChange.add(session, new_changes.keys())
+                        session.commit()
                     stats['upload_time'] += time.time() - upload_start
 
                     stats['count'] += 1
@@ -77,4 +79,3 @@ if __name__ == '__main__':
               'count:', stats['count'],
               'download_time:', stats['download_time'] / stats['count'],
               'upload_time:', stats['upload_time'] / stats['count'])
-        # upload_local_db()

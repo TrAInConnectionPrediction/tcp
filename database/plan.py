@@ -3,10 +3,10 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
 from sqlalchemy import Column, Text, DateTime
-from sqlalchemy.dialects.postgresql import JSON, insert
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.ext.declarative import declarative_base
-from database import get_engine
+from typing import List
+from database import get_engine, upsert_base
 import datetime
 
 Base = declarative_base()
@@ -21,79 +21,49 @@ class Plan(Base):
     def __init__(self) -> None:
         try:
             engine = get_engine()
-            Base.metadata.create_all(engine)
+            self.metadata.create_all(engine)
             engine.dispose()
         except sqlalchemy.exc.OperationalError:
-            print('database.plan running offline!')
-            
-        self.engine = None
-        self.session = None
+            print(f'database.{self.__tablename__} running offline!')
 
         self.queue = []
 
-    def __enter__(self):
-        self.engine = get_engine()
-        self.session = sessionmaker(bind=self.engine)()
-        return self
-    
-    def __exit__(self, exc_type, exc_value, exc_traceback): 
-        self.session.close()
-        self.engine.dispose()
+    @staticmethod
+    def upsert(session: sqlalchemy.orm.Session, rows: List[dict]):
+        return upsert_base(session, Plan.__table__, rows)
 
-        self.engine = None
-        self.session = None
-
-
-    def upsert(self, rows, no_update_cols=[]):
-        if self.session is None:
-            raise ValueError('upsert only works within a with')
-        table = Plan.__table__
-
-        stmt = insert(table).values(rows)
-
-        update_cols = [c.name for c in table.c
-                       if c not in list(table.primary_key.columns)
-                       and c.name not in no_update_cols]
-
-        on_conflict_stmt = stmt.on_conflict_do_update(
-            index_elements=table.primary_key.columns,
-            set_={k: getattr(stmt.excluded, k) for k in update_cols}
-        )
-
-        self.session.execute(on_conflict_stmt)
-
-    def add_plan(self, plan, bhf, date, hour):
-        if self.session is None:
-            raise ValueError('add only works within a with')
+    def add_plan(self, session: sqlalchemy.orm.Session, plan, bhf, date, hour) -> None:
         date = datetime.datetime.combine(date, datetime.time(hour, 0))
         self.queue.append({'date': date, 'bhf': bhf, 'plan': plan})
         if len(self.queue) > 1000:
-            self.commit()
+            self.commit(session)
 
-    def commit(self):
-        if self.session is None:
-            raise ValueError('commit only works within a with')
-        self.upsert(self.queue)
+    def commit(self, session: sqlalchemy.orm.Session):
+        self.upsert(session, self.queue)
         self.queue = []
-        self.session.commit()
 
-    def plan_of_station(self, bhf: str, date1: datetime.datetime, date2: datetime.datetime):
-        if self.session is None:
-            raise ValueError('plan_of_station only works within a with')
-
+    @staticmethod
+    def plan_of_station(
+        session: sqlalchemy.orm.Session,
+        bhf: str,
+        date1: datetime.datetime = None,
+        date2: datetime.datetime = None
+    ) -> List:
         if date1 is None:
-            return self.session.query(Plan).filter((Plan.bhf == bhf)).all()
+            return session.query(Plan).filter((Plan.bhf == bhf)).all()
         if date2 is None:
-            return self.session.query(Plan).filter(
+            return session.query(Plan).filter(
                 (Plan.bhf == bhf) & (Plan.date == date1)).first()
-        return self.session.query(Plan).filter((Plan.bhf == bhf)
+        return session.query(Plan).filter((Plan.bhf == bhf)
                                                & (Plan.date >= date1)
                                                & (Plan.date < date2)).all()
 
-    def count_entries_at_date(self, date: datetime.datetime) -> int:
-        if self.session is None:
-            raise ValueError('count_entries_at_date only works within a with')
-        return self.session.query(Plan).filter(Plan.date == date).count()
+    @staticmethod
+    def count_entries_at_date(
+        session: sqlalchemy.orm.Session,
+        date: datetime.datetime
+    ) -> int:
+        return session.query(Plan).filter(Plan.date == date).count()
 
 
 if __name__ == '__main__':

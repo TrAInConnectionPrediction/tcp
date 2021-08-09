@@ -7,10 +7,8 @@ import sqlalchemy
 from sqlalchemy import Column, Integer, Text, DateTime, String, BIGINT, Float, Boolean
 from sqlalchemy.dialects.postgresql import JSON, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from database import get_engine
 import datetime
-from sqlalchemy import exc
 from config import RTD_TABLENAME
 
 
@@ -75,7 +73,49 @@ class Rtd(Base):
     dayly_id = Column(BIGINT)
     date_id = Column(DateTime)
     stop_id = Column(Integer)
-    hash_id = Column(BIGINT, primary_key=True)
+    hash_id = Column(BIGINT, primary_key=True, autoincrement=False)
+
+    def __init__(self) -> None:
+        try:
+            engine = get_engine()
+            self.metadata.create_all(engine)
+            engine.dispose()
+        except sqlalchemy.exc.OperationalError:
+            print(f'database.{self.__tablename__} running offline!')
+
+    @staticmethod
+    def max_date(session) -> datetime.datetime:
+        """
+        Get the max date used in Rtd. Can be used to select missing data to parse
+
+        Returns
+        -------
+        datetime.datetime
+            The max date used in Rtd
+        """
+        return session.query(sqlalchemy.func.max(Rtd.ar_pt)).scalar()
+
+    @staticmethod
+    def upsert(df: pd.DataFrame, engine: sqlalchemy.engine):
+        """
+        Upsert dataframe to db using pangres
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            Data to upsert
+        """
+        if not df.empty:
+            pangres.upsert(
+                engine,
+                df,
+                if_row_exists='update',
+                table_name=Rtd.__tablename__,
+                dtype=sql_types,
+                create_schema=False,
+                add_new_columns=False,
+                adapt_dtype_of_empty_db_columns=False
+            )
 
 
 class RtdArrays(Base):
@@ -104,7 +144,7 @@ class RtdArrays(Base):
     conn = Column(JSON)
     rtr = Column(JSON)
     
-    hash_id = Column(BIGINT, primary_key=True)
+    hash_id = Column(BIGINT, primary_key=True, autoincrement=False)
 
 
 # This is the same as Rtd(Base) but as dict. Pangres cannot use the Rtd(Base) class
@@ -186,67 +226,5 @@ sql_types = {
     'obstacles_priority_80': Float,
 }
 
-
-class RtdManager:
-    def __init__(self) -> None:
-        self.engine = get_engine()
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
-
-    def max_date(self) -> datetime.datetime:
-        """
-        Get the max date used in Rtd. Can be used to select missing data to parse
-
-        Returns
-        -------
-        datetime.datetime
-            The max date used in Rtd
-        """
-        return self.session.query(sqlalchemy.func.max(Rtd.ar_pt)).scalar()
-
-    def upsert(self, df: pd.DataFrame):
-        """
-        Upsert dataframe to db using pangres
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data to upsert
-        """
-        if not df.empty:
-            pangres.upsert(self.engine,
-                        df,
-                        if_row_exists='update',
-                        table_name=Rtd.__tablename__,
-                        dtype=sql_types,
-                        create_schema=False,
-                        add_new_columns=False,
-                        adapt_dtype_of_empty_db_columns=False)
-
-    
-    def upsert_arrays(self, df: pd.DataFrame):
-        """
-        Upsert dataframe to db using pangres
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Arrays to upsert
-        """
-        if not df.empty:
-            pangres.upsert(self.engine,
-                        df,
-                        if_row_exists='update',
-                        table_name=RtdArrays.__tablename__,
-                        dtype=sql_types,
-                        create_schema=False,
-                        add_new_columns=False,
-                        adapt_dtype_of_empty_db_columns=False)
-
 if __name__ == '__main__':
-    try:
-        engine = get_engine()
-        Base.metadata.create_all(engine)
-        engine.dispose()
-    except sqlalchemy.exc.OperationalError:
-        print('database.rtd running offline!')
+    Rtd()

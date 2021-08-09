@@ -73,6 +73,7 @@ def angle_three_points(a, b, c):
     β = math.degrees(math.atan2(c[1]-b[1], c[0]-b[0]) - math.atan2(a[1]-b[1], a[0]-b[0]))
     return (β + 360 if β < 0 else β) % 180
 
+
 flatten = itertools.chain.from_iterable
 
 
@@ -133,6 +134,31 @@ def simplify(streckennetz: nx.MultiGraph) -> nx.MultiGraph:
             nodes_to_remove = []
         else:
             break
+
+    # Concat edges of nodes that have a degree of 2
+    while True:
+        nodes_to_remove = []
+        edges_to_add = []
+        for node in streckennetz.nodes():
+            if streckennetz.degree(node) == 2 and 'type' not in streckennetz.nodes[node]:
+                u, v = streckennetz.neighbors(node)
+                if u not in nodes_to_remove and v not in nodes_to_remove:
+                    nodes_to_remove.append(node)
+                    edges_to_add.append[(
+                        u, v, {
+                            'length': list(streckennetz[node][v].values())[0]['length'] + list(streckennetz[node][v].values())[0]['length'],
+                            'geometry': shapely.ops.linemerge([list(streckennetz[node][v].values())[0]['geometry'], list(streckennetz[node][v].values())[0]['geometry']])
+                        }
+                    )]
+        if nodes_to_remove:
+            print(f'found {len(nodes_to_remove) * 2} edges that can be merged')
+            streckennetz.remove_nodes_from(nodes_to_remove)
+            nodes_to_remove = []
+            streckennetz.add_edges_from(edges_to_add)
+            edges_to_add = []
+        else:
+            break
+
     return streckennetz
 
 
@@ -515,7 +541,7 @@ if __name__ == '__main__':
         edges['length'] = list(tqdm(executor.map(length_of_line, edges['geometry']), total=len(edges['geometry'])))
     # edges['length'] = lengths
 
-    streckennetz = ox.graph_from_gdfs(nodes, edges)
+    streckennetz = nx.MultiGraph(ox.graph_from_gdfs(nodes, edges))
     streckennetz = simplify(streckennetz)
     nodes, edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
 

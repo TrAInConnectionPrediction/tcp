@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
@@ -92,7 +93,7 @@ class ObstacleOlly(StreckennetzSteffi):
             # category == 1: Baustelle
             # category == 2: Streckenunruche (Was auch immer das heißt)
             elif obstacle['category'] == 1:
-                path = self.get_edge_path(source, target)
+                path = self.get_edge_path_persistant_cache(source, target)
                 if path is None:
                     continue
                 for edge_id in path:
@@ -192,35 +193,40 @@ class ObstacleOlly(StreckennetzSteffi):
         self.obstacles.to_sql('parsed_obstacles', DB_CONNECT_STRING, if_exists='replace', method='multi')
         self.simpler_obstacles.to_sql('simpler_obstacles', DB_CONNECT_STRING, if_exists='replace', method='multi')
 
-    def obstacles_of_path(self, path, time):
+    def obstacles_of_path(self, path: List[str], time: datetime.datetime) -> dict:
         waypoints = []
-        for i in range(len(path) - 1):
-            waypoints_part = self.get_edge_path(path[i], path[i+1])
-            if waypoints_part is not None:
-                waypoints.extend(waypoints_part)
-        if len(waypoints):
-            # Get the obstacles on the path
-            obstacles_on_path = self.np_obstacles[[self.dict_index[waypoint] for waypoint in waypoints if waypoint in self.dict_index], :]
-            # Filter for the time of the journey
-            obstacles_on_path = obstacles_on_path[
-                (obstacles_on_path[:, 2] <= time)
-                & (obstacles_on_path[:, 3] >= time),
-                :3
-            ]
-            if obstacles_on_path.size:
-                # Group by priority and sum the length of the obstacles
-                agg = {
-                    'priority_24': obstacles_on_path[obstacles_on_path[:, 0] == 24, 1].sum(),
-                    'priority_37': obstacles_on_path[obstacles_on_path[:, 0] == 37, 1].sum(),
-                    'priority_63': obstacles_on_path[obstacles_on_path[:, 0] == 63, 1].sum(),
-                    'priority_65': obstacles_on_path[obstacles_on_path[:, 0] == 65, 1].sum(),
-                    'priority_70': obstacles_on_path[obstacles_on_path[:, 0] == 70, 1].sum(),
-                    'priority_80': obstacles_on_path[obstacles_on_path[:, 0] == 80, 1].sum(),
-                }
-                return agg
-            else:
-                return None
-        return None
+        if path is not None and time is not None:
+            for i in range(len(path) - 1):
+                waypoints_part = self.get_edge_path_persistant_cache(path[i], path[i+1])
+                if waypoints_part is not None:
+                    waypoints.extend(waypoints_part)
+            if len(waypoints):
+                # Get the obstacles on the path
+                obstacles_on_path = self.np_obstacles[[self.dict_index[waypoint] for waypoint in waypoints if waypoint in self.dict_index], :]
+                # Filter for the time of the journey
+                obstacles_on_path = obstacles_on_path[
+                    (obstacles_on_path[:, 2] <= time)
+                    & (obstacles_on_path[:, 3] >= time),
+                    :3
+                ]
+                if obstacles_on_path.size:
+                    # Group by priority and sum the length of the obstacles
+                    return {
+                        'priority_24': obstacles_on_path[obstacles_on_path[:, 0] == 24, 1].sum(),
+                        'priority_37': obstacles_on_path[obstacles_on_path[:, 0] == 37, 1].sum(),
+                        'priority_63': obstacles_on_path[obstacles_on_path[:, 0] == 63, 1].sum(),
+                        'priority_65': obstacles_on_path[obstacles_on_path[:, 0] == 65, 1].sum(),
+                        'priority_70': obstacles_on_path[obstacles_on_path[:, 0] == 70, 1].sum(),
+                        'priority_80': obstacles_on_path[obstacles_on_path[:, 0] == 80, 1].sum(),
+                    }
+        return {
+            'priority_24': 0.0,
+            'priority_37': 0.0,
+            'priority_63': 0.0,
+            'priority_65': 0.0,
+            'priority_70': 0.0,
+            'priority_80': 0.0,
+        }
 
 
 def from_hafas_time(hafas_time):
