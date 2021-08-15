@@ -48,7 +48,7 @@ def get_connections(
     json = {
         "start": str(streckennetz.get_eva(name=start)),
         "destination": str(streckennetz.get_eva(name=destination)),
-        "time": time.replace(tzinfo=timezone("CET")).isoformat(),
+        "time": time.replace(tzinfo=timezone('Europe/Helsinki')).isoformat(),
         "maxChanges": max_changes,
         "transferTime": transfer_time,
         "hafasProfile": hafas_profile,
