@@ -33,12 +33,19 @@ metadata:
       {
         rewrite ^ https://trainconnectionprediction.de$request_uri permanent;
       }
+      if ($host ~ "srotr07ii29e1ir7.myfritz.net")
+      {
+        rewrite ^ https://trainconnectionprediction.de$request_uri permanent;
+      }
 
 spec:
   tls:
   - hosts:
     - trainconnectionprediction.de
     - next.trainconnectionprediction.de
+    - hidden-mystery.de
+    - hiddenmystery.de
+    - marcpanse.de
     secretName: default-tls-secret
   rules:
   - host: "trainconnectionprediction.de"
@@ -71,3 +78,43 @@ spec:
               name: webserver-service
               port:
                 number: 5000
+  - host: "srotr07ii29e1ir7.myfritz.net"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: webserver-service
+              port:
+                number: 5000
+  - host: "hidden-mystery.de"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: marcs-escaperoom
+              port:
+                number: 80
+  - host: "hiddenmystery.de"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: marcs-escaperoom
+              port:
+                number: 80
+  - host: "marcpanse.de"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: marcs-escaperoom
+              port:
+                number: 80
