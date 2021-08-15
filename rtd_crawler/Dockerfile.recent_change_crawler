@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.8.1-slim-buster
 RUN apt-get update -y && apt-get install -y gcc build-essential
 
 # Keeps Python from generating .pyc files in the container

@@ -8,7 +8,7 @@
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
 ## Base image
-FROM python:3.9 AS compile-image
+FROM python:3.8.1 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libgeos-dev
@@ -28,7 +28,7 @@ RUN pip install -r requirements.txt
 RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
 
 ## Build-image
-FROM python:3.9-slim-buster AS runtime-image
+FROM python:3.8.1-slim-buster AS runtime-image
 
 ## Copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv
