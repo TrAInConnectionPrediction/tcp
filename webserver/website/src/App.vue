@@ -1,7 +1,7 @@
 <template>
   <body>
     <div class="fixed-top">
-      <nav class="navbar navbar-expand-sm navbar-dark pretty_shadow">
+      <nav class="navbar navbar-expand-lg navbar-dark pretty_shadow">
         <div class="container-fluid">
           <router-link class="navbar-brand" to="/">TCP</router-link>
           <button
@@ -380,7 +380,7 @@ body {
   display: block;
   background-color: transparent;
 }
-@media all and (min-width: 576px) {
+@media all and (min-width: 992px) {
   .navbar .nav-item .dropdown-menu {
     display: none;
   }
