@@ -16,7 +16,6 @@ import traceback
 
 engine, Session = sessionfactory()
 
-
 def preparse_plan(plan, station):
     plan = etree.fromstring(plan.encode())
     plan = list(xml_to_json(stop) for stop in plan)
