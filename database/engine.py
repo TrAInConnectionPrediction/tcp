@@ -16,7 +16,6 @@ def get_engine():
         future=True,
         pool_size=1,
         max_overflow=0,
-        # echo=True
     )
 
 # Session = sessionmaker(bind=get_engine())
