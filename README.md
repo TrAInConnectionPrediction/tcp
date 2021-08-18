@@ -32,18 +32,22 @@ You can also generate plots on our [website](https://purl.org/tcp/data/stations)
 If you for whatever reason want to run our website on your computer just do as described below.  
 But you are going to need a connection to our database, to do so [contact us...](mailto:theo.doellmann@gmx.de)
 
-To run our webserver we strongly recommend to use Docker.  
+To run our webserver we strongly recommend to use Docker.
 
-First it's important to set this enviroment variable `export DOCKER_BUILDKIT=1`
+First, the usergroup 420 has to have the rights to write to the cache volume. In order to add the permission, do the following
+```bash
+sudo chown -R :420 /path/to/your/cache/
+```
 
-Then in project directory run:
+Then in the project directory run:
 
 ```bash
 # In order to build:
-docker build -f webserver/Dockerfile.webserver . -t webserver
+DOCKER_BUILDKIT=1 docker build -f webserver/Dockerfile.webserver . -t webserver
 # In order to serve:
 docker run -p 5000:5000 -v $(pwd)/config.py:/mnt/config/config.py -v $(pwd)/cache:/usr/src/app/cache webserver
 ```
+The webserver should now be running on http://localhost:5000/
 
 ## Frontend development
 
