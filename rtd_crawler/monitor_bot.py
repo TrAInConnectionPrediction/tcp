@@ -24,11 +24,11 @@ async def on_ready():
 @client.event
 async def monitor_hour(old_change_count):
     channel = client.get_channel(720671295129518232)
-    hour = datetime.datetime.now().time().hour - 1
 
-    hour = datetime.datetime.now().time().hour
-    date_to_check = datetime.datetime.combine(datetime.date.today(),
-                                              datetime.time(hour, 0)) - datetime.timedelta(hours=1)
+    date_to_check = datetime.datetime.combine(
+        datetime.date.today(),
+        datetime.datetime.now().time() + datetime.timedelta(hours=3)
+    )
 
     # Plan (hourly)
     try:
@@ -45,6 +45,7 @@ async def monitor_hour(old_change_count):
         print('checked ' + str(date_to_check) + ': ???? rows were added')
 
     # Recent changed (crawled every two minutes but only checked once a day)
+    hour = datetime.datetime.now().time().hour
     if hour == 6:
         try:
             with Change() as changes:
