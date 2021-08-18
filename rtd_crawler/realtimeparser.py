@@ -4,10 +4,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import datetime
 from tqdm import tqdm
+import traceback
 from database import Change, PlanById, UnparsedChange, UnparsedPlan, Rtd, sessionfactory
 from helpers import ObstacleOlly
 import time
-import re
 import concurrent.futures
 import multiprocessing as mp
 import argparse
@@ -20,9 +20,7 @@ parser = argparse.ArgumentParser(description='Parse train delay data')
 parser.add_argument('--parse_continues', help='Check for unparsed data every 30 seconds and parse it', action="store_true")
 parser.add_argument('--parse_all', help='Parse all raw data that is in the databse', action="store_true")
 
-id_splitter = re.compile(r'(?<=\d)(-)(?=\d)')
-
-obstacles = ObstacleOlly(prefer_cache=True)
+obstacles = ObstacleOlly(prefer_cache=False)
 
 
 def db_to_datetime(dt: Union[str, None]) -> Union[datetime.datetime, None]:
@@ -141,6 +139,7 @@ def add_change(stop: dict, change: dict) -> dict:
         stop['dp_cp'] = stop['dp_pp']
     return stop
 
+
 def add_route_info(stop: dict) -> dict:
     if stop['ar_cpth'] is not None:
         stop['distance_to_last'] = obstacles.route_length([stop['ar_cpth'][-1]] + [stop['station']])
@@ -226,27 +225,29 @@ def parse_unparsed():
 
 def parse_unparsed_continues():
     while True:
-        parse_unparsed()
+        try:
+            parse_unparsed()
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
         time.sleep(30)
 
-# from helpers import profile
 
-# @profile
 def parse_chunk(chunk_limits: Tuple[int, int]):
     with Session() as session:
         stops = PlanById.get_stops_from_chunk(session, chunk_limits)
     parse_batch(stops.keys(), stops)
-    obstacles.store_edge_path_persistant_cache(engine)
+    obstacles.store_edge_path_persistent_cache(engine)
+
 
 def parse_all():
-    obstacles.store_edge_path_persistant_cache(engine)
     with Session() as session:
         chunk_limits = PlanById.get_chunk_limits(session)
+
+    # Non concurrent code for debuging
     # for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
     #     parse_chunk(chunk)
-    #     obstacles.store_edge_path_persistant_cache(engine)
             
-    with concurrent.futures.ProcessPoolExecutor(min(8, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
+    with concurrent.futures.ProcessPoolExecutor(min(32, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
         parser_tasks = {
             executor.submit(parse_chunk, chunk): chunk
             for chunk
