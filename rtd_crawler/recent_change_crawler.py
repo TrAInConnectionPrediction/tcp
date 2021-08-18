@@ -43,21 +43,23 @@ if __name__ == '__main__':
 
     stations = StationPhillip()
     eva_list = stations.eva_index_stations.index.to_list()
-    eva_list = [eva_list[i:i + station_to_monitor_per_thread] for i in range(0, len(eva_list), station_to_monitor_per_thread)]
+    eva_list = [
+        eva_list[i:i + station_to_monitor_per_thread]
+        for i
+        in range(0, len(eva_list), station_to_monitor_per_thread)
+    ]
     while True:
         stats = {
             'count': 0,
             'download_time': 0,
             'upload_time': 0,
         }
-        upload_time = time.time()
         stats_time = time.time()
         while (time.time() - stats_time) < 3600:
-            # while datetime.datetime.now().hour != 3 or (time.time() - upload_time) < 3600:
             download_start = time.time()
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=len(eva_list)) as executor:
-                    new_changes = executor.map(monitor_recent_change, eva_list, timeout=60 * 4)
+                    new_changes = list(executor.map(monitor_recent_change, eva_list, timeout=60 * 4))
                     
                     stats['download_time'] += time.time() - download_start
 
