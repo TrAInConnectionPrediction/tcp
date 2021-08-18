@@ -18,36 +18,42 @@ engine, Session = sessionfactory()
 
 
 def preparse_plan(plan, station):
+    """
+    Convert xml to json and add hash_id as key
+    """
     plan = etree.fromstring(plan.encode())
     plan = list(xml_to_json(stop) for stop in plan)
     plan = {hash64(stop['id']): {**stop, 'station':station} for stop in plan}
     return plan
 
 
-def get_plan(eva, str_date, hour):
+def get_plan(eva: int, str_date: str, hour: int) -> str:
     return dd.get_plan(station_id=eva, date=str_date, hour=hour)
 
+
+def hour_in_five_hours() -> int:
+    return (datetime.datetime.now() + datetime.timedelta(hours=5)).time().hour
 
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     stations = StationPhillip()
     evas = stations.eva_index_stations.index.to_list()
     dd = SimplestDownloader()
-    hour = datetime.datetime.now().time().hour - 1
+    hour = hour_in_five_hours() - 1
     plan_by_station = Plan()
     plan_by_id = PlanById()
     unparsed_plan = UnparsedPlan()
 
     while True:
-        if hour == datetime.datetime.now().time().hour:
+        if hour == hour_in_five_hours():
             time.sleep(20)
         else:
             date = datetime.datetime.today().date()
-            hour = datetime.datetime.now().time().hour
+            hour = hour_in_five_hours()
             str_date = datetime.datetime.now().strftime('%y%m%d')
             try:
                 with ThreadPoolExecutor(max_workers=4) as executor:
-                    print(datetime.datetime.now(), 'getting plan')
+                    print(datetime.datetime.now(), 'getting plan for', str_date, hour)
                     plans = executor.map(lambda eva: get_plan(eva, str_date, hour), evas)
 
                 with Session() as session:
