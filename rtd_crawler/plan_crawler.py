@@ -16,7 +16,6 @@ import traceback
 
 engine, Session = sessionfactory()
 
-
 def preparse_plan(plan, station):
     """
     Convert xml to json and add hash_id as key
