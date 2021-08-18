@@ -75,7 +75,6 @@ def cached_table_fetch(
                     cached_table_push(df, tablename)
                 return df
                 
-            print(ex)
             raise FileNotFoundError(f'There is no connection to the database and no cache of {tablename}')
 
 
