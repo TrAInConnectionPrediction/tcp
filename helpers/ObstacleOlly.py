@@ -93,7 +93,7 @@ class ObstacleOlly(StreckennetzSteffi):
             # category == 1: Baustelle
             # category == 2: Streckenunruche (Was auch immer das heißt)
             elif obstacle['category'] == 1:
-                path = self.get_edge_path_persistant_cache(source, target)
+                path = self.get_edge_path_persistent_cache(source, target)
                 if path is None:
                     continue
                 for edge_id in path:
@@ -197,7 +197,7 @@ class ObstacleOlly(StreckennetzSteffi):
         waypoints = []
         if path is not None and time is not None:
             for i in range(len(path) - 1):
-                waypoints_part = self.get_edge_path_persistant_cache(path[i], path[i+1])
+                waypoints_part = self.get_edge_path_persistent_cache(path[i], path[i+1])
                 if waypoints_part is not None:
                     waypoints.extend(waypoints_part)
             if len(waypoints):
