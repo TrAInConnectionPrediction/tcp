@@ -28,16 +28,14 @@ class PlanById(Base):
 
     @staticmethod
     def upsert(session: sqlalchemy.orm.Session, rows: List[dict]):
-        return upsert_base(session, PlanById.__table__, rows)
+        upsert_base(session, PlanById.__table__, rows)
 
     @staticmethod
     def add_plan(session: sqlalchemy.orm.Session, plan: dict):
-        new_plan = [{'hash_id': hash_id, 'stop': json.dumps(plan[hash_id])}
-                        for hash_id in plan if json.dumps(plan[hash_id])]
-        for stop in new_plan:
-            if 0 < stop['hash_id'] < 400:
-                print(stop['hash_id'])
-        PlanById.upsert(session, new_plan)
+        if plan:
+            new_plan = [{'hash_id': hash_id, 'stop': json.dumps(plan[hash_id])}
+                            for hash_id in plan if json.dumps(plan[hash_id])]
+            PlanById.upsert(session, new_plan)
 
     @staticmethod
     def get_stops(session: sqlalchemy.orm.Session, hash_ids: List[int]) -> Dict[int, dict]:
