@@ -43,6 +43,11 @@ class UnparsedPlan(Base):
         if hash_ids:
             statement = sqlalchemy.delete(UnparsedPlan).where(UnparsedPlan.hash_id.in_(hash_ids))
             session.execute(statement)
+
+    @staticmethod
+    def remove_all(session: sqlalchemy.orm.Session):
+        statement = sqlalchemy.delete(UnparsedPlan)
+        session.execute(statement)
     
 
 class UnparsedChange(Base):
@@ -77,6 +82,11 @@ class UnparsedChange(Base):
         if hash_ids:
             statement = sqlalchemy.delete(UnparsedChange).where(UnparsedChange.hash_id.in_(hash_ids))
             session.execute(statement)
+
+    @staticmethod
+    def remove_all(session: sqlalchemy.orm.Session):
+        statement = sqlalchemy.delete(UnparsedChange)
+        session.execute(statement)
 
 
 if __name__ == '__main__':

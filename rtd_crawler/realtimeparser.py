@@ -233,6 +233,13 @@ def parse_unparsed_continues():
 
 
 def parse_chunk(chunk_limits: Tuple[int, int]):
+    """Parse all stops with hash_id within the limits
+
+    Parameters
+    ----------
+    chunk_limits : Tuple[int, int]
+        min and max hash_id to parse in this chunk
+    """
     with Session() as session:
         stops = PlanById.get_stops_from_chunk(session, chunk_limits)
     parse_batch(stops.keys(), stops)
@@ -240,7 +247,14 @@ def parse_chunk(chunk_limits: Tuple[int, int]):
 
 
 def parse_all():
+    """Parse all raw data there is
+    """
     with Session() as session:
+        # Everything will be parsed, including the unparsed stuff -> remove it
+        # from the list of unparsed stuff
+        UnparsedPlan.remove_all(session)
+        UnparsedChange.remove_all(session)
+
         chunk_limits = PlanById.get_chunk_limits(session)
 
     # Non concurrent code for debuging
