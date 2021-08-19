@@ -7,11 +7,26 @@ from discord.ext import tasks, commands
 from config import discord_bot_token
 import datetime
 import requests
-from database import Change, Plan
+from database import Change, PlanById, sessionfactory
+from typing import Callable, Coroutine, Union
+import traceback
+import functools
+import asyncio
 
+
+def to_thread(func: Callable) -> Coroutine:
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        wrapped = functools.partial(func, *args, **kwargs)
+        return await loop.run_in_executor(None, wrapped)
+    return wrapper
+
+
+engine, Session = sessionfactory()
 client = discord.Client()
-
 old_change_count = 0
+old_plan_count = 0
 
 
 @client.event
@@ -21,51 +36,66 @@ async def on_ready():
     await channel.send('Data gatherer monitor now active')
 
 
-@client.event
-async def monitor_hour(old_change_count):
-    channel = client.get_channel(720671295129518232)
+@to_thread
+def monitor_plan() -> Union[str, None]:
+    global old_plan_count
 
     date_to_check = datetime.datetime.combine(
         datetime.date.today(),
-        datetime.datetime.now().time() + datetime.timedelta(hours=3)
+        (datetime.datetime.now() + datetime.timedelta(hours=3)).time()
     )
 
     # Plan (hourly)
+    message = None
     try:
-        with Plan() as plan:
-            plan_row_count = plan.count_entries_at_date(date_to_check)
-        if plan_row_count < 7000:
+        with Session() as session:
+            new_plan_count = PlanById.count_entries(session)
+        plan_count_delta = new_plan_count - old_plan_count
+        old_plan_count = new_plan_count
+        if plan_count_delta < 10000:
             message = '@everyone The plan gatherer is not working, as {} new entries where added to database at {}'\
-                    .format(str(plan_row_count), str(date_to_check))
-            await channel.send(message)
-        print('checked plan ' + str(date_to_check) + ': ' + str(plan_row_count) + ' rows were added')
-    except Exception as ex:
-        message = '@everyone Error reading Database:\n{}'.format(str(ex))
-        await channel.send(message)
+                    .format(str(plan_count_delta), str(date_to_check))
+        print('checked plan ' + str(date_to_check) + ': ' + str(plan_count_delta) + ' rows were added')
+    except FileExistsError as e:
+        message = '@everyone Error reading Database:\n{}' \
+            .format(''.join(traceback.format_exception(e, e, e.__traceback__)))
+        print(message)
+        print('checked ' + str(date_to_check) + ': ???? rows were added')
+    
+    return message
+
+
+@to_thread
+def monitor_change() -> Union[str, None]:
+    global old_change_count
+
+    date_to_check = datetime.datetime.combine(
+        datetime.date.today(),
+        (datetime.datetime.now() + datetime.timedelta(hours=3)).time()
+    )
+
+    # Recent changed (crawled every two minutes but only checked once an hour)
+    message = None
+    try:
+        with Session() as session:
+            new_change_count = Change.count_entries(session)
+        count_delta = new_change_count - old_change_count
+        old_change_count = new_change_count
+        if count_delta < 10000:
+            message = '''@everyone The recent change gatherer is not working, as {} 
+                    new entries where added to database at {}'''\
+                    .format(str(count_delta), str(date_to_check))
+        old_change_count = new_change_count
+        print('checked changes ' + str(date_to_check) + ': ' + str(count_delta) + ' rows were added')
+    except Exception as e:
+        message = '@everyone Error reading Database:\n{}' \
+            .format(''.join(traceback.format_exception(None, e, e.__traceback__)))
+        print(message)
         print('checked ' + str(date_to_check) + ': ???? rows were added')
 
-    # Recent changed (crawled every two minutes but only checked once a day)
-    hour = datetime.datetime.now().time().hour
-    if hour == 6:
-        try:
-            with Change() as changes:
-                new_change_count = changes.count_entries()
-            count_delta = new_change_count - old_change_count
-            if count_delta < 50000:
-                message = '''@everyone The recent change gatherer is not working, as {} 
-                        new entries where added to database at {}'''\
-                        .format(str(count_delta), str(date_to_check))
-                await channel.send(message)
-            old_change_count = new_change_count
-            print('checked changes ' + str(date_to_check) + ': ' + str(count_delta) + ' rows were added')
-        except Exception as ex:
-            message = '@everyone Error reading Database:\n{}'.format(str(ex))
-            await channel.send(message)
-            print('checked ' + str(date_to_check) + ': ???? rows were added')
+    return message
 
-    return old_change_count
 
-@client.event
 async def monitor_website():
     channel = client.get_channel(720671295129518232)
     try:
@@ -77,11 +107,11 @@ async def monitor_website():
             message = str(datetime.datetime.now()) \
                 + ': @everyone Somthing not working on the website:\n{}'.format(str(page))
             print(message)
-            # await channel.send(message)
+            await channel.send(message)
     except Exception as ex:
         message = str(datetime.datetime.now()) + ': @everyone Error on the website:\n{}'.format(str(ex))
         print(message)
-        # await channel.send(message)
+        await channel.send(message)
 
     try:
         print('testing https://trainconnectionprediction.de/api/trip from Tübingen Hbf to Köln Hbf...')
@@ -98,10 +128,11 @@ async def monitor_website():
                 + ': @everyone Somthing not working on the website:\n{}'.format(str(trip))
             print(message)
             await channel.send(message)
-    except Exception as ex:
-        message = str(datetime.datetime.now()) + ': @everyone Somthing not working on the website:\n{}'.format(str(ex))
-        print(message)
+    except Exception as e:
+        message = str(datetime.datetime.now()) + ': @everyone Somthing not working on the website:\n{}' \
+            .format(''.join(traceback.format_exception(None, e, e.__traceback__)))
         await channel.send(message)
+        print(message)
 
 
 class Monitor(commands.Cog):
@@ -115,7 +146,16 @@ class Monitor(commands.Cog):
     @tasks.loop(hours=1)
     async def monitor(self):
         await client.wait_until_ready()
-        self.old_change_count = await monitor_hour(self.old_change_count)
+        channel = client.get_channel(720671295129518232)
+
+        message = await monitor_plan()
+        if message is not None:
+            await channel.send(message)
+
+        message = await monitor_change()
+        if message is not None:
+            await channel.send(message)
+
         await monitor_website()
 
 
