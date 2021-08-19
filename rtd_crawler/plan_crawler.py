@@ -33,6 +33,9 @@ def get_plan(eva: int, str_date: str, hour: int) -> str:
 def hour_in_five_hours() -> int:
     return (datetime.datetime.now() + datetime.timedelta(hours=5)).time().hour
 
+def date_in_five_hours() -> int:
+    return (datetime.datetime.now() + datetime.timedelta(hours=5)).date()
+
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     stations = StationPhillip()
@@ -47,13 +50,13 @@ if __name__ == '__main__':
         if hour == hour_in_five_hours():
             time.sleep(20)
         else:
-            date = datetime.datetime.today().date()
+            date = date_in_five_hours()
             hour = hour_in_five_hours()
-            str_date = datetime.datetime.now().strftime('%y%m%d')
+            str_date = date.strftime('%y%m%d')
             try:
                 with ThreadPoolExecutor(max_workers=4) as executor:
-                    print(datetime.datetime.now(), 'getting plan for', str_date, hour)
-                    plans = executor.map(lambda eva: get_plan(eva, str_date, hour), evas)
+                    print(datetime.datetime.now(), 'getting plan for', date, hour)
+                    plans = list(executor.map(lambda eva: get_plan(eva, str_date, hour), evas))
 
                 with Session() as session:
                     plans_by_id = {}
