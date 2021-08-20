@@ -17,7 +17,7 @@ import sqlalchemy
 engine, Session = sessionfactory()
 
 parser = argparse.ArgumentParser(description='Parse train delay data')
-parser.add_argument('--parse_continues', help='Check for unparsed data every 30 seconds and parse it', action="store_true")
+parser.add_argument('--parse_continues', help='Check for unparsed data every 60 seconds and parse it', action="store_true")
 parser.add_argument('--parse_all', help='Parse all raw data that is in the databse', action="store_true")
 
 obstacles = ObstacleOlly(prefer_cache=False)
@@ -195,8 +195,9 @@ def parse_batch(hash_ids: List[int], plans: Dict[int, Dict] = None):
     for hash_id in plans:
         parsed.append(parse_stop(hash_id, plans[hash_id], changes.get(hash_id, {})))
 
-    parsed = pd.DataFrame(parsed).set_index('hash_id')
-    Rtd.upsert(parsed, engine)
+    if parsed:
+        parsed = pd.DataFrame(parsed).set_index('hash_id')
+        Rtd.upsert(parsed, engine)
     
     changes_without_plan = set(changes.keys()).difference(plans.keys())
     session: sqlalchemy.orm.Session
@@ -218,8 +219,10 @@ def parse_unparsed():
                 UnparsedChange.remove(session, unparsed_change)
         session.commit()
     if unparsed_plan:
+        print('parsing', len(unparsed_plan), 'unparsed plans')
         parse_batch(unparsed_plan)
     elif unparsed_change:
+        print('parsing', len(unparsed_change), 'unparsed changes')
         parse_batch(unparsed_change)
 
 
@@ -229,7 +232,7 @@ def parse_unparsed_continues():
             parse_unparsed()
         except Exception:
             traceback.print_exc(file=sys.stdout)
-        time.sleep(30)
+        time.sleep(60)
 
 
 def parse_chunk(chunk_limits: Tuple[int, int]):
