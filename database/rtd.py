@@ -137,28 +137,6 @@ class Rtd(Base):
         """
         return session.query(sqlalchemy.func.max(Rtd.ar_pt)).scalar()
 
-    @staticmethod
-    def upsert(df: pd.DataFrame):
-        """
-        Upsert dataframe to db using pangres
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            Data to upsert
-        """
-        if not df.empty:
-            engine = get_engine()
-            pangres.upsert(engine,
-                        df,
-                        if_row_exists='update',
-                        table_name=Rtd.__tablename__,
-                        dtype=sql_types,
-                        create_schema=False,
-                        add_new_columns=False,
-                        adapt_dtype_of_empty_db_columns=False)
-            engine.dispose()
-
 
 class RtdArrays(Base):
     __tablename__ = RTD_TABLENAME + '_arrays'
