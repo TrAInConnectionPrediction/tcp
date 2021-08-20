@@ -1,6 +1,8 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if os.path.isfile("/mnt/config/config.py"):
+    sys.path.append("/mnt/config/")
 import pandas as pd
 import datetime
 from tqdm import tqdm
