@@ -8,7 +8,7 @@ import io
 import numpy as np
 from PIL import Image
 import datetime
-import matplotlib
+from matplotlib import colors
 import matplotlib.pyplot as plt
 plt.style.use('dark_background')
 import cartopy.crs as ccrs
@@ -98,7 +98,7 @@ class PerStationAnalysis(StationPhillip):
     def plot(self, data_to_plot):
         self.fig, self.ax = dark_fig_ax_germany(crs=ccrs.Miller())
 
-        self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        self.cmap = colors.LinearSegmentedColormap.from_list(
             "", ["green", "yellow", "red"]
         )
         
@@ -141,12 +141,14 @@ class PerStationAnalysis(StationPhillip):
 
         plt.show()
 
+from helpers import profile
 
 class PerStationOverTime(StationPhillip):
     FREQ = "48H"
     DEFAULT_PLOTS = ["no data available", "default"]
     MAP_CRS = ccrs.Miller()
 
+    @profile
     def __init__(self, rtd, **kwargs):
         super().__init__(**kwargs)
 
@@ -165,7 +167,7 @@ class PerStationOverTime(StationPhillip):
         # Setup Plot https://stackoverflow.com/questions/9401658/how-to-animate-a-scatter-plot
         self.fig, self.ax = dark_fig_ax_germany(crs=self.MAP_CRS)
 
-        self.cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        self.cmap = colors.LinearSegmentedColormap.from_list(
             "", ["green", "yellow", "red"]
         )
 
