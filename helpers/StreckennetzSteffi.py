@@ -8,7 +8,7 @@ from database import cached_table_fetch, cached_table_push, get_engine
 import igraph
 import pandas as pd
 import sqlalchemy
-from sqlalchemy import Column
+from sqlalchemy import Column, String, INT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql
 import random
@@ -20,8 +20,16 @@ Base = declarative_base()
 
 class EdgePathPersistantCache(Base):
     __tablename__ = "edge_path_persistent_cache"
-    index = Column(sqlalchemy.types.String, primary_key=True, autoincrement=False)
-    path = Column(postgresql.ARRAY(sqlalchemy.types.INT))
+    index = Column(String, primary_key=True, autoincrement=False)
+    path = Column(postgresql.ARRAY(INT))
+
+    def __init__(self) -> None:
+        try:
+            engine = get_engine()
+            Base.metadata.create_all(engine)
+            engine.dispose()
+        except sqlalchemy.exc.OperationalError:
+            print(f"database.{EdgePathPersistantCache.__tablename__} running offline!")
 
 
 class StreckennetzSteffi(StationPhillip):
@@ -34,21 +42,20 @@ class StreckennetzSteffi(StationPhillip):
 
         streckennetz_df = cached_table_fetch("minimal_streckennetz", **kwargs)
 
-        try:
-            engine = get_engine()
-            Base.metadata.create_all(engine)
-            engine.dispose()
-        except sqlalchemy.exc.OperationalError:
-            print(f"database.{EdgePathPersistantCache.__tablename__} running offline!")
-
         self.persistent_path_cache = cached_table_fetch(
-            "edge_path_persistent_cache", index_col="index"
+            "edge_path_persistent_cache", index_col="index", **kwargs
         )["path"].to_dict()
         self.original_persistent_path_cache_len = len(self.persistent_path_cache)
 
-        tuples = [tuple(x) for x in streckennetz_df[["u", "v", "length"]].values]
-        self.streckennetz_igraph = igraph.Graph.TupleList(
-            tuples, directed=False, edge_attrs=["length"]
+        nodes = list(set(streckennetz_df['u'].to_list() + streckennetz_df['v'].to_list()))
+        node_ids = dict(zip(nodes, range(len(nodes))))
+        edges = list(zip(streckennetz_df["u"].map(node_ids.get).to_list(), streckennetz_df["v"].map(node_ids.get).to_list()))
+        self.streckennetz_igraph = igraph.Graph(
+            n=len(nodes),
+            edges=edges,
+            directed=False,
+            vertex_attrs={'name': nodes},
+            edge_attrs={'length': streckennetz_df['length'].to_list()},
         )
 
         self.get_length = lambda edge: self.streckennetz_igraph.es[edge]["length"]
@@ -197,10 +204,9 @@ class StreckennetzSteffi(StationPhillip):
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
-    streckennetz_steffi = StreckennetzSteffi(prefer_cache=False)
+    streckennetz_steffi = StreckennetzSteffi(prefer_cache=True)
 
-    print(
-        streckennetz_steffi.route_length(
-            ["Tübingen Hbf", "Altingen(Württ)", "Stuttgart Hbf", "Paris Est"]
-        )
-    )
+    print("Tübingen Hbf - Altingen(Württ):", streckennetz_steffi.route_length(["Tübingen Hbf", "Altingen(Württ)"]))
+    print("Tübingen Hbf - Reutlingen Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Reutlingen Hbf"]))
+    print("Tübingen Hbf - Stuttgart Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Stuttgart Hbf"]))
+    print("Tübingen Hbf - Ulm Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Ulm Hbf"]))
