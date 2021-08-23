@@ -52,7 +52,7 @@ def monitor_plan() -> Union[str, None]:
             new_plan_count = PlanById.count_entries(session)
         plan_count_delta = new_plan_count - old_plan_count
         old_plan_count = new_plan_count
-        if plan_count_delta < 10000:
+        if plan_count_delta < 500:
             message = '@everyone The plan gatherer is not working, as {} new entries where added to database at {}'\
                     .format(str(plan_count_delta), str(date_to_check))
         print('checked plan ' + str(date_to_check) + ': ' + str(plan_count_delta) + ' rows were added')
@@ -81,7 +81,7 @@ def monitor_change() -> Union[str, None]:
             new_change_count = Change.count_entries(session)
         count_delta = new_change_count - old_change_count
         old_change_count = new_change_count
-        if count_delta < 10000:
+        if count_delta < 1000:
             message = '''@everyone The recent change gatherer is not working, as {} 
                     new entries where added to database at {}'''\
                     .format(str(count_delta), str(date_to_check))
