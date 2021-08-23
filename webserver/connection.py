@@ -21,6 +21,7 @@ def get_connections(
     transfer_time: int=0,
     hafas_profile: str='db',
     economic: bool=False,
+    search_for_departure: bool=True,
 ) -> list:
     """[summary]
 
@@ -40,6 +41,8 @@ def get_connections(
         Hafas profile to use, by default 'db'
     economic : bool, optional
         True = not only fastest route, by default False
+    search_for_departure : bool, optional
+        False = time == arrival time, by default True
 
     Returns
     -------
@@ -53,6 +56,7 @@ def get_connections(
         "transferTime": transfer_time,
         "hafasProfile": hafas_profile,
         'economic': economic,
+        'searchForDeparture': search_for_departure,
     }
     json['tarif'] = {'class': 2,'traveler':{"type": "E"}}
 

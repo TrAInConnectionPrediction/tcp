@@ -8,7 +8,7 @@
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
 ## Base image
-FROM python:3.8 AS compile-image
+FROM python:3.9 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update
@@ -24,8 +24,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip && pip install pip-tools
 RUN pip install --no-binary shapely shapely
 RUN pip install numpy
-COPY ./webserver/requirements.txt requirements.in
-RUN pip-compile requirements.in > requirements.txt && pip-sync
+COPY ./webserver/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 
@@ -38,7 +37,7 @@ COPY ./webserver/website/ .
 RUN npm run build
 
 ## Build-image
-FROM python:3.8-slim-buster AS runtime-image
+FROM python:3.9 AS runtime-image
 
 ## Install libgeos
 # TODO: Copy libgeos from build image

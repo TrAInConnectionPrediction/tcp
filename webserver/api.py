@@ -51,7 +51,7 @@ def analysis(connection):
 
 
 @log_activity
-def calc_con(start, destination, date):
+def calc_con(start, destination, date, search_for_departure):
     """
     Gets a connection from `start` to `destination` at a given date `date`
     using marudors HAFAS api. And evaluates the connection.
@@ -74,7 +74,7 @@ def calc_con(start, destination, date):
         "Getting connections from " + start + " to " + destination + ", " + date
     )
     connections = get_connections(
-        start, destination, datetime.strptime(date, "%d.%m.%Y %H:%M")
+        start, destination, datetime.strptime(date, "%d.%m.%Y %H:%M"), search_for_departure=search_for_departure
     )
 
     for i in range(len(connections)):
@@ -122,7 +122,7 @@ def api():
         All the possible connections
     """
     data = calc_con(
-        request.json["start"], request.json["destination"], request.json["date"]
+        request.json["start"], request.json["destination"], request.json["date"], request.json["search_for_departure"]
     )
     resp = jsonify(data)
     resp.headers.add("Access-Control-Allow-Origin", "*")

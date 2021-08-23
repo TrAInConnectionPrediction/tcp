@@ -236,12 +236,12 @@ TrAIn_Connection_Prediction ║   ║
 <style lang="scss">
 @import 'src/assets/scss/variables';
 
-// Custom font (https://icomoon.io/app/#/select)
 @font-face {
   font-family: 'tcp_custom_font';
-  src: url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
-    url('./fonts/tcp_custom_font.woff?1p3u8g') format('woff'),
-    url('./fonts/tcp_custom_font.svg?1p3u8g#tcp_custom_font') format('svg');
+  src:
+    url('fonts/tcp_custom_font.ttf?vdwbwf') format('truetype'),
+    url('fonts/tcp_custom_font.woff?vdwbwf') format('woff'),
+    url('fonts/tcp_custom_font.svg?vdwbwf#tcp_custom_font') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -262,15 +262,54 @@ i {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.tcp-train:before {
-  content: '\e92b';
-}
 .tcp-calendar:before {
-  content: '\e953';
+  content: "\e901";
+}
+.tcp-train:before {
+  content: "\e902";
+}
+.tcp-pedestrian:before {
+  content: "\e900";
 }
 .tcp-github:before {
-  content: '\eab0';
+  content: "\eab0";
 }
+
+// Custom font (https://icomoon.io/app/#/select)
+// @font-face {
+//   font-family: 'tcp_custom_font';
+//   src: url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
+//     url('./fonts/tcp_custom_font.woff?1p3u8g') format('woff'),
+//     url('./fonts/tcp_custom_font.svg?1p3u8g#tcp_custom_font') format('svg');
+//   font-weight: normal;
+//   font-style: normal;
+//   font-display: block;
+// }
+
+// i {
+//   /* use !important to prevent issues with browser extensions that change fonts */
+//   font-family: 'tcp_custom_font' !important;
+//   speak: never;
+//   font-style: normal;
+//   font-weight: normal;
+//   font-variant: normal;
+//   text-transform: none;
+//   line-height: 1;
+
+//   /* Better Font Rendering =========== */
+//   -webkit-font-smoothing: antialiased;
+//   -moz-osx-font-smoothing: grayscale;
+// }
+
+// .tcp-train:before {
+//   content: '\e92b';
+// }
+// .tcp-calendar:before {
+//   content: '\e953';
+// }
+// .tcp-github:before {
+//   content: '\eab0';
+// }
 
 h1,
 h2,
@@ -355,8 +394,8 @@ body {
 .col {
   width: 40vw;
   min-width: 350px;
-  max-width: 75vw;
-  margin: 30px;
+  // max-width: 75vw;
+  margin: 10px;
 }
 
 /* NAVBAR BEGIN */
@@ -665,7 +704,7 @@ span.flatpickr-weekday,
   }
 
   .pretty_form {
-    padding: 20px;
+    padding: 20px 8px;
   }
 }
 

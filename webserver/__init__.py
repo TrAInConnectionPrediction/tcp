@@ -7,13 +7,11 @@ if os.path.isfile("/mnt/config/config.py"):
 import config
 
 from flask import Flask
-# import logging
-# import logging.handlers as handlers
 import pyhafas
 from helpers import StreckennetzSteffi, logging
+from data_analysis.per_station import PerStationOverTime
 from webserver.index import index_blueprint
 from webserver.db_logger import db
-from data_analysis.per_station import PerStationOverTime
 
 # Do not use GUI for matplotlib
 import matplotlib

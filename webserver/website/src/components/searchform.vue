@@ -5,9 +5,9 @@
       <strong>Verbindung finden</strong>
     </h3>
     <!-- Start Bhf Form-->
-    <div style="display: flex;">
-      <i class="tcp-train" style="position: relative; font-size: 2.5rem; top: 20px;width: 40px;"></i>
-      <div style="margin-left: 10px;width: 100%;">
+    <div style="display: flex; align-items: end;">
+      <i class="tcp-train" style="font-size: 2.7rem;"></i>
+      <div style="width: 100%;">
       <label for="start">Von</label><br />
       <autosuggest
         name="start"
@@ -19,9 +19,9 @@
       </div>
     </div>
     <!-- End Bhf Form -->
-    <div style="display: flex;">
-      <i class="tcp-train" style="position: relative; font-size: 2.5rem; top: 20px;width: 40px;"></i>
-      <div style="margin-left: 10px;width: 100%;">
+    <div style="display: flex; align-items: end;">
+      <i class="tcp-train" style="font-size: 2.7rem;"></i>
+      <div style="width: 100%;">
       <label for="destination">Nach</label><br />
       <autosuggest
         name="destination"
@@ -33,9 +33,9 @@
       </div>
     </div>
     <!-- Date Form -->
-    <div style="display: flex;">
-      <i class="tcp-calendar" style="position: relative; font-size: 2.5rem; top: 20px;width: 40px;"></i>
-      <div style="margin-left: 10px;width: 100%;">
+    <div style="display: flex; align-items: end;">
+      <i class="tcp-calendar" style="font-size: 2.7rem;"></i>
+      <div style="width: 100%;">
       <label for="datetime">Datum</label><br />
       <flat-pickr
         v-model="date"
@@ -46,6 +46,7 @@
       >
       </flat-pickr>
       </div>
+      <toggleSwitch style="padding: 6px 12px;" v-model="search_for_arrival"></toggleSwitch>
     </div>
     <!-- Submit Button -->
     <div class="text-center">
@@ -67,6 +68,7 @@ import flatPickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 
 import autosuggest from './autosuggest.vue'
+import toggleSwitch from './toggle_switch.vue'
 
 require('flatpickr/dist/themes/dark.css')
 
@@ -85,7 +87,8 @@ export default {
         time_24hr: true,
         dateFormat: 'd.m.Y H:i',
         altFormat: 'd.m.Y H:i'
-      }
+      },
+      search_for_arrival: false
     }
   },
   created () {
@@ -114,7 +117,8 @@ export default {
         this.$parent.get_connections({
           start: this.start,
           destination: this.destination,
-          date: this.date // flatpickr.formatDate(new Date(this.date), "d.m.Y H:i")
+          date: this.date, // flatpickr.formatDate(new Date(this.date), "d.m.Y H:i")
+          search_for_departure: !this.search_for_arrival
         })
       } else {
         if (!this.stations.includes(this.start)) {
@@ -137,7 +141,8 @@ export default {
   },
   components: {
     flatPickr,
-    autosuggest
+    autosuggest,
+    toggleSwitch
   }
 }
 </script>
