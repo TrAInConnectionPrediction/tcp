@@ -118,7 +118,8 @@ async def monitor_website():
         search = {
             'start': 'Tübingen Hbf',
             'destination': 'Köln Hbf',
-            'date': (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%d.%m.%Y %H:%M')
+            'date': (datetime.datetime.now() + datetime.timedelta(hours=1)).strftime('%d.%m.%Y %H:%M'),
+            'search_for_departure': True
         }
         trip = requests.post('https://trainconnectionprediction.de/api/trip', json=search)
         if trip.ok:
