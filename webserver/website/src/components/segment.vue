@@ -24,7 +24,7 @@
     <div class="time" v-if="segment.ar_pt.isSame(segment.ar_ct)">an {{ segment.ar_ct.format('HH:mm') }}</div>
     <div class="time" v-else>an {{ segment.ar_ct.format('HH:mm') }}  <del class="outdated">{{ segment.ar_pt.format('HH:mm') }}</del></div>
     <div class="platform" v-if="segment.ar_pp == segment.ar_cp">an Gl. {{ segment.ar_cp }}</div>
-    <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="outdated">{{ segment.dp_pp }}</del></div>
+    <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="outdated">{{ segment.ar_pp }}</del></div>
 
     <div v-if="'transfer_time' in segment" style="display: contents">
       <div style="background-color: #212529"></div>
