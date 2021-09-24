@@ -40,7 +40,7 @@
       <div style="background-color: #212529"></div>
       <div class="walk" v-bind:style="transfer_style">
         <div style="background-color: #212529"></div>
-        <img src="../assets/img/pedestrian.svg" height="20px" style="color: lightgray" />
+        <i class="tcp-pedestrian" style="font-size: 1.2rem"></i>
         davon {{ segment.walk }} Min. Fußweg
       </div>
     </div>
