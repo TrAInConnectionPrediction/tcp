@@ -1,9 +1,9 @@
 <template>
-    <div class="toggle_container" @click="$emit('input', !value)">
-      <span class="text" :style="{ 'font-weight': !value ? 'bold' : 'normal' }">Ab</span>
-      <span class="toggler" :class="{'on': value}"></span>
-      <span class="text" :style="{ 'font-weight': value ? 'bold' : 'normal' }">An</span>
-    </div>
+  <div class="toggle_container" @click="$emit('input', !value)">
+    <span :class="{ text: true, inactive: value }">Ab</span>
+    <span class="toggler" :class="{ on: value }"></span>
+    <span :class="{ text: true, inactive: !value }">An</span>
+  </div>
 </template>
 
 <script lang="ts">
@@ -26,7 +26,11 @@ export default Vue.extend({
   min-width: max-content;
 
   .text {
-    transition: font-weight 0.5s;
+    font-weight: bold;
+    transition: color 0.1s;
+  }
+  .text.inactive {
+    color: $page_gray_text;
   }
 }
 
@@ -41,12 +45,12 @@ export default Vue.extend({
   vertical-align: middle;
 
   &.on::after {
-      left: 1.4rem;
+    left: 1.4rem;
   }
 }
 
 .toggler::after {
-  content: "";
+  content: '';
   width: 1.3rem;
   height: 1.3rem;
   display: inline-block;
@@ -55,7 +59,7 @@ export default Vue.extend({
   position: absolute;
   top: -0.2rem;
   left: -0.2rem;
-  box-shadow: 0 0 .5rem 0 $page_background;
-  transition: left 0.5s;
+  box-shadow: 0 0 0.5rem 0 $page_background;
+  transition: left 0.1s;
 }
 </style>
