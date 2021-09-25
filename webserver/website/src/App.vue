@@ -608,15 +608,6 @@ span.flatpickr-weekday,
   overflow: auto;
 }
 
-.details_grid {
-  margin: 20px;
-  display: inline-grid;
-  grid-template-columns: repeat(4, max-content);
-  grid-gap: 0px;
-  width: max-content;
-  background-color: $page_lighter_gray;
-}
-
 .open-enter-active,
 .open-leave-active {
   transition: all 0.5s;
@@ -629,39 +620,6 @@ span.flatpickr-weekday,
   display: block;
   max-height: 0px;
   overflow: hidden;
-}
-
-.station {
-  margin: 10px 0;
-  width: 100%;
-  padding: 5px;
-  background-color: $page_gray;
-}
-
-.time {
-  margin: 15px;
-}
-
-.platform {
-  margin: 15px;
-}
-
-.train {
-  margin: 10px;
-}
-
-.score {
-  border: solid 10px transparent;
-  grid-column-start: span 2;
-}
-
-.transfer {
-  border: solid 10px transparent;
-}
-
-.walk {
-  border: solid 10px transparent;
-  grid-column-start: span 3;
 }
 
 @media (max-width: 1000px) {
@@ -712,12 +670,6 @@ span.flatpickr-weekday,
   .card_header {
     grid-template-columns: minmax(190px, 1fr);
   }
-}
-
-.station_delay_line {
-  grid-row-start: span 3;
-  width: 10px;
-  margin: 10px 5px;
 }
 
 .text_content {

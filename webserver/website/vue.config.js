@@ -9,6 +9,6 @@ module.exports = {
       background_color: '#212121',
       short_name: 'TCP'
     },
-    assetsVersion: '0.2.3'
+    assetsVersion: '0.2.4'
   }
 }

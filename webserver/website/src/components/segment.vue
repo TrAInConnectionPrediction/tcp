@@ -9,7 +9,7 @@
     <div class="platform" v-if="segment.dp_pp == segment.dp_cp">von Gl. {{ segment.dp_cp }}</div>
     <div class="platform" v-else>von Gl. {{ segment.dp_cp }}  <del class="outdated">{{ segment.dp_pp }}</del></div>
 
-    <div class="train" style="grid-column-start: span 3;">
+    <div class="train">
       <img
         v-if="segment.dp_c in train_icons"
         v-bind:src="train_icons[segment.dp_c]"
@@ -27,21 +27,18 @@
     <div class="platform" v-else>an Gl. {{ segment.ar_cp }}  <del class="outdated">{{ segment.ar_pp }}</del></div>
 
     <div v-if="'transfer_time' in segment" style="display: contents">
-      <div style="background-color: #212529"></div>
-      <div class="transfer" v-bind:style="transfer_style">
-        Umsteigezeit: {{ segment.transfer_time }} Min.
-      </div>
       <div class="score" v-bind:style="transfer_style">
         Verbindungs-Score:
         <span v-bind:style="text_color">{{ segment.score }}%</span>
       </div>
-    </div>
-    <div v-if="segment.walk" v-bind:style="transfer_style" style="display: contents;">
-      <div style="background-color: #212529"></div>
+      <div class="transfer" v-bind:style="transfer_style">
+        Umsteigezeit: {{ segment.transfer_time }} Min.
+      </div>
       <div class="walk" v-bind:style="transfer_style">
-        <div style="background-color: #212529"></div>
-        <i class="tcp-pedestrian" style="font-size: 1.2rem"></i>
-        davon {{ segment.walk }} Min. Fußweg
+        <div v-if="segment.walk" style="display: contents">
+          <i class="tcp-pedestrian" style="font-size: 1.2rem"></i>
+          davon {{ segment.walk }} Min. Fußweg
+        </div>
       </div>
     </div>
   </div>
@@ -83,3 +80,104 @@ export default {
   }
 }
 </script>
+
+<style lang="scss">
+@import 'src/assets/scss/variables';
+
+.details_grid {
+  margin: 20px;
+  display: inline-grid;
+  grid-template-columns: 15px minmax(max-content, auto) minmax(max-content, auto) minmax(max-content, auto);
+  width: calc(100% - 40px);
+  background-color: $page_lighter_gray;
+}
+
+.station {
+  margin: 10px 10px 10px 0;
+  padding: 5px 10px;
+  background-color: $page_gray;
+}
+
+.time {
+  margin: 15px;
+}
+
+.platform {
+  margin: 15px;
+}
+
+.train {
+  margin: 10px;
+  grid-column-start: span 3;
+}
+
+.score {
+  border: solid 10px transparent;
+  grid-column-start: span 4;
+}
+
+.transfer {
+  border: solid 10px transparent;
+  grid-column-start: span 2;
+}
+
+.walk {
+  border: solid 10px transparent;
+  grid-column-start: span 2;
+}
+
+.station_delay_line {
+  grid-row-start: span 3;
+  width: 10px;
+  margin: 10px 5px;
+}
+
+@media (max-width: 450px) {
+  .details_grid {
+    margin: 10px;
+    display: inline-grid;
+    grid-template-columns: 15px minmax(max-content, auto) minmax(max-content, auto);
+    width: calc(100% - 20px);
+  }
+
+  .station {
+    margin: 10px 10px 0 0;
+    grid-column-start: span 2;
+  }
+
+  .time {
+    margin: 0 0 10px 0;
+    padding: 5px 10px;
+    background-color: $page_gray;
+  }
+
+  .platform {
+    margin: 0 10px 10px 0;
+    padding: 5px 10px;
+    background-color: $page_gray;
+  }
+
+  .train {
+    margin: 10px;
+    grid-column-start: span 2;
+  }
+
+  .score {
+    grid-column-start: span 3;
+  }
+
+  .transfer {
+    grid-column-start: span 3;
+  }
+
+  .walk {
+    grid-column-start: span 3;
+    border-top: 0;
+  }
+
+  .station_delay_line {
+    grid-row-start: span 5;
+  }
+
+}
+</style>
