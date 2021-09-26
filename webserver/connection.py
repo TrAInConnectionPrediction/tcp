@@ -16,7 +16,7 @@ from . import client
 def get_connections(
     start: str,
     destination: str,
-    time: datetime.datetime,
+    date: datetime.datetime,
     max_changes: int=-1,
     transfer_time: int=0,
     hafas_profile: str='db',
@@ -31,8 +31,8 @@ def get_connections(
         start station name
     destination : str
         destination station name
-    time : datetime.datetime
-        time of departure \n
+    date : datetime.datetime
+        date and time of departure \n
     max_changes : int, optional
         Maximum number of allowed changes, by default -1
     transfer_time : int, optional
@@ -51,7 +51,7 @@ def get_connections(
     json = {
         "start": str(streckennetz.get_eva(name=start)),
         "destination": str(streckennetz.get_eva(name=destination)),
-        "time": time.replace(tzinfo=timezone("CET")).isoformat(),
+        "time": date.replace(tzinfo=timezone("CET")).isoformat(),
         "maxChanges": max_changes,
         "transferTime": transfer_time,
         "hafasProfile": hafas_profile,

@@ -20,7 +20,7 @@ from config import CACHE_PATH
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 
-def analysis(connection):
+def analysis(connection: dict):
     """
     Analyses/evaluates/rates a given connection using machine learning
 
@@ -50,39 +50,6 @@ def analysis(connection):
     return connection
 
 
-@log_activity
-def calc_con(start, destination, date, search_for_departure):
-    """
-    Gets a connection from `start` to `destination` at a given date `date`
-    using marudors HAFAS api. And evaluates the connection.
-
-    Parameters
-    ----------
-    startbhf : str
-        Start train station
-    zielbhf : str
-        Destination train station
-    date : str
-        Datetime in format `%d.%m.%Y %H:%M`
-
-    Returns
-    -------
-    list
-        a list with different connections
-    """
-    current_app.logger.info(
-        "Getting connections from " + start + " to " + destination + ", " + date
-    )
-    connections = get_connections(
-        start, destination, datetime.strptime(date, "%d.%m.%Y %H:%M"), search_for_departure=search_for_departure
-    )
-
-    for i in range(len(connections)):
-        connections[i] = analysis(connections[i])
-        connections[i] = datetimes_to_text(connections[i])
-    return connections
-
-
 @bp.route("/connect", methods=["GET"])
 @log_activity
 def connect():
@@ -102,18 +69,19 @@ def connect():
 
 
 @bp.route("/trip", methods=["POST"])
-def api():
+@log_activity
+def trip():
     """
     Gets a connection from `startbhf` to `zielbhf` at a given date `date`
     using marudors HAFAS api. And rates the connection
 
     Parameters
     ----------
-    startbhf : string
-        (from request) the trainstation from which to start
-    zielbhf : string
-        (from request) the trainstation, which is the destination
-    date  : string
+    start : str
+        (from request) the station name where to start
+    destination : str
+        (from request) the station name of the destination
+    date  : str
         (from request: the date and time at which the trip should take place in format `%d.%m.%Y %H:%M`
 
     Returns
@@ -121,10 +89,28 @@ def api():
     flask generated json
         All the possible connections
     """
-    data = calc_con(
-        request.json["start"], request.json["destination"], request.json["date"], request.json["search_for_departure"]
+    start = request.json['start']
+    destination = request.json['destination']
+    date = datetime.strptime(request.json['date'], "%d.%m.%Y %H:%M")
+
+    # optional:
+    search_for_departure = request.json['search_for_departure'] if 'search_for_departure' in request.json else True
+
+    current_app.logger.info(
+        "Getting connections from " + start + " to " + destination + ", " + str(date)
     )
-    resp = jsonify(data)
+    connections = get_connections(
+        start=start,
+        destination=destination,
+        date=date,
+        search_for_departure=search_for_departure,
+    )
+
+    for i in range(len(connections)):
+        connections[i] = analysis(connections[i])
+        connections[i] = datetimes_to_text(connections[i])
+
+    resp = jsonify(connections)
     resp.headers.add("Access-Control-Allow-Origin", "*")
     return resp
 
