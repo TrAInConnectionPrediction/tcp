@@ -14,8 +14,8 @@ def get_engine():
         pool_pre_ping=True,
         pool_recycle=3600,
         # future=True,
-        # pool_size=1,
-        # max_overflow=0,
+        pool_size=1,
+        max_overflow=0,
     )
 
 # Session = sessionmaker(bind=get_engine())
