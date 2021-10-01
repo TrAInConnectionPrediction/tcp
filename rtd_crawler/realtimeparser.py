@@ -7,7 +7,7 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 import traceback
-from database import Change, PlanById, UnparsedChange, UnparsedPlan, Rtd, sessionfactory
+from database import Change, PlanById, UnparsedChange, UnparsedPlan, Rtd, sessionfactory, get_engine, session_scope, sql_types
 from helpers import ObstacleOlly
 import time
 import concurrent.futures
@@ -21,7 +21,7 @@ engine, Session = sessionfactory()
 parser = argparse.ArgumentParser(description='Parse train delay data')
 parser.add_argument('--parse_continues', help='Check for unparsed data every 60 seconds and parse it', action="store_true")
 parser.add_argument('--parse_all', help='Parse all raw data that is in the databse', action="store_true")
-
+Rtd()
 obstacles = ObstacleOlly(prefer_cache=False)
 
 
@@ -189,7 +189,7 @@ def parse_stop(hash_id: int, plan: dict, change: dict) -> dict:
 
 
 def parse_batch(hash_ids: List[int], plans: Dict[int, Dict] = None):
-    with Session() as session:
+    with session_scope(Session) as session:
         if plans is None:
             plans = PlanById.get_stops(session, hash_ids)
         changes = Change.get_changes(session, hash_ids)
@@ -199,17 +199,18 @@ def parse_batch(hash_ids: List[int], plans: Dict[int, Dict] = None):
 
     if parsed:
         parsed = pd.DataFrame(parsed).set_index('hash_id')
+        # parsed.to_sql(Rtd.__tablename__, engine, if_exists='append', dtype=sql_types)
         Rtd.upsert(parsed, engine)
     
     changes_without_plan = set(changes.keys()).difference(plans.keys())
     session: sqlalchemy.orm.Session
-    with Session() as session:
+    with session_scope(Session) as session:
         UnparsedChange.add(session, changes_without_plan)
         session.commit()
 
 
 def parse_unparsed():
-    with Session() as session:
+    with session_scope(Session) as session:
         unparsed_plan = UnparsedPlan.get_all(session)
         unparsed_change = []
         if unparsed_plan:
@@ -245,7 +246,7 @@ def parse_chunk(chunk_limits: Tuple[int, int]):
     chunk_limits : Tuple[int, int]
         min and max hash_id to parse in this chunk
     """
-    with Session() as session:
+    with session_scope(Session) as session:
         stops = PlanById.get_stops_from_chunk(session, chunk_limits)
     parse_batch(stops.keys(), stops)
     obstacles.store_edge_path_persistent_cache(engine)
@@ -254,7 +255,7 @@ def parse_chunk(chunk_limits: Tuple[int, int]):
 def parse_all():
     """Parse all raw data there is
     """
-    with Session() as session:
+    with session_scope(Session) as session:
         # Everything will be parsed, including the unparsed stuff -> remove it
         # from the list of unparsed stuff
         UnparsedPlan.remove_all(session)
@@ -263,10 +264,10 @@ def parse_all():
         chunk_limits = PlanById.get_chunk_limits(session)
 
     # Non concurrent code for debuging
-    # for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
-    #     parse_chunk(chunk)
+    for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
+        parse_chunk(chunk)
             
-    with concurrent.futures.ProcessPoolExecutor(min(32, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
+    with concurrent.futures.ProcessPoolExecutor(min(50, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
         parser_tasks = {
             executor.submit(parse_chunk, chunk): chunk
             for chunk
@@ -282,6 +283,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.parse_all:
         print('Parsing all the data')
+        Rtd()
         parse_all()
     if args.parse_continues:
         print('Starting continues parser')

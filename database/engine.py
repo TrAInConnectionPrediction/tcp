@@ -13,9 +13,9 @@ def get_engine():
         DB_CONNECT_STRING,
         pool_pre_ping=True,
         pool_recycle=3600,
-        future=True,
-        pool_size=1,
-        max_overflow=0,
+        # future=True,
+        # pool_size=1,
+        # max_overflow=0,
     )
 
 # Session = sessionmaker(bind=get_engine())
@@ -24,3 +24,19 @@ def sessionfactory():
     Session = sessionmaker(bind=engine)
     return engine, Session
 # Session = None
+
+
+from contextlib import contextmanager
+
+@contextmanager
+def session_scope(Session):
+    """Provide a transactional scope around a series of operations."""
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
