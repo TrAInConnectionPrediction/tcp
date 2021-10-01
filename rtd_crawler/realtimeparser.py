@@ -263,9 +263,9 @@ def parse_all():
 
         chunk_limits = PlanById.get_chunk_limits(session)
 
-    # Non concurrent code for debuging
-    for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
-        parse_chunk(chunk)
+    # # Non concurrent code for debuging
+    # for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
+    #     parse_chunk(chunk)
             
     with concurrent.futures.ProcessPoolExecutor(min(50, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
         parser_tasks = {
