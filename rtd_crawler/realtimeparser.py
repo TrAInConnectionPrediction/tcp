@@ -267,7 +267,7 @@ def parse_all():
     # for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
     #     parse_chunk(chunk)
             
-    with concurrent.futures.ProcessPoolExecutor(min(50, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
+    with concurrent.futures.ProcessPoolExecutor(min(32, os.cpu_count()), mp_context=mp.get_context('spawn')) as executor:
         parser_tasks = {
             executor.submit(parse_chunk, chunk): chunk
             for chunk
