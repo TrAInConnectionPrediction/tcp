@@ -61,7 +61,10 @@ def cached_table_fetch(
     try:
         df = pd.read_sql_table(tablename, DB_CONNECT_STRING, **kwargs)
         if use_cache:
-            df.to_pickle(cache_path)
+            try:
+                df.to_pickle(cache_path)
+            except Exception as ex:
+                print('could not write cache file\n', ex)
         return df
     except Exception as ex:
         try:
