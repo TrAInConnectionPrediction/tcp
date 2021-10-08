@@ -199,7 +199,6 @@ def parse_batch(hash_ids: List[int], plans: Dict[int, Dict] = None):
 
     if parsed:
         parsed = pd.DataFrame(parsed).set_index('hash_id')
-        # parsed.to_sql(Rtd.__tablename__, engine, if_exists='append', dtype=sql_types)
         Rtd.upsert(parsed, engine)
     
     changes_without_plan = set(changes.keys()).difference(plans.keys())
