@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import sqlalchemy
 from sqlalchemy import Column, BIGINT, select
 from sqlalchemy.ext.declarative import declarative_base
-from database import get_engine, do_nothing_upsert_base
+from database import get_engine, do_nothing_upsert_base, _gt14
 from typing import List
 
 
@@ -25,7 +25,10 @@ class UnparsedPlan(Base):
     
     @staticmethod
     def get_all(session: sqlalchemy.orm.Session) -> List[int]:
-        all_hash_ids = session.execute(select(UnparsedPlan.hash_id)).all()
+        if _gt14():
+            all_hash_ids = session.execute(select(UnparsedPlan.hash_id)).all()
+        else:
+            all_hash_ids = session.query(UnparsedPlan.hash_id).all()
         return [part[0] for part in all_hash_ids]
 
     @staticmethod
@@ -64,7 +67,10 @@ class UnparsedChange(Base):
 
     @staticmethod
     def get_all(session: sqlalchemy.orm.Session) -> List[int]:
-        all_hash_ids = session.execute(select(UnparsedChange.hash_id)).all()
+        if _gt14():
+            all_hash_ids = session.execute(select(UnparsedChange.hash_id)).all()
+        else:
+            all_hash_ids = session.query(UnparsedChange.hash_id).all()
         return [part[0] for part in all_hash_ids]
 
     @staticmethod
