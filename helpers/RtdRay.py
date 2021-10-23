@@ -3,6 +3,7 @@ import pickle
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import dask.dataframe as dd
+import dask
 from dask.diagnostics import ProgressBar
 import datetime
 from database import Rtd, DB_CONNECT_STRING, get_engine
@@ -273,16 +274,16 @@ class RtdRay(Rtd):
         Pull the Rtd.__tablename__ table from db, parse it and save it on disk.
         """
         with ProgressBar():
-            rtd = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
+            rtd: dd.DataFrame = dd.read_sql_table(self.__tablename__, DB_CONNECT_STRING,
                                     index_col='hash_id', meta=self.meta, npartitions=200)
-            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', schema='infer') # write_metadata_file=False)
+            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
             rtd = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow')
 
             rtd = self._parse(rtd)
             self._save_encoders(rtd)
 
             # Save data to parquet. We have to use pyarrow as fastparquet does not support pd.Int64
-            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', schema='infer')
+            rtd.to_parquet(self.DATA_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
 
 
     def upgrade_rtd(self):
@@ -514,7 +515,9 @@ if __name__ == "__main__":
 
     if args.local_cluster:
         from dask.distributed import Client
-        client = Client(n_workers=min(16, os.cpu_count()))
+        # Setting `threads_per_worker` is very important as Dask will otherwise
+        # create as many threads as cpu cores which is to munch for big cpus with small RAM
+        client = Client(n_workers=min(10, os.cpu_count() // 4), threads_per_worker=2)
 
     # import time
 
