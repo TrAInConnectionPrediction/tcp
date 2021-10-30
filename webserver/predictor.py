@@ -12,7 +12,8 @@ def from_utc(utc_time: str) -> datetime.datetime:
 
 
 class Predictor:
-    def __init__(self):
+    def __init__(self, n_models=40):
+        self.n_models = n_models
         self.cat_encoders = {}
         for cat in ["o", "c", "n", "station", 'pp']:
             self.cat_encoders[cat] = pickle.load(
@@ -20,25 +21,27 @@ class Predictor:
             )
         self.ar_models = []
         self.dp_models = []
-        for model in range(40):
+        for model in range(self.n_models):
             self.ar_models.append(pickle.load(open(MODEL_PATH.format('ar_' + str(model)), "rb")))
             self.dp_models.append(pickle.load(open(MODEL_PATH.format('dp_' + str(model)), "rb")))
 
     def predict_ar(self, features):
-        prediction = np.empty((len(features), 40))
-        for model in range(40):
-            prediction[:, model] = self.ar_models[model].predict_proba(features, validate_features=True)[:, 1]
+        features = features.to_numpy()
+        prediction = np.empty((len(features), self.n_models))
+        for model in range(self.n_models):
+            prediction[:, model] = self.ar_models[model].predict_proba(features, validate_features=False)[:, 1]
         return prediction
 
     def predict_dp(self, features):
-        prediction = np.empty((len(features), 40))
-        for model in range(40):
-            prediction[:, model] = self.dp_models[model].predict_proba(features, validate_features=True)[:, 1]
+        features = features.to_numpy()
+        prediction = np.empty((len(features), self.n_models))
+        for model in range(self.n_models):
+            prediction[:, model] = self.dp_models[model].predict_proba(features, validate_features=False)[:, 1]
         return prediction
 
     def predict_con(self, ar_prediction, dp_prediction, transfer_time):
         con_score = np.ones(len(transfer_time))
-        for tra_time in range(40):
+        for tra_time in range(self.n_models):
             mask = transfer_time == tra_time
             if mask.any():
                 con_score[mask] = ar_prediction[mask, max(tra_time - 2, 0)] * dp_prediction[mask, max(0, 2 - tra_time)]
