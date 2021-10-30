@@ -29,7 +29,7 @@ logging.info('Done!')
 
 from webserver.predictor import Predictor
 logging.info('Initialising predictior')
-predictor = Predictor()
+predictor = Predictor(n_models=15)
 logging.info('Done!')
 
 
