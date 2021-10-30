@@ -19,6 +19,8 @@ if os.path.isdir("/usr/src/app/cache"):
 # Cartopy requirements
 # apt-get install libproj-dev proj-data proj-bin  
 # apt-get install libgeos-dev 
+# Install proj from source
+# sudo ldconfig
 
 from helpers import StationPhillip, RtdRay, groupby_index_to_flat
 from database import cached_table_fetch
@@ -141,14 +143,12 @@ class PerStationAnalysis(StationPhillip):
 
         plt.show()
 
-from helpers import profile
 
 class PerStationOverTime(StationPhillip):
     FREQ = "48H"
     DEFAULT_PLOTS = ["no data available", "default"]
     MAP_CRS = ccrs.Miller()
 
-    @profile
     def __init__(self, rtd, **kwargs):
         super().__init__(**kwargs)
 
@@ -191,16 +191,6 @@ class PerStationOverTime(StationPhillip):
         self.colorbar.ax.get_yaxis().labelpad = 15
         self.colorbar.ax.set_ylabel("Ø Verspätung in Minuten", rotation=270)
 
-        for plot_name in self.DEFAULT_PLOTS:
-            if not os.path.isfile(f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp"):
-                if plot_name == 'default':
-                    self.ax.set_title('', fontsize=16)
-                else:
-                    self.ax.set_title(plot_name, fontsize=16)
-                memory_buffer = io.BytesIO()
-                self.fig.savefig(memory_buffer, dpi=300, transparent=True)
-                image_to_webp(memory_buffer, f"{CACHE_PATH}/plot_cache/{self.version}_{plot_name}.webp")
-
     def generate_data(self, rtd: dd.DataFrame) -> pd.DataFrame:
         # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
         from dask.distributed import Client
@@ -236,6 +226,18 @@ class PerStationOverTime(StationPhillip):
             "min": self.data["stop_hour"].min(),
             "max": self.data["stop_hour"].max()
         }
+
+    def generate_default(self, title: str) -> str:
+        plotpath = f"{CACHE_PATH}/plot_cache/{self.version}_{title}.webp"
+        if not os.path.isfile(plotpath):
+            if title == 'default':
+                self.ax.set_title('', fontsize=16)
+            else:
+                self.ax.set_title(title, fontsize=16)
+            memory_buffer = io.BytesIO()
+            self.fig.savefig(memory_buffer, dpi=300, transparent=True)
+            image_to_webp(memory_buffer, plotpath)
+        return plotpath
 
     def generate_plot(self, start_time, end_time, use_cached_images=False) -> str:
         """
@@ -331,7 +333,7 @@ class PerStationOverTime(StationPhillip):
             self.fig.savefig(memory_buffer, dpi=300, transparent=True)
             image_to_webp(memory_buffer, plot_path)
         else:
-            plot_path = f"{CACHE_PATH}/plot_cache/{self.version}_no data available.webp"
+            plot_path = self.generate_default(title='no data available')
 
         return plot_path
 
@@ -341,28 +343,32 @@ if __name__ == "__main__":
 
     rtd_df=None
     rtd_ray = RtdRay()
-    rtd_df = rtd_ray.load_data(
-        columns=[
-            "ar_pt",
-            "dp_pt",
-            "station",
-            "ar_delay",
-            "ar_happened",
-            "dp_delay",
-            "dp_happened",
-            "lat",
-            "lon",
-        ],
-        min_date=datetime.datetime(2021, 3, 1)
-    )
+    # rtd_df = rtd_ray.load_data(
+    #     columns=[
+    #         "ar_pt",
+    #         "dp_pt",
+    #         "station",
+    #         "ar_delay",
+    #         "ar_happened",
+    #         "dp_delay",
+    #         "dp_happened",
+    #         "lat",
+    #         "lon",
+    #     ],
+    #     min_date=datetime.datetime(2021, 3, 1)
+    # )
 
     # per_station = PerStationAnalysis(rtd_df, use_cache=True)
     # per_station.plot(per_station.DELAY_PLOT)
 
-    per_station_time = PerStationOverTime(rtd_df, generate=False, prefer_cache=True)
+    import time
+
+    start = time.time()
+    per_station_time = PerStationOverTime(rtd_df, generate=False, prefer_cache=False)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )
-    per_station_time.generate_plot(
-        datetime.datetime(2021, 3, 10, hour=0), datetime.datetime(2021, 3, 20, hour=0)
-    )
+    print('took:', time.time() - start)
+    # per_station_time.generate_plot(
+    #     datetime.datetime(2021, 3, 10, hour=0), datetime.datetime(2021, 3, 20, hour=0)
+    # )

@@ -82,7 +82,7 @@ def trip():
     destination : str
         (from request) the station name of the destination
     date  : str
-        (from request: the date and time at which the trip should take place in format `%d.%m.%Y %H:%M`
+        (from request) the date and time at which the trip should take place in format `%d.%m.%Y %H:%M`
 
     Returns
     -------
@@ -155,7 +155,7 @@ def station_plot(date_range):
     """
 
     if date_range in per_station_time.DEFAULT_PLOTS:
-        path_to_plot = f"{CACHE_PATH}/plot_cache/{per_station_time.version}_{date_range}.webp"
+        path_to_plot = per_station_time.generate_default(title=date_range)
     else:
         date_range = date_range.split("-")
         path_to_plot = per_station_time.generate_plot(
