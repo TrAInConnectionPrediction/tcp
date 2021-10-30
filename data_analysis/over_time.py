@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker
 import datetime
+import dask.dataframe as dd
 from helpers import RtdRay
+from config import n_dask_workers
 
 
 def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:
@@ -133,26 +135,27 @@ class OverHour:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client(n_workers=min(16, os.cpu_count()))
-            rtd_df['minute'] = rtd_df['ar_pt'].dt.minute
-            rtd_df['minute'] = rtd_df['minute'].fillna(value=rtd_df['dp_pt'].dt.minute).astype(int)
-            rtd_df['minute'] = rtd_df.map_partitions(self.minutetime, meta=rtd_df['ar_pt'])
-            rtd_df = rtd_df.loc[~rtd_df['minute'].isna(), :]
-            self.data = rtd_df.groupby('minute').agg({
-                        'ar_delay': ['count', 'mean'],
-                        'ar_happened': ['mean'],
-                        'dp_delay': ['count', 'mean'],
-                        'dp_happened': ['mean'],
-                    }).compute()
-            self.data = self.data.loc[~self.data.index.isna(), :]
-            self.data = self.data.sort_index()
-            self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
-                                                 ('ar_delay', 'count'),
-                                                 ('ar_happened', 'mean'),
-                                                 ('dp_delay', 'mean'),
-                                                 ('dp_delay', 'count'),
-                                                 ('dp_happened', 'mean')], window=5)
-            self.data.to_csv(self.CACHE_PATH)
+            with Client(n_workers=n_dask_workers, threads_per_worker=2) as client:
+                rtd_df['minute'] = rtd_df['ar_pt']
+                rtd_df['minute'] = rtd_df['minute'].fillna(value=rtd_df['dp_pt'])
+                rtd_df['minute'] = \
+                    pd.to_datetime(datetime.date(year=2000, month=1, day=3)) \
+                    + dd.to_timedelta(rtd_df['minute'].dt.minute, unit='m')
+                self.data = rtd_df.groupby('minute').agg({
+                            'ar_delay': ['count', 'mean'],
+                            'ar_happened': ['mean'],
+                            'dp_delay': ['count', 'mean'],
+                            'dp_happened': ['mean'],
+                        }).compute()
+                self.data = self.data.loc[~self.data.index.isna(), :]
+                self.data = self.data.sort_index()
+                self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                    ('ar_delay', 'count'),
+                                                    ('ar_happened', 'mean'),
+                                                    ('dp_delay', 'mean'),
+                                                    ('dp_delay', 'count'),
+                                                    ('dp_happened', 'mean')], window=11)
+                self.data.to_csv(self.CACHE_PATH)
 
         self.plot = lambda: plot(self.data,
                                  title='Delay within one hour',
@@ -190,26 +193,29 @@ class OverDay:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client(n_workers=min(16, os.cpu_count()))
-            rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
-            rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'].dt.time)
-            rtd_df['daytime'] = rtd_df.map_partitions(self.daytime, meta=rtd_df['daytime'])
-            rtd_df = rtd_df.loc[~rtd_df['daytime'].isna(), :]
-            self.data = rtd_df.groupby('daytime').agg({
-                        'ar_delay': ['count', 'mean'],
-                        'ar_happened': ['mean'],
-                        'dp_delay': ['count', 'mean'],
-                        'dp_happened': ['mean'],
-                    }).compute()
-            self.data = self.data.loc[~self.data.index.isna(), :]
-            self.data = self.data.sort_index()
-            self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
-                                                 ('ar_delay', 'count'),
-                                                 ('ar_happened', 'mean'),
-                                                 ('dp_delay', 'mean'),
-                                                 ('dp_delay', 'count'),
-                                                 ('dp_happened', 'mean')], window=21)
-            self.data.to_csv(self.CACHE_PATH)
+            with Client(n_workers=n_dask_workers, threads_per_worker=2) as client:
+                rtd_df['daytime'] = rtd_df['ar_pt']
+                rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'])
+                rtd_df['daytime'] = \
+                    pd.to_datetime(datetime.date(year=2000, month=1, day=3)) \
+                    + dd.to_timedelta(rtd_df['daytime'].dt.hour, unit='h') \
+                    + dd.to_timedelta(rtd_df['daytime'].dt.minute, unit='m')
+                rtd_df = rtd_df.loc[~rtd_df['daytime'].isna(), :]
+                self.data = rtd_df.groupby('daytime').agg({
+                            'ar_delay': ['count', 'mean'],
+                            'ar_happened': ['mean'],
+                            'dp_delay': ['count', 'mean'],
+                            'dp_happened': ['mean'],
+                        }).compute()
+                self.data = self.data.loc[~self.data.index.isna(), :]
+                self.data = self.data.sort_index()
+                self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                    ('ar_delay', 'count'),
+                                                    ('ar_happened', 'mean'),
+                                                    ('dp_delay', 'mean'),
+                                                    ('dp_delay', 'count'),
+                                                    ('dp_happened', 'mean')], window=21)
+                self.data.to_csv(self.CACHE_PATH)
 
         self.plot = lambda: plot(self.data,
                                  title='Delay within one day',
@@ -217,24 +223,6 @@ class OverDay:
                                  formatter=mdates.DateFormatter("%H:%M"),
                                  locator=mdates.HourLocator(),
                                  ax1_ylim_bottom=0)
-
-    @staticmethod
-    def daytime(df):
-        """
-        Create datetime from time.
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            DataFrame with the columns daytime (datetime.time).
-
-        Returns
-        -------
-        pd.Series
-            daytime combined with basedate (03-01-2000).
-        """
-        return pd.Series([datetime.datetime(year=2000, month=1, day=3, hour=time.hour, minute=time.minute) for time in df['daytime']], index=df['daytime'].index)
-
 
 class OverWeek:
     CACHE_PATH = 'data/over_week.csv'
@@ -248,51 +236,37 @@ class OverWeek:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client(n_workers=min(16, os.cpu_count()))
-            rtd_df['weekday'] = rtd_df['ar_pt'].dt.dayofweek
-            rtd_df['weekday'] = rtd_df['weekday'].fillna(value=rtd_df['dp_pt'].dt.dayofweek)
-            rtd_df['daytime'] = rtd_df['ar_pt'].dt.time
-            rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'].dt.time)
-            rtd_df['weektime'] = rtd_df.map_partitions(self.weektime, meta=rtd_df['daytime'])
-            self.data = rtd_df.groupby(['weektime']).agg({
-                        'ar_delay': ['count', 'mean'],
-                        'ar_happened': ['mean'],
-                        'dp_delay': ['count', 'mean'],
-                        'dp_happened': ['mean'],
-                    }).compute()
-            self.data = self.data.loc[~self.data.index.isna(), :]
-            self.data = self.data.sort_index()
-            self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
-                                                 ('ar_delay', 'count'),
-                                                 ('ar_happened', 'mean'),
-                                                 ('dp_delay', 'mean'),
-                                                 ('dp_delay', 'count'),
-                                                 ('dp_happened', 'mean')], window=41)
-            self.data.to_csv(self.CACHE_PATH)
+            with Client(n_workers=n_dask_workers, threads_per_worker=2) as client:
+                rtd_df['weekday'] = rtd_df['ar_pt'].dt.dayofweek
+                rtd_df['weekday'] = rtd_df['weekday'].fillna(value=rtd_df['dp_pt'].dt.dayofweek)
+                rtd_df['daytime'] = rtd_df['ar_pt']
+                rtd_df['daytime'] = rtd_df['daytime'].fillna(value=rtd_df['dp_pt'])
+                rtd_df['weektime'] = \
+                    pd.to_datetime(datetime.date(year=2000, month=1, day=3)) \
+                    + dd.to_timedelta(rtd_df['weekday'], unit='d') \
+                    + dd.to_timedelta(rtd_df['daytime'].dt.hour, unit='h') \
+                    + dd.to_timedelta(rtd_df['daytime'].dt.minute, unit='m')
+                self.data = rtd_df.groupby(['weektime']).agg({
+                            'ar_delay': ['count', 'mean'],
+                            'ar_happened': ['mean'],
+                            'dp_delay': ['count', 'mean'],
+                            'dp_happened': ['mean'],
+                        }).compute()
+                self.data = self.data.loc[~self.data.index.isna(), :]
+                self.data = self.data.sort_index()
+                self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                    ('ar_delay', 'count'),
+                                                    ('ar_happened', 'mean'),
+                                                    ('dp_delay', 'mean'),
+                                                    ('dp_delay', 'count'),
+                                                    ('dp_happened', 'mean')], window=41)
+                self.data.to_csv(self.CACHE_PATH)
         self.plot = lambda: plot(self.data,
                                  title='Delay within one week',
                                  x_label='Time',
                                  formatter=mdates.DateFormatter("%A %H:%M"), # E.g.: Monday 08:00
                                  locator=mdates.HourLocator(interval=8),
                                  ax1_ylim_bottom=0)
-
-    @staticmethod
-    def weektime(df):
-        """
-        Create datetime from time and weekday.
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            DataFrame with the columns daytime (datetime.time) and weekday (0 - 6).
-
-        Returns
-        -------
-        pd.Series
-            daytime and weekday combined on basedate (03-01-2000).
-        """
-        return pd.Series([datetime.datetime.combine(datetime.date(year=2000, month=1, day=3), time) for time in df['daytime']], index=df['daytime'].index) \
-               + pd.Series(data=[pd.Timedelta(days=day) for day in df['weekday']], index=df['daytime'].index)
 
 
 class OverYear:
@@ -307,35 +281,31 @@ class OverYear:
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
             from dask.distributed import Client
-            client = Client(n_workers=min(16, os.cpu_count()))
-            rtd_df['floating_hour'] = rtd_df['ar_pt'].dt.hour // 24 * 24
-            rtd_df['floating_hour'] = rtd_df['floating_hour'].fillna(value=rtd_df['dp_pt'].dt.hour // 24 * 24)
-            rtd_df['date'] = rtd_df['ar_pt'].dt.date
-            rtd_df['date'] = rtd_df['date'].fillna(value=rtd_df['dp_pt'].dt.date)
-            rtd_df['floating_yeartime'] = rtd_df.map_partitions(self.floating_yeartime, meta=rtd_df['ar_pt'])
-            self.data = rtd_df.groupby(['floating_yeartime']).agg({
-                        'ar_delay': ['count', 'mean'],
-                        'ar_happened': ['mean'],
-                        'dp_delay': ['count', 'mean'],
-                        'dp_happened': ['mean'],
-                    }).compute()
-            self.data = self.data.loc[~self.data.index.isna(), :]
-            self.data = self.data.sort_index()
-            full_index = pd.date_range(start=self.data.index.min(), end=self.data.index.max())
-            full_data = pd.DataFrame(index=full_index, columns=self.data.columns)
-            full_data.loc[self.data.index, :] = self.data.loc[:, :]
-            self.data = full_data.fillna(0)
+            with Client(n_workers=n_dask_workers, threads_per_worker=2) as client:
+                rtd_df['date'] = rtd_df['ar_pt'].dt.date
+                rtd_df['date'] = rtd_df['date'].fillna(value=rtd_df['dp_pt'].dt.date)
+                rtd_df['floating_yeartime'] = rtd_df['date']
+                self.data = rtd_df.groupby(['floating_yeartime']).agg({
+                            'ar_delay': ['count', 'mean'],
+                            'ar_happened': ['mean'],
+                            'dp_delay': ['count', 'mean'],
+                            'dp_happened': ['mean'],
+                        }).compute()
+                self.data = self.data.loc[~self.data.index.isna(), :]
+                self.data = self.data.sort_index()
+                full_index = pd.date_range(start=self.data.index.min(), end=self.data.index.max())
+                full_data = pd.DataFrame(index=full_index, columns=self.data.columns)
+                full_data.loc[self.data.index, :] = self.data.loc[:, :]
+                self.data = full_data.fillna(0)
 
-            # Calculate rolling mean
-            for col in [('ar_delay', 'mean'),
-                        ('ar_delay', 'count'),
-                        ('ar_happened', 'mean'),
-                        ('dp_delay', 'mean'),
-                        ('dp_delay', 'count'),
-                        ('dp_happened', 'mean')]:
-                new_col_name = (col[0], col[1] + '_rolling_mean')
-                self.data[new_col_name] = self.data[col].rolling(3, center=True).mean()
-            self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
+                self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                                                    ('ar_delay', 'count'),
+                                                    ('ar_happened', 'mean'),
+                                                    ('dp_delay', 'mean'),
+                                                    ('dp_delay', 'count'),
+                                                    ('dp_happened', 'mean')], window=3)
+
+                self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
         
         self.plot = lambda kind='delay': plot(self.data,
                                  title='Delay over the years',
@@ -345,49 +315,34 @@ class OverYear:
                                  ax1_ylim_bottom=0,
                                  ax2_ylim_bottom=0,
                                  kind=kind)
-        
-
-    @staticmethod
-    def floating_yeartime(df):
-        """
-        Create datetime from hour and date.
-
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            DataFrame with the columns date (datetime.date) and hour (0 - 23).
-
-        Returns
-        -------
-        pd.Series
-            date and hour combined.
-        """
-        return pd.Series([datetime.datetime.combine(row['date'], datetime.time(hour=int(row['floating_hour']))) for i, row in df.iterrows()], index=df['date'].index)
 
 
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     rtd_ray = RtdRay()
-    rtd_df = rtd_ray.load_data(columns=['ar_pt',
-                                        'dp_pt',
-                                        'ar_delay',
-                                        'ar_happened',
-                                        'dp_delay',
-                                        'dp_happened'])
-
+    rtd_df = rtd_ray.load_data(
+        columns=[
+            'ar_pt',
+            'dp_pt',
+            'ar_delay',
+            'ar_happened',
+            'dp_delay',
+            'dp_happened'
+        ]
+    )
     
     print('grouping over hour')
-    time = OverHour(rtd_df, use_cache=True)
+    time = OverHour(rtd_df, use_cache=False)
     time.plot()
 
     print('grouping over day')
-    time = OverDay(rtd_df, use_cache=True)
+    time = OverDay(rtd_df, use_cache=False)
     time.plot()
 
     print('grouping over week')
-    time = OverWeek(rtd_df, use_cache=True)
+    time = OverWeek(rtd_df, use_cache=False)
     time.plot()
 
     print('grouping over year')
-    time = OverYear(rtd_df, use_cache=True)
+    time = OverYear(rtd_df, use_cache=False)
     time.plot(kind='delay')
