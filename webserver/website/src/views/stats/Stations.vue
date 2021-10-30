@@ -76,6 +76,7 @@ export default {
     }
   },
   created () {
+    this.$parent.start_progress()
     fetch(window.location.protocol + '//' + window.location.host + '/api/stationplot/limits', {
       method: 'GET',
       headers: {
@@ -121,6 +122,7 @@ export default {
     },
     replaceByDefault () {
       this.plotURL = window.location.protocol + '//' + window.location.host + '/api/stationplot/default.webp'
+      this.$parent.start_progress()
     }
   }
 }
