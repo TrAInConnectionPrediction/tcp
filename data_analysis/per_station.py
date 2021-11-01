@@ -194,7 +194,7 @@ class PerStationOverTime(StationPhillip):
     def generate_data(self, rtd: dd.DataFrame) -> pd.DataFrame:
         # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
         from dask.distributed import Client
-        client = Client(n_workers=min(16, os.cpu_count()))
+        client = Client(n_workers=4, threads_per_worker=2, memory_limit='16GB')
 
         # Generate an index with self.FREQ for groupby over time and station
         rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)

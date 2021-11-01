@@ -6,7 +6,7 @@ on:
       - 'master'
 
 jobs:
-  docker:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -21,10 +21,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push webserver
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           file: webserver/Dockerfile.webserver
           tags: trainconnectionprediction/webserver:latest
+
+      - name: Build and push update_bulter
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          file: update_butler/Dockerfile.update_butler
+          tags: trainconnectionprediction/tcp:update_bulter

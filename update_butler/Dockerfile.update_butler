@@ -1,17 +1,19 @@
 # In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
 # To test the container locally you can run:
 # docker build -f update_butler/Dockerfile.update_butler . -t update_butler
-# docker run -v $(pwd)/config_docker.py:/usr/src/app/config.py -v $(pwd)/cache:/usr/src/app/cache update_butler
+# docker run -v $(pwd)/config.py:/usr/src/app/config.py -v $(pwd)/cache:/usr/src/app/cache update_butler
 # Though I would suggest that you have a seperate config for docker
 # If not so replace -v $(pwd)/config_docker.py:/usr/src/app/config.py with -v $(pwd)/config.py:/usr/src/app/config.py
 
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
 ## Base image
-FROM python:3.8.1 AS compile-image
+FROM python:3.9 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libgeos-dev
+RUN apt-get update
+RUN apt-get install -y gcc libproj-dev proj-data proj-bin
+RUN apt-get install -y libgeos-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -20,22 +22,24 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ## Add and install requirements
 RUN pip install --upgrade pip && pip install pip-tools
+# RUN pip install --no-binary shapely shapely
+# RUN pip install numpy
 COPY ./update_butler/requirements.txt requirements.in
 RUN pip-compile requirements.in > requirements.txt && pip-sync
 RUN pip install -r requirements.txt
 
-# He needs special treatment
-RUN pip install https://github.com/matplotlib/basemap/archive/v1.2.2rel.zip
-
 ## Build-image
-FROM python:3.8.1-slim-buster AS runtime-image
+FROM python:3.9 AS runtime-image
+
+## Install libgeos
+# TODO: Copy libgeos from build image
+RUN apt-get update
+RUN apt-get install -y gcc build-essential libproj-dev proj-data proj-bin
+RUN apt-get install -y libgeos-dev
 
 ## Copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv
 
-## Install libgeos
-# TODO: Copy libgeos from build image
-RUN apt-get update && apt-get install -y --no-install-recommends libgeos-dev
 ## Set working directory
 WORKDIR /usr/src/app
 

@@ -12,14 +12,14 @@ spec:
       template:
         spec:
           containers:
-          - name: update_butler_container
-            image: trainconnectionprediction/update_butler:latest
-            imagePullPolicy: IfNotPresent
+          - name: update_butler
+            image: trainconnectionprediction/tcp:update_butler
+            imagePullPolicy: Always
             volumeMounts:
-            - mountPath: /mnt/config
-              name: config-pvc-storage
-            - mountPath: /usr/src/app/cache
-              name: cache-pvc-storage
+            - name: config-pvc-storage
+              mountPath: /mnt/config  
+            - name: cache-pvc-storage
+              mountPath: /usr/src/app/cache   
           restartPolicy: OnFailure
           volumes:
           - name: config-pvc-storage
