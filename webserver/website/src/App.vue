@@ -181,7 +181,7 @@ TrAIn_Connection_Prediction ║   ║
     },
     start_progress () {
       // start progress animation
-      this.progress.animate(60, { duration: 1000000, easing: 'linear' })
+      this.progress.animate(600, { duration: 300000, easing: 'linear' })
     },
     stop_progress () {
       // stop animation
