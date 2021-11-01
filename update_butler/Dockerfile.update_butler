@@ -12,8 +12,8 @@ FROM python:3.9 AS compile-image
 
 ## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update
-RUN apt-get install -y gcc libproj-dev proj-data proj-bin
-RUN apt-get install -y libgeos-dev
+RUN apt-get install -y libgeos++-dev
+RUN apt-get install -y libproj-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -34,8 +34,8 @@ FROM python:3.9 AS runtime-image
 ## Install libgeos
 # TODO: Copy libgeos from build image
 RUN apt-get update
-RUN apt-get install -y gcc build-essential libproj-dev proj-data proj-bin
-RUN apt-get install -y libgeos-dev
+RUN apt-get install -y libgeos++-dev
+RUN apt-get install -y libproj-dev
 
 ## Copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv

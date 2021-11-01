@@ -23,31 +23,31 @@ spec:
         app: webserver
     spec:
       containers:
-      - name: webserver
-        image: trainconnectionprediction/webserver:latest
-        imagePullPolicy: Always
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - name: tz-berlin # set timezone to CEST
-          mountPath: /etc/localtime
-        - name: config-pvc-storage 
-          mountPath: /mnt/config
-        - name: cache-pvc-storage
-          mountPath: /usr/src/app/cache    
+        - name: webserver
+          image: trainconnectionprediction/webserver:latest
+          imagePullPolicy: Always
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - name: tz-berlin # set timezone to CEST
+              mountPath: /etc/localtime
+            - name: config-pvc-storage
+              mountPath: /mnt/config
+            - name: cache-pvc-storage
+              mountPath: /usr/src/app/cache
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-      - name: config-pvc-storage
-        persistentVolumeClaim:
-          claimName: config-pvc
-      - name: cache-pvc-storage
-        persistentVolumeClaim:
-          claimName: cache-pvc
-      - name: tz-berlin  # set timezone to CEST
-        hostPath:
-          path: /usr/share/zoneinfo/Europe/Berlin
+        - name: config-pvc-storage
+          persistentVolumeClaim:
+            claimName: config-pvc
+        - name: cache-pvc-storage
+          persistentVolumeClaim:
+            claimName: cache-pvc
+        - name: tz-berlin # set timezone to CEST
+          hostPath:
+            path: /usr/share/zoneinfo/Europe/Berlin
