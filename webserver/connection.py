@@ -193,8 +193,18 @@ def parse_connection(connection):
 
     # Add transfer times
     for segment in range(len(segments) - 1):
-        segments[segment]['transfer_time'] = (segments[segment + 1]['dp_ct']
-                                              - segments[segment]['ar_ct']).seconds // 60
+        if segments[segment + 1]['dp_ct'] < segments[segment]['ar_ct']:
+            segments[segment]['transfer_time'] = -(
+                (segments[segment + 1]['ar_ct']
+                - segments[segment]['dp_ct']).seconds
+                // 60
+            )
+        else:
+            segments[segment]['transfer_time'] = (
+                (segments[segment + 1]['dp_ct']
+                - segments[segment]['ar_ct']).seconds
+                // 60
+            )
     return {'summary': summary, 'segments': segments}
 
 
