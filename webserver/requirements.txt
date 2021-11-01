@@ -1,6 +1,6 @@
 alembic==1.5.8
 # numpy==1.20.2
-Cartopy==0.18.0
+cartopy==0.20.1
 certifi==2020.12.5
 chardet==4.0.0
 click==7.1.2
