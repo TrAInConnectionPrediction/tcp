@@ -24,7 +24,7 @@ if os.path.isdir("/usr/src/app/cache"):
 
 from helpers import StationPhillip, RtdRay, groupby_index_to_flat
 from database import cached_table_fetch
-from config import CACHE_PATH
+from config import CACHE_PATH, n_dask_workers
 
 
 def image_to_webp(buffer: io.BytesIO, path: str) -> None:
@@ -145,7 +145,8 @@ class PerStationAnalysis(StationPhillip):
 
 
 class PerStationOverTime(StationPhillip):
-    FREQ = "48H"
+    FREQ_HOURS = int(24 * 1)
+    FREQ = str(FREQ_HOURS) + 'H'
     DEFAULT_PLOTS = ["no data available", "default"]
     MAP_CRS = ccrs.Miller()
 
@@ -194,37 +195,49 @@ class PerStationOverTime(StationPhillip):
     def generate_data(self, rtd: dd.DataFrame) -> pd.DataFrame:
         # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
         from dask.distributed import Client
-        client = Client(n_workers=min(16, os.cpu_count()))
+        with Client(n_workers=n_dask_workers, threads_per_worker=1) as client:
+            # Generate an index with self.FREQ for groupby over time and station
+            rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)
+            
 
-        # Generate an index with self.FREQ for groupby over time and station
-        rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)
-        rtd = rtd.drop(columns=['ar_pt', 'dp_pt'])
-        rtd["single_index_for_groupby"] = rtd["stop_hour"].astype("str") + rtd[
-            "station"
-        ].astype("str")
+            rtd["single_index_for_groupby"] = (rtd["stop_hour"].astype("str") + rtd[
+                "station"
+            ].astype("str")).apply(hash, meta=(None, 'int64'))
 
-        data: pd.DataFrame = (
-            rtd.groupby("single_index_for_groupby", sort=False)
-            .agg({
-                "ar_delay": ["mean"],
-                "ar_happened": ["sum"],
-                "dp_delay": ["mean"],
-                "dp_happened": ["sum"],
-                "stop_hour": ["first"],
-                "station": ["first"],
-                "lat": ['first'],
-                "lon": ['first'],
-            })
-            .compute()
-        )
+            # Label encode station, as this speeds up the groupby tremendosly (10 minutes
+            # instead of >24h)
+            rtd['station'] = rtd['station'].cat.codes
+            rtd = rtd.drop(columns=['ar_pt', 'dp_pt'])
 
-        data = groupby_index_to_flat(data)
-        return data
+            data: pd.DataFrame = (
+                rtd.groupby("single_index_for_groupby", sort=False)
+                .agg({
+                    "ar_delay": ["mean"],
+                    "ar_happened": ["sum"],
+                    "dp_delay": ["mean"],
+                    "dp_happened": ["sum"],
+                    "stop_hour": ["first"],
+                    "station": ["first"],
+                    "lat": ['first'],
+                    "lon": ['first'],
+                })
+                .compute()
+            )
+            del rtd
+
+            data = groupby_index_to_flat(data)
+            # remove rows where ar_happened_sum is 0 and dp_happened_sum is 0
+            data = data.loc[
+                (data['ar_happened_sum'] > 0) 
+                | (data['dp_happened_sum'] > 0)
+            ]
+            return data
 
     def limits(self):
         return {
             "min": self.data["stop_hour"].min(),
-            "max": self.data["stop_hour"].max()
+            "max": self.data["stop_hour"].max(),
+            "freq": self.FREQ_HOURS
         }
 
     def generate_default(self, title: str) -> str:
@@ -343,20 +356,20 @@ if __name__ == "__main__":
 
     rtd_df=None
     rtd_ray = RtdRay()
-    # rtd_df = rtd_ray.load_data(
-    #     columns=[
-    #         "ar_pt",
-    #         "dp_pt",
-    #         "station",
-    #         "ar_delay",
-    #         "ar_happened",
-    #         "dp_delay",
-    #         "dp_happened",
-    #         "lat",
-    #         "lon",
-    #     ],
-    #     min_date=datetime.datetime(2021, 3, 1)
-    # )
+    rtd_df = rtd_ray.load_data(
+        columns=[
+            "ar_pt",
+            "dp_pt",
+            "station",
+            "ar_delay",
+            "ar_happened",
+            "dp_delay",
+            "dp_happened",
+            "lat",
+            "lon",
+        ],
+        min_date=datetime.datetime(2021, 3, 1)
+    ) # .head(100)
 
     # per_station = PerStationAnalysis(rtd_df, use_cache=True)
     # per_station.plot(per_station.DELAY_PLOT)
@@ -364,7 +377,7 @@ if __name__ == "__main__":
     import time
 
     start = time.time()
-    per_station_time = PerStationOverTime(rtd_df, generate=False, prefer_cache=False)
+    per_station_time = PerStationOverTime(rtd_df, generate=True, prefer_cache=False)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )

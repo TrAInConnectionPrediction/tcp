@@ -91,7 +91,7 @@ export default {
 
         const dates = [limits.min]
         while (dates[dates.length - 1].isBefore(limits.max)) {
-          dates.push(dates[dates.length - 1].add(2, 'days'))
+          dates.push(dates[dates.length - 1].add(limits.freq, 'hours'))
         }
         for (let i = 0; i < dates.length; i++) {
           dates[i] = dates[i].format('DD.MM.YYYY')
