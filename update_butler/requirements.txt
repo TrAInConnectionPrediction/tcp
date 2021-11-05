@@ -4,7 +4,7 @@ cityhash==0.2.3.post9
 click==7.1.2
 cloudpickle==1.6.0
 cycler==0.10.0
-dask==2021.3.0
+dask==2021.10.0
 dask[dataframe]==2021.3.0
 dask[diagnostics]==2021.3.0
 dask[distributed]==2021.3.0
