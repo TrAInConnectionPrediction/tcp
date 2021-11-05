@@ -6,6 +6,7 @@ chardet==4.0.0
 click==7.1.2
 cloudpickle==1.6.0
 cycler==0.10.0
+d6tstack==0.2.0
 dask==2021.4.1
 decorator==4.4.2
 Flask==1.1.2

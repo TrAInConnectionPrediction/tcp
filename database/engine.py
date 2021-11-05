@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from config import db_database, db_password, db_server, db_username
 
-DB_CONNECT_STRING = 'postgresql://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
+DB_CONNECT_STRING = 'postgresql+psycopg2://' + db_username + ':' + db_password + '@' + db_server + '/' + db_database + '?sslmode=require'
 
 def get_engine():
     return sqlalchemy.create_engine(

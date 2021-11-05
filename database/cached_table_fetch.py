@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Optional, Callable
 import pandas as pd
+import d6tstack.utils
 from database import DB_CONNECT_STRING
 from config import CACHE_PATH
 
@@ -94,4 +95,7 @@ def cached_table_push(df: pd.DataFrame, tablename: str, **kwargs):
     """
     cache_path = CACHE_PATH + '/' + tablename + '.pkl'
     df.to_pickle(cache_path)
-    df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', **kwargs)
+    # d6stack is way faster than pandas at inserting data to sql.
+    # It exports the dataframe to a csv and then inserts it to the database.
+    d6tstack.utils.pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists='replace')
+    # df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', chunksize=10_000, **kwargs)
