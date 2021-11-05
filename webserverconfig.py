@@ -1,4 +1,4 @@
-from config import DB_CONNECT_STRING
+from database import DB_CONNECT_STRING
 
 class Config(object):
     # Database

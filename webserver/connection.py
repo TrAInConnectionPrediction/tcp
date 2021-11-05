@@ -194,6 +194,8 @@ def parse_connection(connection):
     # Add transfer times
     for segment in range(len(segments) - 1):
         if segments[segment + 1]['dp_ct'] < segments[segment]['ar_ct']:
+            # Negative transfer time. This should not happen (opinion of the tcp dev team).
+            # Hafas however sometimes returns connections with negative transfer times.
             segments[segment]['transfer_time'] = -(
                 (segments[segment + 1]['ar_ct']
                 - segments[segment]['dp_ct']).seconds
@@ -212,6 +214,7 @@ def parse_connections(connections):
     with ThreadPoolExecutor(max_workers=10) as executor:
         parsed = list(executor.map(parse_connection, connections['routes']))
 
+    parsed = sorted(parsed, key=lambda el: el['summary']['dp_ct'])
     # add unique id used for rendering in vue
     for i in range(len(parsed)):
         parsed[i]['id'] = i
