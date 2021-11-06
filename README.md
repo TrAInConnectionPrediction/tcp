@@ -60,6 +60,40 @@ cd webserver/website
 ./node_modules/.bin/vue-cli-service build --mode development
 ```
 
+## Installing Cartopy
+
+We use cartopy in our backend to generate nice looking geo plots. It can be hard to install cartopy.
+Modern Cartopy uses proj 8, which is unavailable in many package repositories. Here is how to install in from source:
+
+Install build dependencies
+```bash
+apt update -y
+apt install -y --fix-missing --no-install-recommends \
+            software-properties-common build-essential ca-certificates \
+            make cmake wget unzip libtool automake \
+            zlib1g-dev libsqlite3-dev pkg-config sqlite3 libcurl4-gnutls-dev \
+            libtiff5-dev git
+```
+
+Clone proj repository from GitHub
+```bash
+git clone https://github.com/OSGeo/PROJ.git
+cd PROJ
+```
+
+Build and install
+```bash
+./autogen.sh
+./configure
+make
+make install
+```
+
+After installing Proj, you should now be able to just install cartopy
+```bash
+pip install cartopy
+```
+
 ## Credits
 
 - Marius De Kuthy Meurers aka [NotSomeBot](https://github.com/mariusdkm)
