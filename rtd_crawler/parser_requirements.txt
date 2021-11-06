@@ -1,7 +1,7 @@
 alembic==1.6.5
 cityhash==0.2.3.post9
 cloudpickle==1.6.0
-dask==2021.6.2
+dask==2021.10.0
 DateTime==4.3
 decorator==4.4.2
 fsspec==2021.6.1
