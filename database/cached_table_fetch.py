@@ -3,7 +3,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Optional, Callable
 import pandas as pd
-import d6tstack.utils
 from database import DB_CONNECT_STRING
 from config import CACHE_PATH
 
@@ -82,6 +81,49 @@ def cached_table_fetch(
             raise FileNotFoundError(f'There is no connection to the database and no cache of {tablename}')
 
 
+def pd_to_psql(df, uri, table_name, schema_name=None, if_exists='fail', sep=','):
+    """
+    Load pandas dataframe into a sql table using native postgres COPY FROM.
+    Args:
+        df (dataframe): pandas dataframe
+        uri (str): postgres psycopg2 sqlalchemy database uri
+        table_name (str): table to store data in
+        schema_name (str): name of schema in db to write to
+        if_exists (str): {‘fail’, ‘replace’, ‘append’}, default ‘fail’. See `pandas.to_sql()` for details
+        sep (str): separator for temp file, eg ',' or '\t'
+    Returns:
+        bool: True if loader finished
+    """
+
+    if not 'psycopg2' in uri:
+        raise ValueError('need to use psycopg2 uri eg postgresql+psycopg2://psqlusr:psqlpwdpsqlpwd@localhost/psqltest. install with `pip install psycopg2-binary`')
+    table_name = table_name.lower()
+    if schema_name:
+        schema_name = schema_name.lower()
+   
+    import sqlalchemy
+    import io
+
+    if schema_name is not None:
+        sql_engine = sqlalchemy.create_engine(uri, connect_args={'options': '-csearch_path={}'.format(schema_name)})
+    else:
+        sql_engine = sqlalchemy.create_engine(uri)
+    sql_cnxn = sql_engine.raw_connection()
+    cursor = sql_cnxn.cursor()
+
+    df[:0].to_sql(table_name, sql_engine, schema=schema_name, if_exists=if_exists, index=False)
+
+    fbuf = io.StringIO()
+    df.to_csv(fbuf, index=False, header=False, sep=sep)
+    fbuf.seek(0)
+    cursor.copy_from(fbuf, table_name, sep=sep, null='')
+    sql_cnxn.commit()
+    cursor.close()
+
+    return True
+
+
+
 def cached_table_push(df: pd.DataFrame, tablename: str, **kwargs):
     """
     Save df to local cache file and replace the table in the database.
@@ -97,5 +139,5 @@ def cached_table_push(df: pd.DataFrame, tablename: str, **kwargs):
     df.to_pickle(cache_path)
     # d6stack is way faster than pandas at inserting data to sql.
     # It exports the dataframe to a csv and then inserts it to the database.
-    d6tstack.utils.pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists='replace')
+    pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists='replace')
     # df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', chunksize=10_000, **kwargs)
