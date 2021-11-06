@@ -18,7 +18,7 @@ colorama==0.4.4
 colorlog==4.6.2
 cycler==0.10.0
 Cython==0.29.21
-dask==2.30.0
+dask==2021.10.0
 dask-glm==0.2.0
 dask-ml==1.7.0
 decorator==4.4.2
