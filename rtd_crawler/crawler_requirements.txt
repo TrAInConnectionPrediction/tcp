@@ -3,7 +3,7 @@ certifi==2020.12.5
 chardet==4.0.0
 cityhash==0.2.3.post9
 cloudpickle==1.6.0
-dask==2021.5.0
+dask==2021.10.0
 decorator==4.4.2
 fsspec==2021.5.0
 geographiclib==1.50
