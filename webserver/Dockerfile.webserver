@@ -6,38 +6,17 @@
 # If not so replace -v $(pwd)/config_docker.py:/mnt/config/config.py with -v $(pwd)/config.py:/mnt/config/config.py
 
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
-FROM ubuntu:18.04 as proj-builder
-
-ARG DESTDIR="/build"
-
-# Setup build env
-RUN apt-get update -y \
-    && apt-get install -y --fix-missing --no-install-recommends \
-            software-properties-common build-essential ca-certificates \
-            make cmake wget unzip libtool automake \
-            zlib1g-dev libsqlite3-dev pkg-config sqlite3 libcurl4-gnutls-dev \
-            libtiff5-dev git
-
-RUN git clone https://github.com/OSGeo/PROJ.git
-RUN cd PROJ
-
-COPY . /PROJ
-
-RUN cd /PROJ \
-    && ./autogen.sh \
-    && ./configure --prefix=/usr \
-    && make -j$(nproc) \
-    && make install
+FROM osgeo/proj:8.2.0 as proj
 
 
 ## Base image
-FROM python:3.9 AS compile-image
+FROM python:3.10 AS compile-image
 
 
-COPY --from=proj-builder  /build/usr/share/proj/ /usr/share/proj/
-COPY --from=proj-builder  /build/usr/include/ /usr/include/
-COPY --from=proj-builder  /build/usr/bin/ /usr/bin/
-COPY --from=proj-builder  /build/usr/lib/ /usr/lib/
+COPY --from=proj  /usr/share/proj/ /usr/share/proj/
+COPY --from=proj  /usr/include/ /usr/include/
+COPY --from=proj  /usr/bin/ /usr/bin/
+COPY --from=proj  /usr/lib/ /usr/lib/
 
 ## Install dependencies (libgeos in order for basemap to work)
 RUN apt-get update
@@ -64,19 +43,20 @@ RUN npm install
 COPY ./webserver/website/ .
 RUN npm run build
 
-## Build-image
-FROM python:3.9 AS runtime-image
 
-COPY --from=proj-builder  /build/usr/share/proj/ /usr/share/proj/
-COPY --from=proj-builder  /build/usr/include/ /usr/include/
-COPY --from=proj-builder  /build/usr/bin/ /usr/bin/
-COPY --from=proj-builder  /build/usr/lib/ /usr/lib/
+## runtime-image
+FROM python:3.10-slim-buster AS runtime-image
+
+COPY --from=proj  /usr/share/proj/ /usr/share/proj/
+COPY --from=proj  /usr/include/ /usr/include/
+COPY --from=proj  /usr/bin/ /usr/bin/
+COPY --from=proj  /usr/lib/ /usr/lib/
 
 ## Install libgeos
 # TODO: Copy libgeos from build image
-RUN apt-get update
-# RUN apt-get install -y gcc build-essential
-RUN apt-get install -y libgeos-dev
+# RUN apt-get update
+# # RUN apt-get install -y gcc build-essential
+# RUN apt-get install -y libgeos-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
