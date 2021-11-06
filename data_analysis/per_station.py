@@ -270,9 +270,9 @@ class PerStationOverTime(StationPhillip):
             Path to the generated plot
         """
 
-        if start_time + datetime.timedelta(hours=48) > end_time:
-            # We generate plots over a minimum timespan of 48 hours
-            end_time = end_time + datetime.timedelta(hours=48)
+        if start_time + datetime.timedelta(hours=self.FREQ_HOURS) > end_time:
+            # We generate plots over a minimum timespan of FREQ_HOURS
+            end_time = end_time + datetime.timedelta(hours=self.FREQ_HOURS)
 
         plot_name = (
             start_time.strftime("%d.%m.%Y")
@@ -286,11 +286,11 @@ class PerStationOverTime(StationPhillip):
             # Return cached image
             return plot_path
 
-        # Extract data that is between start_time and end_time
+        # Extract data that is between start_time and end_time 
         current_data = self.data.loc[
             (start_time <= self.data["stop_hour"])
             & (self.data["stop_hour"] < end_time)
-        ].copy()
+        ].copy()     
 
         if not current_data.empty:
             # As self.data is already preaggregated we need to compute the weighted
@@ -326,11 +326,16 @@ class PerStationOverTime(StationPhillip):
             )
             current_data = current_data.fillna(0)
 
+            n_days = (end_time - start_time).days
+
             size = (
                 current_data.loc[:, ["ar_happened_sum"]].to_numpy()[:, 0]
                 + current_data.loc[:, ["dp_happened_sum"]].to_numpy()[:, 0]
             )
-            size = (size / size.max()) * 70
+            size = size / n_days
+            # 2000 is the average max number of trains on the busiest station.
+            # This is used to scale the size of the markers
+            size = (size / 2000) * 70
 
             color = current_data.loc[:, ["ar_delay_mean"]].to_numpy().astype(float)[:, 0]            
 
