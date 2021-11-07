@@ -47,6 +47,7 @@ spec:
     # - hiddenmystery.de
     # - marcpanse.de
     - nextcloud.sfz-eningen.de
+    - overleaf.marcpanse.de
     secretName: default-tls-secret
   rules:
   - host: "trainconnectionprediction.de"
@@ -127,5 +128,15 @@ spec:
           backend:
             service:
               name: sfz-nextcloud
+              port:
+                number: 80
+  - host: "overleaf.marcpanse.de"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: sfz-overleaf
               port:
                 number: 80
