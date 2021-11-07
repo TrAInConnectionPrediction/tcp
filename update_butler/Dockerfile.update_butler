@@ -21,11 +21,10 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ## Add and install requirements
-RUN pip install --upgrade pip && pip install pip-tools
-# RUN pip install --no-binary shapely shapely
-# RUN pip install numpy
-COPY ./update_butler/requirements.txt requirements.in
-RUN pip-compile requirements.in > requirements.txt && pip-sync
+RUN pip install --upgrade pip
+COPY ./update_butler/requirements.txt requirements.txt
+# RUN pip install pip-tools
+# RUN pip-compile requirements.txt > requirements.txt && pip-sync
 RUN pip install -r requirements.txt
 
 ## Build-image
