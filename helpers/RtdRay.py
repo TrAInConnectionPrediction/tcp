@@ -400,7 +400,11 @@ class RtdRay(Rtd):
 
         # Filter data if min_date and / or max_date is given
         if max_date is not None or min_date is not None:
-            _filter = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', columns=['ar_pt', 'dp_pt'])
+            if 'ar_pt' in rtd.columns and 'dp_pt' in rtd.columns:
+                _filter = rtd.loc[:, ['ar_pt', 'dp_pt']]
+            else:
+                _filter = dd.read_parquet(self.DATA_CACHE_PATH, engine='pyarrow', columns=['ar_pt', 'dp_pt'])
+
             if max_date is not None and min_date is not None:
                 rtd = rtd.loc[((_filter['ar_pt'] >= min_date)
                               | (_filter['dp_pt'] >= min_date))

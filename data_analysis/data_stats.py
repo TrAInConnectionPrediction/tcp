@@ -31,7 +31,7 @@ class Stats:
         min_date = max_date - timedelta(1)
         print("Last 24h from %s to %s" % (min_date, max_date))
 
-        # HYPER OPTIMISATION SPEED DATA LOADING
+        # Only now filter the data, since we didn't have the min_date and max_date before
         self._rtd_d_new = self._rtd_d.loc[
             ((self._rtd_d['ar_pt'] >= min_date) | (self._rtd_d['dp_pt'] >= min_date)) 
             & ((self._rtd_d['ar_pt'] < max_date) | (self._rtd_d['dp_pt'] < max_date))
