@@ -8,6 +8,8 @@ import datetime
 import dask.dataframe as dd
 from helpers import RtdRay
 from config import n_dask_workers
+from database import cached_table_fetch, cached_table_push
+from helpers import groupby_index_to_flat
 
 
 def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:
@@ -54,17 +56,17 @@ def add_rolling_mean(df: pd.DataFrame, columns: list, window=3) -> pd.DataFrame:
     return df.iloc[dist_from_center:-dist_from_center]
 
 
-def plot(data,
-         title,
-         x_label,
+def plot(data: pd.DataFrame,
+         title: str,
+         x_label: str,
          formatter,
          locator,
          ax1_ylim_bottom=None,
          ax2_ylim_bottom=None,
          nticks=5,
-         kind='delay') -> None:
-    if kind not in ['delay', 'cancellations']:
-        raise ValueError(f'kind must be "delay" or "cancellations" not {kind}')
+         kind: str='delay') -> None:
+    if kind not in ['delay', 'cancellations', 'everything']:
+        raise ValueError(f'kind must be "delay", "cancellations" or "everything" not {kind}')
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
     ax1.tick_params(axis="both", labelsize=20) 
@@ -87,12 +89,11 @@ def plot(data,
     ax1.set_xlabel(x_label, fontsize=30)
     ax1.set_ylabel('Stops', color="blue", fontsize=30)
 
-    ax1.plot(data[('ar_delay', 'count_rolling_mean')] + data[('dp_delay', 'count_rolling_mean')],
+    if kind == 'delay':
+        ax1.plot(data[('ar_delay', 'count_rolling_mean')] + data[('dp_delay', 'count_rolling_mean')],
                     color="blue",
                     linewidth=3,
                     label='Stops')  
-
-    if kind == 'delay':
         ax2.set_ylabel('Delay in Minutes', color="orange", fontsize=30)
       
         ax2.plot(data[('ar_delay', 'mean_rolling_mean')],
@@ -105,6 +106,10 @@ def plot(data,
                     label='Departure delay')
 
     elif kind == 'cancellations':
+        ax1.plot(data[('ar_delay', 'count_rolling_mean')] + data[('dp_delay', 'count_rolling_mean')],
+                    color="blue",
+                    linewidth=3,
+                    label='Stops')  
         ax2.set_ylabel('Relative non-cancellations', color="orange", fontsize=30)
       
         ax2.plot(data[('ar_happened', 'mean_rolling_mean')],
@@ -115,6 +120,30 @@ def plot(data,
                     color="orange",
                     linewidth=3,
                     label='Departure non-cancellations')
+    elif kind == 'everything':
+        ax1.plot(data['ar_happened_sum'] + data['dp_happened_sum'],
+                    color="blue",
+                    linewidth=3,
+                    label='Stops')
+
+        ax2.set_ylabel('Delay in Minutes', color="orange", fontsize=30)
+      
+        ax2.plot(data['ar_on_time_mean'],
+                    color="red",
+                    linewidth=3,
+                    label='Arrival on time mean')
+        ax2.plot(data['dp_on_time_mean'],
+                    color="orange",
+                    linewidth=3,
+                    label='Departure on time mean')
+        # ax2.plot(data['ar_delay_std'],
+        #             color="orange",
+        #             linewidth=3,
+        #             label='Arrival delay std')
+        # ax2.plot(data['dp_delay_mean'],
+        #             color="red",
+        #             linewidth=3,
+        #             label='Departure delay mean')
     
     fig.legend(fontsize=20)
     ax1.set_ylim(bottom=ax1_ylim_bottom)
@@ -276,7 +305,8 @@ class OverYear:
         try:
             if not use_cache:
                 raise FileNotFoundError
-            self.data = pd.read_csv(self.CACHE_PATH, header=[0, 1], index_col=0, parse_dates=[0])
+            self.data = cached_table_fetch('overyear', prefer_cache=True)
+            # self.data = pd.read_csv(self.CACHE_PATH, header=[0, 1], index_col=0, parse_dates=[0])
             print('using cached data')
         except FileNotFoundError:
             # Use dask Client to do groupby as the groupby is complex and scales well on local cluster.
@@ -286,30 +316,49 @@ class OverYear:
                 rtd_df['date'] = rtd_df['date'].fillna(value=rtd_df['dp_pt'].dt.date)
                 rtd_df['floating_yeartime'] = rtd_df['date']
                 self.data = rtd_df.groupby(['floating_yeartime']).agg({
-                            'ar_delay': ['count', 'mean'],
-                            'ar_happened': ['mean'],
-                            'dp_delay': ['count', 'mean'],
-                            'dp_happened': ['mean'],
+                            'ar_delay': ['count', 'mean', 'std'],
+                            'ar_on_time': ['mean'],
+                            'ar_happened': ['sum', 'mean'],
+                            'dp_delay': ['count', 'mean', 'std'],
+                            'dp_on_time': ['mean'],
+                            'dp_happened': ['sum', 'mean'],
                         }).compute()
-                self.data = self.data.loc[~self.data.index.isna(), :]
                 self.data = self.data.sort_index()
+                # If a day is completely missing, 
                 full_index = pd.date_range(start=self.data.index.min(), end=self.data.index.max())
                 full_data = pd.DataFrame(index=full_index, columns=self.data.columns)
                 full_data.loc[self.data.index, :] = self.data.loc[:, :]
                 self.data = full_data.fillna(0)
 
-                self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
-                                                    ('ar_delay', 'count'),
-                                                    ('ar_happened', 'mean'),
-                                                    ('dp_delay', 'mean'),
-                                                    ('dp_delay', 'count'),
-                                                    ('dp_happened', 'mean')], window=3)
+                self.data = groupby_index_to_flat(self.data)
 
-                self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
+
+                # Calculate rolling mean
+                for col in [
+                        'ar_delay_mean',
+                        'ar_happened_sum',
+                        'ar_happened_mean',
+                        'ar_on_time_mean',
+                        'dp_delay_mean',
+                        'ar_happened_mean',
+                        'dp_happened_mean',
+                        'dp_on_time_mean',
+                    ]:
+                    self.data[col] = self.data[col].rolling(3, center=True).mean()
+
+                # self.data = add_rolling_mean(self.data, [('ar_delay', 'mean'),
+                #                                     ('ar_delay', 'count'),
+                #                                     ('ar_happened', 'mean'),
+                #                                     ('dp_delay', 'mean'),
+                #                                     ('dp_delay', 'count'),
+                #                                     ('dp_happened', 'mean')], window=3)
+
+                cached_table_push(self.data, 'overyear')
+                # self.data.iloc[1:-1].to_csv(self.CACHE_PATH)
         
         self.plot = lambda kind='delay': plot(self.data,
                                  title='Delay over the years',
-                                 x_label='Time',
+                                 x_label='Date',
                                  formatter=mdates.DateFormatter("%b %Y"),
                                  locator=mdates.MonthLocator(),
                                  ax1_ylim_bottom=0,
@@ -330,19 +379,22 @@ if __name__ == '__main__':
             'dp_happened'
         ]
     )
+
+    rtd_df['ar_on_time'] = rtd_df['ar_delay'] <= 5
+    rtd_df['dp_on_time'] = rtd_df['dp_delay'] <= 5
     
-    print('grouping over hour')
-    time = OverHour(rtd_df, use_cache=False)
-    time.plot()
+    # print('grouping over hour')
+    # time = OverHour(rtd_df, use_cache=False)
+    # time.plot()
 
-    print('grouping over day')
-    time = OverDay(rtd_df, use_cache=False)
-    time.plot()
+    # print('grouping over day')
+    # time = OverDay(rtd_df, use_cache=False)
+    # time.plot()
 
-    print('grouping over week')
-    time = OverWeek(rtd_df, use_cache=False)
-    time.plot()
+    # print('grouping over week')
+    # time = OverWeek(rtd_df, use_cache=False)
+    # time.plot()
 
     print('grouping over year')
-    time = OverYear(rtd_df, use_cache=False)
-    time.plot(kind='delay')
+    time = OverYear(rtd_df, use_cache=True)
+    time.plot(kind='everything')
