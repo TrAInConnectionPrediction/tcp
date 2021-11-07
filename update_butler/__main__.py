@@ -23,9 +23,9 @@ print("Done")
 
 print("Refreshing local Cache...")
 # If this doesn't work properly switch to 
-# TODO switch to rtd_ray.update_local_buffer()
-# rtd_ray.download_rtd()
-rtd_ray.upgrade_rtd()
+# TODO switch to rtd_ray.upgrade_rtd()
+rtd_ray.download_rtd()
+# rtd_ray.upgrade_rtd()
 
 print("Done")
 
