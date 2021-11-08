@@ -1,9 +1,9 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  labels:
-    app: update_butler
-  name: update_butler
+  # labels:
+  #   app: updatebutler
+  name: updatebutler
   namespace: default
 spec:
   schedule: "0 3 * * *"
@@ -12,7 +12,7 @@ spec:
       template:
         spec:
           containers:
-            - name: update_butler
+            - name: updatebutler
               image: trainconnectionprediction/tcp:update_butler
               imagePullPolicy: Always
               volumeMounts:
@@ -20,7 +20,7 @@ spec:
                   mountPath: /mnt/config
                 - name: cache-pvc-storage
                   mountPath: /usr/src/app/cache
-          restartPolicy: OnFailure
+          restartPolicy: Never
           volumes:
             - name: config-pvc-storage
               persistentVolumeClaim:

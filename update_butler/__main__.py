@@ -14,7 +14,7 @@ import config
 from dask.distributed import Client
 
 # set up cluster and workers
-client = Client(ip='127.0.0.1', n_workers=4, threads_per_worker=2, memory_limit='16GB')
+client = Client(ip='127.0.0.1', n_workers=8, threads_per_worker=2, memory_limit='16GB')
 
 from helpers import RtdRay
 rtd_ray = RtdRay()
