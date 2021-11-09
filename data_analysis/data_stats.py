@@ -22,10 +22,10 @@ class Stats:
     # Graph?
     stats = {'all': {}, 'new': {}}
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         from helpers import RtdRay
 
-        self._rtd_d = RtdRay().load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs"])
+        self._rtd_d = RtdRay().load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"], **kwargs)
         
         max_date = self._rtd_d['ar_pt'].max().compute()
         min_date = max_date - timedelta(1)
@@ -40,29 +40,29 @@ class Stats:
     def generate_stats(self):
         self.stats["time"] = datetime.now().strftime("%d.%m.%Y %H:%M")
 
-        self.stats["all"]["num_ar_data"] = int(self._rtd_d["ar_pt"].count().compute())
-        self.stats["all"]["num_dp_data"] = int(self._rtd_d["dp_pt"].count().compute())
+        self.stats["all"]["num_ar_data"] = int(self._rtd_d["ar_happened"].sum().compute())
+        self.stats["all"]["num_dp_data"] = int(self._rtd_d["dp_happened"].sum().compute())
 
         self.stats["all"]["max_ar_delay"] = str(self._rtd_d["ar_delay"].max().compute())
         self.stats["all"]["max_dp_delay"] = str(self._rtd_d["dp_delay"].max().compute())
         self.stats["all"]["avg_ar_delay"] = str(round(self._rtd_d["ar_delay"].mean().compute(), 2))
         self.stats["all"]["avg_dp_delay"] = str(round(self._rtd_d["dp_delay"].mean().compute(), 2))
 
-        self.stats["all"]["perc_ar_delay"] = str(round(( 1 - ((self._rtd_d["ar_delay"] < 6).sum() / self.stats["all"]["num_ar_data"] * 1.0).compute()) * 100, 2))
-        self.stats["all"]["perc_dp_delay"] = str(round(( 1 - ((self._rtd_d["dp_delay"] < 6).sum() / self.stats["all"]["num_dp_data"] * 1.0).compute()) * 100, 2))
+        self.stats["all"]["perc_ar_delay"] = str(round(((((self._rtd_d["ar_delay"] > 5) & (self._rtd_d["ar_happened"])).sum() / self.stats["all"]["num_ar_data"] * 1.0).compute()) * 100, 2))
+        self.stats["all"]["perc_dp_delay"] = str(round(((((self._rtd_d["dp_delay"] > 5) & (self._rtd_d["dp_happened"])).sum() / self.stats["all"]["num_dp_data"] * 1.0).compute()) * 100, 2))
         self.stats["all"]["perc_ar_cancel"] = str(round(((self._rtd_d["ar_cs"] == "c").sum() / self.stats["all"]["num_ar_data"]).compute() * 100, 2))
         self.stats["all"]["perc_dp_cancel"] = str(round(((self._rtd_d["dp_cs"] == "c").sum() / self.stats["all"]["num_dp_data"]).compute() * 100, 2))
 
-        self.stats["new"]["num_ar_data"] = int(self._rtd_d_new["ar_pt"].count().compute())
-        self.stats["new"]["num_dp_data"] = int(self._rtd_d_new["dp_pt"].count().compute())
+        self.stats["new"]["num_ar_data"] = int(self._rtd_d_new["ar_happened"].sum().compute())
+        self.stats["new"]["num_dp_data"] = int(self._rtd_d_new["ar_happened"].sum().compute())
 
         self.stats["new"]["max_ar_delay"] = str(self._rtd_d_new["ar_delay"].max().compute())
         self.stats["new"]["max_dp_delay"] = str(self._rtd_d_new["dp_delay"].max().compute())
         self.stats["new"]["avg_ar_delay"] = str(round(self._rtd_d_new["ar_delay"].mean().compute(), 2))
         self.stats["new"]["avg_dp_delay"] = str(round(self._rtd_d_new["dp_delay"].mean().compute(), 2))
 
-        self.stats["new"]["perc_ar_delay"] = str(round((1 - ((self._rtd_d_new["ar_delay"] < 6).sum() / self.stats["new"]["num_ar_data"] * 1.0).compute()) * 100, 2))
-        self.stats["new"]["perc_dp_delay"] = str(round((1 - ((self._rtd_d_new["dp_delay"] < 6).sum() / self.stats["new"]["num_dp_data"] * 1.0).compute()) * 100, 2))
+        self.stats["new"]["perc_ar_delay"] = str(round(((((self._rtd_d_new["ar_delay"] > 5) & (self._rtd_d_new["ar_happened"])).sum() / self.stats["new"]["num_ar_data"]).compute()) * 100, 2))
+        self.stats["new"]["perc_dp_delay"] = str(round(((((self._rtd_d_new["dp_delay"] > 5) & (self._rtd_d_new["dp_happened"])).sum() / self.stats["new"]["num_dp_data"]).compute()) * 100, 2))
         self.stats["new"]["perc_ar_cancel"] = str(round(((self._rtd_d_new["ar_cs"] == "c").sum() / self.stats["new"]["num_ar_data"]).compute() * 100, 2))
         self.stats["new"]["perc_dp_cancel"] = str(round(((self._rtd_d_new["dp_cs"] == "c").sum() / self.stats["new"]["num_dp_data"]).compute() * 100, 2))
 
