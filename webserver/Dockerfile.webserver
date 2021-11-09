@@ -12,15 +12,15 @@ FROM osgeo/proj:8.2.0 as proj
 ## Base image
 FROM python:3.10 AS compile-image
 
+# Install dependencies (libgeos in order for cartopy to work)
+RUN apt-get update
+RUN apt-get install -y gcc build-essential 
+RUN apt-get install -y libgeos-dev
 
 COPY --from=proj  /usr/share/proj/ /usr/share/proj/
 COPY --from=proj  /usr/include/ /usr/include/
 COPY --from=proj  /usr/bin/ /usr/bin/
 COPY --from=proj  /usr/lib/ /usr/lib/
-
-## Install dependencies (libgeos in order for basemap to work)
-RUN apt-get update
-RUN apt-get install -y libgeos-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -29,8 +29,6 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 ## Add and install requirements
 RUN pip install --upgrade pip && pip install pip-tools
-RUN pip install --no-binary shapely shapely
-RUN pip install numpy
 COPY ./webserver/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
@@ -45,18 +43,16 @@ RUN npm run build
 
 
 ## runtime-image
-FROM python:3.10-slim-buster AS runtime-image
+FROM python:3.10 AS runtime-image
 
 COPY --from=proj  /usr/share/proj/ /usr/share/proj/
 COPY --from=proj  /usr/include/ /usr/include/
 COPY --from=proj  /usr/bin/ /usr/bin/
 COPY --from=proj  /usr/lib/ /usr/lib/
 
-## Install libgeos
-# TODO: Copy libgeos from build image
-# RUN apt-get update
-# # RUN apt-get install -y gcc build-essential
-# RUN apt-get install -y libgeos-dev
+# Install dependencies (libgeos in order for cartopy to work)
+RUN apt-get update
+RUN apt-get install -y libgeos-dev
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
