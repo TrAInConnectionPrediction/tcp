@@ -29,10 +29,10 @@ jobs:
       #     file: webserver/Dockerfile.webserver
       #     tags: trainconnectionprediction/webserver:latest
 
-      - name: Build and push update_bulter
+      - name: Build and push update_butler
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           file: update_butler/Dockerfile.update_butler
-          tags: trainconnectionprediction/tcp:update_bulter
+          tags: trainconnectionprediction/tcp:update_butler
