@@ -43,9 +43,6 @@ spec:
   - hosts:
     - trainconnectionprediction.de
     - next.trainconnectionprediction.de
-    # - hidden-mystery.de
-    # - hiddenmystery.de
-    # - marcpanse.de
     - nextcloud.sfz-eningen.de
     - overleaf.marcpanse.de
     secretName: default-tls-secret
@@ -118,16 +115,6 @@ spec:
           backend:
             service:
               name: marcs-escaperoom
-              port:
-                number: 80
-  - host: "nextcloud.sfz-eningen.de"
-    http:
-      paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: sfz-nextcloud
               port:
                 number: 80
   - host: "overleaf.marcpanse.de"

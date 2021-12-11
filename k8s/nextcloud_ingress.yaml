@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-ingress-https
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size:  50m
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+
+spec:
+  tls:
+  - hosts:
+    secretName: default-tls-secret
+  rules:
+  - host: "nextcloud.sfz-eningen.de"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: sfz-nextcloud
+              port:
+                number: 443

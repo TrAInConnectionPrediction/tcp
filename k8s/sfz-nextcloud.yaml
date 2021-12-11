@@ -4,10 +4,8 @@ metadata:
   name: sfz-nextcloud
 spec:
   ports:
-  - name: http
-    port: 80
-    protocol: TCP
-    targetPort: 80
+  - port: 443
+    targetPort: 8080
   clusterIP: None
   type: ClusterIP
 ---
@@ -19,6 +17,4 @@ subsets:
 - addresses:
   - ip: 192.168.178.24
   ports:
-  - name: http
-    port: 8080
-    protocol: TCP
+  - port: 8080
