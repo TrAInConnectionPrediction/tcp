@@ -1,4 +1,4 @@
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   # labels:
@@ -16,15 +16,16 @@ spec:
               image: trainconnectionprediction/tcp:update_butler
               imagePullPolicy: Always
               volumeMounts:
-                - name: config-pvc-storage
-                  mountPath: /mnt/config
+                - mountPath: /usr/src/app/config.py
+                  name: config
+                  subPath: config.py
                 - name: cache-pvc-storage
                   mountPath: /usr/src/app/cache
           restartPolicy: Never
           volumes:
-            - name: config-pvc-storage
-              persistentVolumeClaim:
-                claimName: config-pvc
+            - name: config
+              configMap:
+                name: tcp-config
             - name: cache-pvc-storage
               persistentVolumeClaim:
                 claimName: cache-pvc
