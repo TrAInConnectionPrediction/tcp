@@ -26,7 +26,6 @@ jobs:
         with:
           context: .
           push: true
-          no-cache: true
           file: webserver/Dockerfile.webserver
           tags: trainconnectionprediction/webserver:latest
 
@@ -35,6 +34,5 @@ jobs:
         with:
           context: .
           push: true
-          no-cache: true
           file: update_butler/Dockerfile.update_butler
           tags: trainconnectionprediction/tcp:update_butler

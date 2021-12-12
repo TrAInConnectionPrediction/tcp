@@ -1,8 +1,9 @@
-#Ignore everything
+# Ignore everything
 **
 
-#Except
-!update_butler
+# Except
+# Start with a ./??
+!./update_butler/
 !ml_models/
 !database/
 !helpers/
