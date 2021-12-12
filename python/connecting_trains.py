@@ -12,8 +12,7 @@ from tqdm import tqdm
 from config import CACHE_PATH
 
 def separate_stations():
-    rtd_ray = RtdRay()
-    rtd = rtd_ray.load_for_ml_model(label_encode=False, return_times=True).compute() # .persist()
+    rtd = RtdRay.load_for_ml_model(label_encode=False, return_times=True).compute() # .persist()
     # rtd = rtd.reset_index()
     # rtd['station'] = rtd['station'].cat.as_ordered()
     # rtd = rtd.set_index('station')

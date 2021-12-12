@@ -80,5 +80,5 @@ if __name__ == "__main__":
     connection_ray = ConnectionRay()
     rtd = connection_ray.load_ar()
     print('length of data: {} rows'.format(len(rtd)))
-    # rtd_ray.refresh_local_buffer()
-    # rtd = rtd_ray.load_for_ml_model()
+    # RtdRay.refresh_local_buffer()
+    # rtd = RtdRay.load_for_ml_model()

@@ -69,7 +69,6 @@ class DelayAnalysis:
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
-    rtd_ray = RtdRay()
-    rtd = rtd_ray.load_data(columns=['ar_delay', 'dp_delay', 'ar_pt', 'dp_pt', 'ar_happened', 'dp_happened'])
+    rtd = RtdRay.load_data(columns=['ar_delay', 'dp_delay', 'ar_pt', 'dp_pt', 'ar_happened', 'dp_happened'])
     delay = DelayAnalysis(rtd, use_cache=True)
     delay.plot_count()

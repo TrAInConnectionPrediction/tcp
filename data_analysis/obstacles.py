@@ -93,8 +93,7 @@ def analyze_single_priority(priority_col: str, obstacle_rtd, non_obstacle_rtd):
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
-    rtd_ray = RtdRay()
-    # obstacle_rtd = rtd_ray.load_data(min_date=datetime.datetime(2021, 3, 14)).compute()
+    # obstacle_rtd = RtdRay.load_data(min_date=datetime.datetime(2021, 3, 14)).compute()
     # non_obstacle_rtd = obstacle_rtd.loc[
     #     ~(obstacle_rtd['obstacles_priority_24'] > 0) &
     #     ~(obstacle_rtd['obstacles_priority_37'] > 0) &

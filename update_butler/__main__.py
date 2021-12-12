@@ -17,15 +17,14 @@ from dask.distributed import Client
 client = Client(ip='127.0.0.1', n_workers=8, threads_per_worker=2, memory_limit='16GB')
 
 from helpers import RtdRay
-rtd_ray = RtdRay()
 
 print("Done")
 
 print("Refreshing local Cache...")
 # If this doesn't work properly switch to 
-# TODO switch to rtd_ray.upgrade_rtd()
-rtd_ray.download_rtd()
-# rtd_ray.upgrade_rtd()
+# TODO switch to RtdRay.upgrade_rtd()
+RtdRay.download_rtd()
+# RtdRay.upgrade_rtd()
 
 print("Done")
 
@@ -43,7 +42,7 @@ print("--Done")
 print("--Per Station Data")
 
 import datetime
-rtd_df = rtd_ray.load_data(
+rtd_df = RtdRay.load_data(
     columns=[
         "ar_pt",
         "dp_pt",

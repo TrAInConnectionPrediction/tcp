@@ -6,20 +6,19 @@ if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 from xgboost import XGBClassifier
 import xgboost
-from helpers import RtdRay
 import datetime
 import pandas as pd
 import optuna
 import pickle
 import dask.dataframe as dd
 from database import DB_CONNECT_STRING
-from config import ENCODER_PATH
+from config import ENCODER_PATH, RTD_CACHE_PATH
 
 
 CLASSES_TO_COMPUTE = range(16)
 
 
-class Datasets(RtdRay):
+class Datasets:
     def __init__(self):
         super().__init__()
 
@@ -31,7 +30,7 @@ class Datasets(RtdRay):
             open(ENCODER_PATH.format(encoder="dp_cs"), "rb")
         )
 
-        self.rtd =  dd.read_parquet(self.DATA_CACHE_PATH + '_hyper_dataset', engine='pyarrow').persist()
+        self.rtd = dd.read_parquet(RTD_CACHE_PATH + '_hyper_dataset', engine='pyarrow').persist()
 
     def get_sets(self, current_date, days_for_training, threshhold_minutes, ar_or_dp):
         """Generate train and test data

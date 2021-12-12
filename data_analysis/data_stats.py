@@ -25,7 +25,7 @@ class Stats:
     def __init__(self, **kwargs):
         from helpers import RtdRay
 
-        self._rtd_d = RtdRay().load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"], **kwargs)
+        self._rtd_d = RtdRay.load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"], **kwargs)
         
         max_date = self._rtd_d['ar_pt'].max().compute()
         min_date = max_date - timedelta(1)

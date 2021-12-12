@@ -23,7 +23,7 @@ def normalize(df: pd.DataFrame, normalizer):
     return df.apply(normalizer)
 
 
-class Datasets(RtdRay):
+class Datasets():
     def __init__(self):
         super().__init__()
 
@@ -38,7 +38,7 @@ class Datasets(RtdRay):
         try:
             self.rtd = pd.read_pickle(CACHE_PATH + '/torch_data.pkl')
         except FileNotFoundError:
-            self.rtd: pd.DataFrame = self.load_for_ml_model(
+            self.rtd: pd.DataFrame = RtdRay.load_for_ml_model(
                 return_status=True,
                 min_date=datetime.datetime(2021, 2, 16),
                 max_date=datetime.datetime(2021, 3, 25),
@@ -54,7 +54,6 @@ class Datasets(RtdRay):
                 'dp_cs',
             ]]
             self.rtd.to_pickle(CACHE_PATH + '/torch_data.pkl')
-
 
     def get_sets(self, threshhold_minutes, ar_or_dp):
         """Generate train and test data
@@ -156,6 +155,7 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
+
 def batchify(x: torch.tensor, y: torch.tensor, batch_size: int):
     for i in range(0, x.size()[0], batch_size):
         yield x[i:i+batch_size], y[i:i+batch_size]
@@ -174,7 +174,6 @@ if __name__ == '__main__':
 
     train_x, train_y, test_x, test_y = datasets.np_normalized_sets(threshhold_minutes=0, ar_or_dp='ar')
     train_x, train_y = torch.from_numpy(train_x), torch.from_numpy(train_y)
-
 
     for epoch in range(20):  # loop over the dataset multiple times
         running_loss = 0.0

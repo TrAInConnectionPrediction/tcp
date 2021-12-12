@@ -198,7 +198,6 @@ class PerStationOverTime(StationPhillip):
         with Client(n_workers=n_dask_workers, threads_per_worker=1) as client:
             # Generate an index with self.FREQ for groupby over time and station
             rtd["stop_hour"] = rtd["ar_pt"].fillna(value=rtd["dp_pt"]).dt.round(self.FREQ)
-            
 
             rtd["single_index_for_groupby"] = (rtd["stop_hour"].astype("str") + rtd[
                 "station"
@@ -360,8 +359,7 @@ if __name__ == "__main__":
     import helpers.fancy_print_tcp
 
     rtd_df=None
-    rtd_ray = RtdRay()
-    rtd_df = rtd_ray.load_data(
+    rtd_df = RtdRay.load_data(
         columns=[
             "ar_pt",
             "dp_pt",

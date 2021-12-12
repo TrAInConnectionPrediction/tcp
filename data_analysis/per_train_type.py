@@ -321,8 +321,7 @@ class PlatformAnalysis(PerCategoryAnalysis):
 
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
-    rtd_ray = RtdRay()
-    rtd = rtd_ray.load_data(columns=[
+    rtd = RtdRay.load_data(columns=[
         'c',
         'o',
         'f',

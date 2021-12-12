@@ -12,8 +12,40 @@ import matplotlib.pyplot as plt
 from config import MODEL_PATH, ENCODER_PATH, CACHE_PATH
 
 # CACHE_PATH = "cache/models/model_{}.pkl"
-CLASSES_TO_COMPUTE = [2, 5, 8]  # range(10)
+CLASSES_TO_COMPUTE = range(15)
 
+hyperparameters = {
+    'ar_0': {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_1': {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_2': {'learning_rate': 0.4, 'max_depth': 13, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_3': {'learning_rate': 0.4, 'max_depth': 13, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_4': {'learning_rate': 0.4, 'max_depth': 12, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_5': {'learning_rate': 0.4, 'max_depth': 12, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_6': {'learning_rate': 0.4, 'max_depth': 11, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_7': {'learning_rate': 0.4, 'max_depth': 11, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_8': {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_9': {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_10': {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_11': {'learning_rate': 0.4, 'max_depth': 9, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_12': {'learning_rate': 0.4, 'max_depth': 9, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_13': {'learning_rate': 0.4, 'max_depth': 8, 'n_estimators': 100, 'gamma': 2.8,},
+    'ar_14': {'learning_rate': 0.4, 'max_depth': 8, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_0': {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_1': {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_2': {'learning_rate': 0.4, 'max_depth': 13, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_3': {'learning_rate': 0.4, 'max_depth': 13, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_4': {'learning_rate': 0.4, 'max_depth': 12, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_5': {'learning_rate': 0.4, 'max_depth': 12, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_6': {'learning_rate': 0.4, 'max_depth': 11, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_7': {'learning_rate': 0.4, 'max_depth': 11, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_8': {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_9': {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_10': {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_11': {'learning_rate': 0.4, 'max_depth': 9, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_12': {'learning_rate': 0.4, 'max_depth': 9, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_13': {'learning_rate': 0.4, 'max_depth': 8, 'n_estimators': 100, 'gamma': 2.8,},
+    'dp_14': {'learning_rate': 0.4, 'max_depth': 8, 'n_estimators': 100, 'gamma': 2.8,},
+}
 
 def train_model(train_x, train_y, **model_parameters):
     print("Majority Baseline during training:", majority_baseline(train_x, train_y))
@@ -31,8 +63,7 @@ def train_model(train_x, train_y, **model_parameters):
 
 
 def train_models(**load_parameters):
-    rtd_ray = RtdRay()
-    train = rtd_ray.load_for_ml_model(**load_parameters).compute()
+    train = RtdRay.load_for_ml_model(**load_parameters).compute()
     status_encoder = {}
     status_encoder["ar"] = pickle.load(open(ENCODER_PATH.format(encoder="ar_cs"), "rb"))
     status_encoder["dp"] = pickle.load(open(ENCODER_PATH.format(encoder="dp_cs"), "rb"))
@@ -69,7 +100,24 @@ def train_models(**load_parameters):
     if not os.path.exists(newpath):
         os.makedirs(newpath)
 
-    parameters = pickle.load(open(CACHE_PATH + "/hyperparameters.pkl", "rb"))
+    parameters = {
+        -1: {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+        0: {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+        1: {'learning_rate': 0.4, 'max_depth': 14, 'n_estimators': 100, 'gamma': 2.8,},
+        2: {'learning_rate': 0.4, 'max_depth': 13, 'n_estimators': 100, 'gamma': 2.8,},
+        3: {'learning_rate': 0.4, 'max_depth': 13, 'n_estimators': 100, 'gamma': 2.8,},
+        4: {'learning_rate': 0.4, 'max_depth': 12, 'n_estimators': 100, 'gamma': 2.8,},
+        5: {'learning_rate': 0.4, 'max_depth': 12, 'n_estimators': 100, 'gamma': 2.8,},
+        6: {'learning_rate': 0.4, 'max_depth': 11, 'n_estimators': 100, 'gamma': 2.8,},
+        7: {'learning_rate': 0.4, 'max_depth': 11, 'n_estimators': 100, 'gamma': 2.8,},
+        8: {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+        9: {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+        10: {'learning_rate': 0.4, 'max_depth': 10, 'n_estimators': 100, 'gamma': 2.8,},
+        11: {'learning_rate': 0.4, 'max_depth': 9, 'n_estimators': 100, 'gamma': 2.8,},
+        12: {'learning_rate': 0.4, 'max_depth': 9, 'n_estimators': 100, 'gamma': 2.8,},
+        13: {'learning_rate': 0.4, 'max_depth': 8, 'n_estimators': 100, 'gamma': 2.8,},
+        14: {'learning_rate': 0.4, 'max_depth': 8, 'n_estimators': 100, 'gamma': 2.8,},
+    }
 
     for label in CLASSES_TO_COMPUTE:
         model_name = f"ar_{label}"
@@ -169,7 +217,7 @@ if __name__ == "__main__":
 
     train_models(
         # max_date=datetime.datetime(2021, 2, 1),
-        min_date=datetime.datetime(2021, 3, 14), # datetime.datetime(2021, 2, 1) - datetime.timedelta(days=7 * 2),
+        min_date=datetime.datetime.today() - datetime.timedelta(days=7 * 4),
         long_distance_only=False,
         return_status=True,
     )
@@ -178,8 +226,7 @@ if __name__ == "__main__":
     status_encoder["ar"] = pickle.load(open(ENCODER_PATH.format(encoder="ar_cs"), "rb"))
     status_encoder["dp"] = pickle.load(open(ENCODER_PATH.format(encoder="dp_cs"), "rb"))
 
-    rtd_ray = RtdRay()
-    test = rtd_ray.load_for_ml_model(
+    test = RtdRay.load_for_ml_model(
         # max_date=datetime.datetime(2021, 2, 1),
         min_date=datetime.datetime(2021, 3, 14), # datetime.datetime(2021, 2, 1) - datetime.timedelta(days=7 * 2),
         long_distance_only=False,

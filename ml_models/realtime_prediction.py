@@ -15,8 +15,7 @@ if __name__ == '__main__':
     import helpers.fancy_print_tcp
     from dask.distributed import Client
     client = Client(n_workers=min(16, os.cpu_count()))
-    rtd_ray = RtdRay()
-    rtd = rtd_ray.load_data(columns=['station', 'date_id', 'lat', 'lon', 'ar_ct', 'ar_delay'])
+    rtd = RtdRay.load_data(columns=['station', 'date_id', 'lat', 'lon', 'ar_ct', 'ar_delay'])
 
     rtd = rtd.loc[(rtd['ar_ct'] < datetime.datetime(2020, 11, 28)) & (rtd['ar_ct'] > datetime.datetime(2020, 11, 10)), :]
     rtd['ar_ct'] = rtd['ar_ct'].astype(int)
