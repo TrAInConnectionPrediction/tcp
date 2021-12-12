@@ -1,19 +1,21 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Optional, Callable
 import pandas as pd
 from database import DB_CONNECT_STRING
 from config import CACHE_PATH
 
+
 def cached_table_fetch(
-    tablename: str,
-    use_cache: Optional[bool]=True,
-    prefer_cache: Optional[bool]=False,
-    generate: Optional[bool]=False,
-    table_generator: Optional[Callable[[], pd.DataFrame]]=None,
-    push: Optional[bool]=False,
-    **kwargs
+        tablename: str,
+        use_cache: Optional[bool] = True,
+        prefer_cache: Optional[bool] = False,
+        generate: Optional[bool] = False,
+        table_generator: Optional[Callable[[], pd.DataFrame]] = None,
+        push: Optional[bool] = False,
+        **kwargs
 ) -> pd.DataFrame:
     """
     Fetch table from database and create a local cache of it
@@ -51,7 +53,7 @@ def cached_table_fetch(
         if push:
             cached_table_push(df, tablename)
         return df
-        
+
     if prefer_cache:
         try:
             return pd.read_pickle(cache_path)
@@ -77,7 +79,7 @@ def cached_table_fetch(
                 if push:
                     cached_table_push(df, tablename)
                 return df
-                
+
             raise FileNotFoundError(f'There is no connection to the database and no cache of {tablename}')
 
 
@@ -95,12 +97,13 @@ def pd_to_psql(df, uri, table_name, schema_name=None, if_exists='fail', sep=',')
         bool: True if loader finished
     """
 
-    if not 'psycopg2' in uri:
-        raise ValueError('need to use psycopg2 uri eg postgresql+psycopg2://psqlusr:psqlpwdpsqlpwd@localhost/psqltest. install with `pip install psycopg2-binary`')
+    if 'psycopg2' not in uri:
+        raise ValueError(
+            'need to use psycopg2 uri eg postgresql+psycopg2://psqlusr:psqlpwdpsqlpwd@localhost/psqltest. install with `pip install psycopg2-binary`')
     table_name = table_name.lower()
     if schema_name:
         schema_name = schema_name.lower()
-   
+
     import sqlalchemy
     import io
 
@@ -123,8 +126,7 @@ def pd_to_psql(df, uri, table_name, schema_name=None, if_exists='fail', sep=',')
     return True
 
 
-
-def cached_table_push(df: pd.DataFrame, tablename: str, **kwargs):
+def cached_table_push(df: pd.DataFrame, tablename: str, fast: bool = True, **kwargs):
     """
     Save df to local cache file and replace the table in the database.
 
@@ -134,10 +136,16 @@ def cached_table_push(df: pd.DataFrame, tablename: str, **kwargs):
         DataFrame to push
     tablename : str
         Name of the table in the database
+    fast : bool, optional
+        Whether to use a faster push method or not, by default False
+        True: use the fast method, which might not be as accurate
+        False: use the slow method, which is more accurate
     """
     cache_path = CACHE_PATH + '/' + tablename + '.pkl'
     df.to_pickle(cache_path)
     # d6stack is way faster than pandas at inserting data to sql.
     # It exports the dataframe to a csv and then inserts it to the database.
-    pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists='replace')
-    # df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', chunksize=10_000, **kwargs)
+    if fast:
+        pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists='replace')
+    else:
+        df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', chunksize=10_000, **kwargs)
