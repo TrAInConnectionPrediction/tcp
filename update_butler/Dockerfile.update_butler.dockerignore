@@ -2,7 +2,7 @@
 **
 
 #Except
-!update_butler
+!update_butler/
 !ml_models/
 !database/
 !helpers/
