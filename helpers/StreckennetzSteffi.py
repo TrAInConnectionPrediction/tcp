@@ -38,14 +38,15 @@ class StreckennetzSteffi(StationPhillip):
             kwargs["generate"] = False
             print("StreckennetzSteffi does not support generate")
 
+        self.kwargs = kwargs
+
         super().__init__(**kwargs)
 
         streckennetz_df = cached_table_fetch("minimal_streckennetz", **kwargs)
 
-        self.persistent_path_cache = cached_table_fetch(
-            "edge_path_persistent_cache", index_col="index", **kwargs
-        )["path"].to_dict()
-        self.original_persistent_path_cache_len = len(self.persistent_path_cache)
+        # Lazy loading of persistent cache, as many programs will not use it
+        self.persistent_path_cache = None
+        self.original_persistent_path_cache_len = None
 
         nodes = list(set(streckennetz_df['u'].to_list() + streckennetz_df['v'].to_list()))
         node_ids = dict(zip(nodes, range(len(nodes))))
@@ -121,8 +122,16 @@ class StreckennetzSteffi(StationPhillip):
             return None
 
     def get_edge_path_persistent_cache(self, source, target):
+        # Lazy loading of persistent cache, as many programs will not use it
+        if self.persistent_path_cache is None:
+            self.persistent_path_cache = cached_table_fetch(
+                "edge_path_persistent_cache", index_col="index", **self.kwargs
+            )["path"].to_dict()
+            self.original_persistent_path_cache_len = len(self.persistent_path_cache)
+
         source, target = sorted((source, target))
         key = source + "__" + target
+
         result = self.persistent_path_cache.get(key, -1)
         if result == -1:
             result = self.get_edge_path(source, target)
