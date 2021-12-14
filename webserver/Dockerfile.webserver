@@ -93,4 +93,4 @@ ENV MPLCONFIGDIR="/usr/src/app/cache"
 
 EXPOSE 5000
 
-CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:create_app()", "-t 100"]
+CMD ["gunicorn","-b 0.0.0.0:5000", "webserver:create_app()", "-t 200"]
