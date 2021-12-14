@@ -267,7 +267,7 @@ def _parse(rtd: dd.DataFrame) -> dd.DataFrame:
     return rtd
 
 
-def download_rtd(self):
+def download_rtd():
     """
     Pull the RTD_TABLENAME table from db, parse it and save it on disk.
     """
@@ -284,7 +284,7 @@ def download_rtd(self):
         rtd.to_parquet(RTD_CACHE_PATH, engine='pyarrow', write_metadata_file=False)
 
 
-def upgrade_rtd(self):
+def upgrade_rtd():
     """
     Pull data from database, that is not yet in the local cache.
     This function seems to work but is not properly tested.
