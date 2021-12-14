@@ -3,7 +3,7 @@
 
 # Except
 # Start with a ./??
-!./update_butler/
+!update_butler/
 !ml_models/
 !database/
 !helpers/
