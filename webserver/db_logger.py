@@ -53,7 +53,7 @@ def log_activity(func):
                 version=request.user_agent.version,
                 user_agent=request.user_agent.string,
                 ip=request.remote_addr if 'X-Forwarded-For' not in request.headers else request.headers['X-Forwarded-For'],
-                request_data=request.json,
+                request_data=request.get_json(silent=True),
                 args=args,
                 kwargs=kwargs
             )
