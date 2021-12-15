@@ -26,10 +26,6 @@ const routes = [
     component: () => import('../views/privacy.vue')
   },
   {
-    path: '/data',
-    redirect: { name: 'Statistiken' }
-  },
-  {
     path: '/data/stats',
     name: 'Statistiken',
     component: () => import('../views/stats/Stats.vue')

@@ -27,7 +27,7 @@
                 <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
                 <ul class="dropdown-menu">
                   <li>
-                    <router-link class="dropdown-item" :to="{ path: '/data', hash: '#content' }">Übersicht</router-link>
+                    <router-link class="dropdown-item" :to="{ path: '/data/stats', hash: '#content' }">Übersicht</router-link>
                   </li>
                   <li>
                     <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#content' }"
@@ -226,7 +226,7 @@ TrAIn_Connection_Prediction ║   ║
           if (this.$route.path !== '/') {
             this.$router.push('/')
           }
-          document.getElementById('content').scrollIntoView({ behavior: 'smooth' })
+          document.getElementById('content').scrollIntoView({ behavior: 'smooth', block: 'center' })
         })
     }
   }

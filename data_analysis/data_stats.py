@@ -3,80 +3,89 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timedelta
+import pandas as pd
+from helpers import RtdRay
+from database import cached_table_fetch
+from config import n_dask_workers
+from functools import cache
 
 
-class Stats:
-    # When gernerated
-    # Number of datapoints
-    # Number of new datapoints in the last day
-    # Biggest delay all time
-    # Biggest delay yesterday
-    # Average delay all time
-    # Average delay yesterday
-    # Percent of trains on time all time (< 6 min)
-    # Percent of trains on time yesterday (< 6 min)
-    # Percent of cancelt trains all Time
-    # Percent of cancelt trains yesterday
+def stats_generator() -> pd.DataFrame:
+    print("Generating stats...")
+    from dask.distributed import Client
+    with Client(n_workers=n_dask_workers, threads_per_worker=2) as client:
+        rtd = RtdRay.load_data(
+            columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"],
+        )
 
-    # Last day Models on yesterdays data
-    # Graph?
-    stats = {'all': {}, 'new': {}}
+        stats = {}
 
-    def __init__(self, **kwargs):
-        from helpers import RtdRay
 
-        self._rtd_d = RtdRay.load_data(columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"], **kwargs)
-        
-        max_date = self._rtd_d['ar_pt'].max().compute()
-        min_date = max_date - timedelta(1)
-        print("Last 24h from %s to %s" % (min_date, max_date))
+        stats["all_num_ar_data"] = int(rtd["ar_happened"].sum().compute())
+        stats["all_num_dp_data"] = int(rtd["dp_happened"].sum().compute())
+        stats["all_num_ar_cancel"] = int((rtd["ar_cs"] == "c").sum().compute())
+        stats["all_num_dp_cancel"] = int((rtd["dp_cs"] == "c").sum().compute())
 
-        # Only now filter the data, since we didn't have the min_date and max_date before
-        self._rtd_d_new = self._rtd_d.loc[
-            ((self._rtd_d['ar_pt'] >= min_date) | (self._rtd_d['dp_pt'] >= min_date)) 
-            & ((self._rtd_d['ar_pt'] < max_date) | (self._rtd_d['dp_pt'] < max_date))
-        ]
+        stats["all_max_ar_delay"] = int(rtd["ar_delay"].max().compute())
+        stats["all_max_dp_delay"] = int(rtd["dp_delay"].max().compute())
+        stats["all_avg_ar_delay"] = float(round(rtd["ar_delay"].mean().compute(), 2))
+        stats["all_avg_dp_delay"] = float(round(rtd["dp_delay"].mean().compute(), 2))
 
-    def generate_stats(self):
-        self.stats["time"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+        stats["all_perc_ar_delay"] = float(round((((rtd["ar_delay"] > 5).sum() / (stats["all_num_ar_data"])).compute()) * 100, 2))
+        stats["all_perc_dp_delay"] = float(round((((rtd["dp_delay"] > 5).sum() / (stats["all_num_dp_data"])).compute()) * 100, 2))
+        stats["all_perc_ar_cancel"] = float(round((stats["all_num_ar_cancel"] / (stats["all_num_ar_data"] + stats["all_num_ar_cancel"])) * 100, 2))
+        stats["all_perc_dp_cancel"] = float(round((stats["all_num_dp_cancel"] / (stats["all_num_dp_data"] + stats["all_num_dp_cancel"])) * 100, 2))
 
-        self.stats["all"]["num_ar_data"] = int(self._rtd_d["ar_happened"].sum().compute())
-        self.stats["all"]["num_dp_data"] = int(self._rtd_d["dp_happened"].sum().compute())
+        max_date = rtd['ar_pt'].max().compute()
+        stats["time"] = max_date.strftime("%d.%m.%Y %H:%M")
 
-        self.stats["all"]["max_ar_delay"] = str(self._rtd_d["ar_delay"].max().compute())
-        self.stats["all"]["max_dp_delay"] = str(self._rtd_d["dp_delay"].max().compute())
-        self.stats["all"]["avg_ar_delay"] = str(round(self._rtd_d["ar_delay"].mean().compute(), 2))
-        self.stats["all"]["avg_dp_delay"] = str(round(self._rtd_d["dp_delay"].mean().compute(), 2))
+        rtd = RtdRay.load_data(
+            columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"],
+            min_date=max_date - timedelta(days=1),
+            max_date=max_date,
+        ).compute()
 
-        self.stats["all"]["perc_ar_delay"] = str(round(((((self._rtd_d["ar_delay"] > 5) & (self._rtd_d["ar_happened"])).sum() / self.stats["all"]["num_ar_data"] * 1.0).compute()) * 100, 2))
-        self.stats["all"]["perc_dp_delay"] = str(round(((((self._rtd_d["dp_delay"] > 5) & (self._rtd_d["dp_happened"])).sum() / self.stats["all"]["num_dp_data"] * 1.0).compute()) * 100, 2))
-        self.stats["all"]["perc_ar_cancel"] = str(round(((self._rtd_d["ar_cs"] == "c").sum() / self.stats["all"]["num_ar_data"]).compute() * 100, 2))
-        self.stats["all"]["perc_dp_cancel"] = str(round(((self._rtd_d["dp_cs"] == "c").sum() / self.stats["all"]["num_dp_data"]).compute() * 100, 2))
+        stats["new_num_ar_data"] = int(rtd["ar_happened"].sum())
+        stats["new_num_dp_data"] = int(rtd["dp_happened"].sum())
+        stats["new_num_ar_cancel"] = int((rtd["ar_cs"] == "c").sum())
+        stats["new_num_dp_cancel"] = int((rtd["dp_cs"] == "c").sum())
 
-        self.stats["new"]["num_ar_data"] = int(self._rtd_d_new["ar_happened"].sum().compute())
-        self.stats["new"]["num_dp_data"] = int(self._rtd_d_new["ar_happened"].sum().compute())
+        stats["new_max_ar_delay"] = int(rtd["ar_delay"].max())
+        stats["new_max_dp_delay"] = int(rtd["dp_delay"].max())
+        stats["new_avg_ar_delay"] = float(round(rtd["ar_delay"].mean(), 2))
+        stats["new_avg_dp_delay"] = float(round(rtd["dp_delay"].mean(), 2))
 
-        self.stats["new"]["max_ar_delay"] = str(self._rtd_d_new["ar_delay"].max().compute())
-        self.stats["new"]["max_dp_delay"] = str(self._rtd_d_new["dp_delay"].max().compute())
-        self.stats["new"]["avg_ar_delay"] = str(round(self._rtd_d_new["ar_delay"].mean().compute(), 2))
-        self.stats["new"]["avg_dp_delay"] = str(round(self._rtd_d_new["dp_delay"].mean().compute(), 2))
+        stats["new_perc_ar_delay"] = float(round((((rtd["ar_delay"] > 5).sum() / (stats["new_num_ar_data"]))) * 100, 2))
+        stats["new_perc_dp_delay"] = float(round((((rtd["dp_delay"] > 5).sum() / (stats["new_num_dp_data"]))) * 100, 2))
+        stats["new_perc_ar_cancel"] = float(round((stats["new_num_ar_cancel"] / (stats["new_num_ar_data"] + stats["new_num_ar_cancel"])) * 100, 2))
+        stats["new_perc_dp_cancel"] = float(round((stats["new_num_dp_cancel"] / (stats["new_num_dp_data"] + stats["new_num_dp_cancel"])) * 100, 2))
 
-        self.stats["new"]["perc_ar_delay"] = str(round(((((self._rtd_d_new["ar_delay"] > 5) & (self._rtd_d_new["ar_happened"])).sum() / self.stats["new"]["num_ar_data"]).compute()) * 100, 2))
-        self.stats["new"]["perc_dp_delay"] = str(round(((((self._rtd_d_new["dp_delay"] > 5) & (self._rtd_d_new["dp_happened"])).sum() / self.stats["new"]["num_dp_data"]).compute()) * 100, 2))
-        self.stats["new"]["perc_ar_cancel"] = str(round(((self._rtd_d_new["ar_cs"] == "c").sum() / self.stats["new"]["num_ar_data"]).compute() * 100, 2))
-        self.stats["new"]["perc_dp_cancel"] = str(round(((self._rtd_d_new["dp_cs"] == "c").sum() / self.stats["new"]["num_dp_data"]).compute() * 100, 2))
+        return pd.DataFrame({key: [stats[key]] for key in stats})
 
-        return self.stats
+@cache
+def load_stats(**kwargs) -> dict:
+    """Loads stats from database or local
 
-    def save_stats(self, name = "stats.json"):
-        import json
-        from config import CACHE_PATH
-        with open(f"{CACHE_PATH}/{name}", "w") as file:
-            json.dump(self.stats, file, indent=4)
+    Args:
+        **kwargs: passed to `cached_table_fetch`. See its docstring for more info.
+
+    Returns
+    -------
+    dict
+        Loaded stats
+    """
+    stats = cached_table_fetch(
+        "stats_overview",
+        **kwargs
+    )
+
+    return stats.iloc[0].to_dict()
 
 
 if __name__ == '__main__':
-    stats = Stats(min_date=datetime(2021,2,15))
-    data = stats.generate_stats()
-    print(data)
-    stats.save_stats()
+    stats = load_stats(
+        table_generator=stats_generator,
+        generate=True,
+    )
+
+    print(stats)

@@ -7,7 +7,6 @@ from flask.helpers import send_file
 
 from datetime import datetime
 import numpy as np
-import json
 
 from webserver.connection import (
     datetimes_to_text,
@@ -15,6 +14,7 @@ from webserver.connection import (
 )
 from webserver import predictor, streckennetz, per_station_time
 from webserver.db_logger import log_activity
+from data_analysis import data_stats
 from config import CACHE_PATH
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -130,10 +130,7 @@ def stats():
     flask generated json
         The stats
     """
-    with open(f"{CACHE_PATH}/stats.json") as file:
-        resp = jsonify(json.load(file))
-    resp.headers.add("Access-Control-Allow-Origin", "*")
-    return resp
+    return data_stats.load_stats()
 
 
 @bp.route("/stationplot/<string:date_range>.webp")

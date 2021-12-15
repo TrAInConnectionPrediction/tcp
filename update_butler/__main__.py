@@ -3,64 +3,65 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Print Logo
 import helpers.fancy_print_tcp
+from config import n_dask_workers
 
-print("Init")
+if __name__ == '__main__':
 
-# load/import classes
-from dask.distributed import Client
+    print("Init")
 
-# set up cluster and workers
-client = Client(ip='127.0.0.1', n_workers=10, threads_per_worker=2, memory_limit='16GB')
+    from dask.distributed import Client
+    with Client(n_workers=2, threads_per_worker=1, memory_limit='16GB') as client:
+        from helpers import RtdRay
 
-from helpers import RtdRay
+        print("Done")
 
-print("Done")
+        print("Refreshing local Cache...")
+        # If this doesn't work properly switch to 
+        # TODO switch to RtdRay.upgrade_rtd()
+        RtdRay.download_rtd()
+        # RtdRay.upgrade_rtd()
 
-print("Refreshing local Cache...")
-# If this doesn't work properly switch to 
-# TODO switch to RtdRay.upgrade_rtd()
-RtdRay.download_rtd()
-# RtdRay.upgrade_rtd()
+        print("Done")
 
-print("Done")
+    print("Generating Statistics...")
 
-print("Generating Statistics...")
+    print("--Overview")
 
-print("--Overview")
+    from data_analysis import data_stats
 
-from data_analysis.data_stats import Stats
-stats = Stats()
-stats.generate_stats()
-stats.save_stats()
+    data_stats.load_stats(
+        table_generator=data_stats.stats_generator,
+        generate=True,
+    )
 
-print("--Done")
+    print("--Done")
 
-print("--Per Station Data")
+    print("--Per Station Data")
 
-import datetime
-rtd_df = RtdRay.load_data(
-    columns=[
-        "ar_pt",
-        "dp_pt",
-        "station",
-        "ar_delay",
-        "ar_happened",
-        "dp_delay",
-        "dp_happened",
-        "lat",
-        "lon",
-    ],
-    min_date=datetime.datetime(2021, 1, 1)
-)
+    import datetime
+    rtd_df = RtdRay.load_data(
+        columns=[
+            "ar_pt",
+            "dp_pt",
+            "station",
+            "ar_delay",
+            "ar_happened",
+            "dp_delay",
+            "dp_happened",
+            "lat",
+            "lon",
+        ],
+        min_date=datetime.datetime(2021, 1, 1)
+    )
 
-from data_analysis.per_station import PerStationOverTime
-PerStationOverTime(rtd_df, generate=True, use_cache=False)
+    from data_analysis.per_station import PerStationOverTime
+    PerStationOverTime(rtd_df, generate=True, use_cache=False)
 
-# del rtd_df
-print("--Done")
+    # del rtd_df
+    print("--Done")
 
-print("Training ML Models...")
+    print("Training ML Models...")
 
-# TODO
+    # TODO
 
-print("Done")
+    print("Done")
