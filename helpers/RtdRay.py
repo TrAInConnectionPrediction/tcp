@@ -175,10 +175,12 @@ def _get_delays(rtd: dd.DataFrame) -> dd.DataFrame:
     # rtd['ar_cancellation_time_delta'] = (((rtd['ar_clt'] - rtd['ar_pt']).dt.total_seconds()) // 60).astype('Int16')
     rtd['ar_delay'] = (((rtd['ar_ct'] - rtd['ar_pt']).dt.total_seconds()) // 60).astype('Int16')
     rtd['ar_happened'] = (rtd['ar_cs'] != 'c') & ~rtd['ar_delay'].isna()
+    rtd['ar_cacelled'] = rtd['ar_cs'] == 'c'
 
     # rtd['dp_cancellation_time_delta'] = (((rtd['dp_clt'] - rtd['dp_pt']).dt.total_seconds()) // 60).astype('Int16')
     rtd['dp_delay'] = (((rtd['dp_ct'] - rtd['dp_pt']).dt.total_seconds()) // 60).astype('Int16')
     rtd['dp_happened'] = (rtd['dp_cs'] != 'c') & ~rtd['dp_delay'].isna()
+    rtd['dp_cacelled'] = rtd['dp_cs'] == 'c'
 
     # Everything with less departure delay than -1 is definitly a bug of IRIS
     rtd['ar_delay'] = rtd['ar_delay'].where(rtd['dp_delay'] >= -1, 0)
