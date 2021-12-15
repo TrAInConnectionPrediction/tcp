@@ -42,7 +42,7 @@ def db_to_datetime(dt: Union[str, None]) -> Union[datetime.datetime, None]:
 
 
 def parse_path(path: Union[str, None]) -> Union[List[str], None]:
-    if path is None:
+    if path is None or not path:
         return None
     return path.split('|')
 
