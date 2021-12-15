@@ -14,7 +14,7 @@ def cached_table_fetch(
         prefer_cache: Optional[bool] = False,
         generate: Optional[bool] = False,
         table_generator: Optional[Callable[[], pd.DataFrame]] = None,
-        push: Optional[bool] = False,
+        push: Optional[bool] = True,
         **kwargs
 ) -> pd.DataFrame:
     """
