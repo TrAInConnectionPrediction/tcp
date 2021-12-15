@@ -168,7 +168,7 @@ class StreckennetzSteffi(StationPhillip):
             retry = True
             while retry:
                 try:
-                    cached_table_push(cache_df, tablename="edge_path_persistent_cache", chunksize=10_000, dtype={"path": postgresql.ARRAY(sqlalchemy.types.INT)})
+                    cached_table_push(cache_df, tablename="edge_path_persistent_cache", fast=False, dtype={"path": postgresql.ARRAY(sqlalchemy.types.INT)})
                     retry = False
                 except sqlalchemy.exc.ProgrammingError:
                     # Try again after random delay
