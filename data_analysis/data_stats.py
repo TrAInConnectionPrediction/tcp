@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from datetime import datetime, timedelta
+import datetime
 import pandas as pd
 from helpers import RtdRay
 from database import cached_table_fetch
@@ -15,11 +15,10 @@ def stats_generator() -> pd.DataFrame:
     from dask.distributed import Client
     with Client(n_workers=n_dask_workers, threads_per_worker=2) as client:
         rtd = RtdRay.load_data(
-            columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"],
+            columns=["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"],
         )
 
         stats = {}
-
 
         stats["all_num_ar_data"] = int(rtd["ar_happened"].sum().compute())
         stats["all_num_dp_data"] = int(rtd["dp_happened"].sum().compute())
@@ -36,15 +35,20 @@ def stats_generator() -> pd.DataFrame:
         stats["all_perc_ar_cancel"] = float(round((stats["all_num_ar_cancel"] / (stats["all_num_ar_data"] + stats["all_num_ar_cancel"])) * 100, 2))
         stats["all_perc_dp_cancel"] = float(round((stats["all_num_dp_cancel"] / (stats["all_num_dp_data"] + stats["all_num_dp_cancel"])) * 100, 2))
 
-        max_date = rtd['ar_pt'].max().compute()
-        stats["time"] = max_date.strftime("%d.%m.%Y %H:%M")
+        stats["time"] = datetime.datetime.today().strftime("%d.%m.%Y %H:%M")
 
+        today = datetime.datetime.combine(datetime.datetime.today().date(), datetime.time())
+        yersterday = today - datetime.timedelta(days=1)
+
+        # One day will alsways fit into ram, so we compute the loaded dask DataFrame right away
         rtd = RtdRay.load_data(
-            columns = ["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"],
-            min_date=max_date - timedelta(days=1),
-            max_date=max_date,
+            columns=["dp_delay", "ar_delay", "dp_pt", "ar_pt", "ar_cs", "dp_cs", "ar_happened", "dp_happened"],
+            min_date=yersterday,
+            max_date=today,
         ).compute()
 
+        
+        stats["new_date"] = yersterday.strftime("%d.%m.%Y")
         stats["new_num_ar_data"] = int(rtd["ar_happened"].sum())
         stats["new_num_dp_data"] = int(rtd["dp_happened"].sum())
         stats["new_num_ar_cancel"] = int((rtd["ar_cs"] == "c").sum())
