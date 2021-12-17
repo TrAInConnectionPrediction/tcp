@@ -120,6 +120,7 @@ def parse_connection(connection):
     summary['train_categories'] = list(set(connection['segmentTypes'])) # set to get unique categories
     summary['duration'] = str(summary['ar_ct'] - summary['dp_ct'])[:-3]
     summary['price'] = connection['tarifSet'][0]['fares'][0]['price'] if 'tarifSet' in connection else -1
+    summary['is_rideable'] = connection['isRideable']
     for segment in connection['segments']:
         if segment['type'] == 'WALK':
             # Add walking time to last segment and skip walk segment
@@ -213,6 +214,9 @@ def parse_connection(connection):
 def parse_connections(connections):
     with ThreadPoolExecutor(max_workers=10) as executor:
         parsed = list(executor.map(parse_connection, connections['routes']))
+
+    # Remove connections that are not rideable (for example, because of a stop is cancelled)
+    parsed = [connection for connection in parsed if connection['summary']['is_rideable']]
 
     parsed = sorted(parsed, key=lambda el: el['summary']['dp_ct'])
     # add unique id used for rendering in vue
