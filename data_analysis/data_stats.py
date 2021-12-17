@@ -4,10 +4,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import datetime
 import pandas as pd
-from helpers import RtdRay
+from helpers import RtdRay, lru_cache_time
 from database import cached_table_fetch
 from config import n_dask_workers
-from functools import cache
 
 
 def stats_generator() -> pd.DataFrame:
@@ -66,7 +65,7 @@ def stats_generator() -> pd.DataFrame:
 
         return pd.DataFrame({key: [stats[key]] for key in stats})
 
-@cache
+@lru_cache_time(maxsize=1, time_to_last=60*60)
 def load_stats(**kwargs) -> dict:
     """Loads stats from database or local
 
