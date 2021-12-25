@@ -2,7 +2,7 @@ import time
 from functools import lru_cache, partial, update_wrapper
 
 
-def lru_cache_time(time_to_last, maxsize=None):
+def lru_cache_time(time_to_last, maxsize=128):
     """
     Adds time aware caching to lru_cache
     """
