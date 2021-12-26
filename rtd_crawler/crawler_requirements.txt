@@ -11,7 +11,7 @@ geopy==2.1.0
 greenlet==1.1.0
 idna==2.10
 locket==0.2.1
-lxml==4.6.3
+lxml==4.6.5
 Mako==1.1.4
 MarkupSafe==2.0.0
 networkx==2.5.1
