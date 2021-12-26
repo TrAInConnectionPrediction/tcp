@@ -1,9 +1,13 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import cached_table_fetch, DB_CONNECT_STRING
+from helpers import lru_cache_time
+from config import CACHE_TIMEOUT_SECONDS
 import pandas as pd
-from typing import Tuple, Optional, Union, Any
+from typing import Tuple, Optional, Union, List, Iterator
+import datetime
 
 
 class StationPhillip:
@@ -11,16 +15,40 @@ class StationPhillip:
         if 'generate' in kwargs:
             kwargs['generate'] = False
             print('StationPhillip does not support generate')
-        
-        self.name_index_stations = cached_table_fetch('stations', index_col='name', **kwargs)
-        self.name_index_stations['eva'] = self.name_index_stations['eva'].astype(int)
+        self.kwargs = kwargs
 
-        self.eva_index_stations = self.name_index_stations.reset_index().set_index('eva')
-        self.ds100_index_stations = self.name_index_stations.reset_index().set_index('ds100')
-        self.sta_list = self.name_index_stations.sort_values(by='number_of_events', ascending=False).index.to_list()
+    @property
+    @lru_cache_time(CACHE_TIMEOUT_SECONDS, 1)
+    def stations(self) -> pd.DataFrame:
+        stations = cached_table_fetch('stations', **self.kwargs)
+        if 'valid_from' not in stations.columns:
+            stations['valid_from'] = pd.NaT
+        if 'valid_to' not in stations.columns:
+            stations['valid_to'] = pd.NaT
+        stations['valid_from'] = stations['valid_from'].fillna(pd.Timestamp.min)
+        stations['valid_to'] = stations['valid_to'].fillna(pd.Timestamp.max)
+        stations['eva'] = stations['eva'].astype(int)
+        stations['name'] = stations['name'].astype(pd.StringDtype())
+        stations['ds100'] = stations['ds100'].astype(pd.StringDtype())
+
+        stations.set_index(['name', 'eva', 'ds100'], drop=False, inplace=True, )
+        stations.index.set_names(['name', 'eva', 'ds100'], inplace=True)
+        return stations
+
+    @property
+    @lru_cache_time(CACHE_TIMEOUT_SECONDS, 1)
+    def name_index_stations(self) -> pd.DataFrame:
+        name_index_stations = cached_table_fetch('stations', **self.kwargs).set_index('name')
+        name_index_stations['eva'] = name_index_stations['eva'].astype(int)
+        return name_index_stations
+
+    @property
+    @lru_cache_time(CACHE_TIMEOUT_SECONDS, 1)
+    def sta_list(self) -> List[str]:
+        return list(self.stations.sort_values(by='number_of_events', ascending=False)['name'].unique())
 
     def __len__(self):
-        return len(self.name_index_stations)
+        return len(self.stations)
 
     def __iter__(self):
         """
@@ -31,7 +59,7 @@ class StationPhillip:
         str
             Name of station
         """
-        yield from self.name_index_stations.index
+        yield from self.stations['name'].unique()
 
     def to_gpd(self):
         """
@@ -44,14 +72,87 @@ class StationPhillip:
         """
         import geopandas as gpd
         return gpd.GeoDataFrame(
-            self.name_index_stations,
-            geometry=gpd.points_from_xy(self.name_index_stations.lon, self.name_index_stations.lat)
+            self.stations,
+            geometry=gpd.points_from_xy(self.stations.lon, self.stations.lat)
         ).set_crs("EPSG:4326")
 
+    
+    @staticmethod
+    def _filter_stations_by_date(
+        date: Union[datetime.datetime, Iterator[datetime.datetime]],
+        stations_to_filter: pd.DataFrame,
+    ):
+        if not isinstance(date, datetime.datetime):
+            date = pd.Series(
+                index=stations_to_filter.index.unique(),
+                data=list(date),
+                name='date'
+            )
+
+        stations_to_filter = stations_to_filter.loc[
+            (date >= stations_to_filter['valid_from'])
+            & (date < stations_to_filter['valid_to'])
+        ]
+
+        stations_to_filter['date'] = date
+        stations_to_filter.set_index(['date'], append=True, inplace=True)
+
+        return stations_to_filter
+
+    def _get_station(
+            self,
+            date: datetime.datetime,
+            name: Union[str, Iterator[str]] = None,
+            eva: Union[int, Iterator[int]] = None,
+            ds100: Union[str, Iterator[str]] = None,
+    ) -> pd.DataFrame:
+        if name is not None:
+            if isinstance(name, str):
+                return self._filter_stations_by_date(date, self.stations.xs(name, level='name'))
+            else:
+                stations = self.stations.loc[(
+                    name,
+                    slice(None),
+                    slice(None),
+                ), :]
+                stations = self._filter_stations_by_date(date, stations)
+                stations = stations.droplevel(level=['eva', 'ds100'])
+
+                return stations
+
+        elif eva is not None:
+            if isinstance(eva, int):
+                return self._filter_stations_by_date(date, self.stations.xs(eva, level='eva'))
+            else:
+                stations = self.stations.loc[(
+                    slice(None),
+                    eva,
+                    slice(None),
+                ), :]
+                stations = self._filter_stations_by_date(date, stations)
+                stations = stations.droplevel(level=['name', 'ds100'])
+
+                return stations
+
+        elif ds100 is not None:
+            if isinstance(ds100, str):
+                return self._filter_stations_by_date(date, self.stations.xs(ds100, level='ds100'))
+            else:
+                stations = self.stations.loc[(
+                    slice(None),
+                    slice(None),
+                    ds100,
+                ), :]
+                stations = self._filter_stations_by_date(date, stations)
+                stations = stations.droplevel(level=['name', 'eva'])
+
+                return stations
+
     def get_eva(
-        self,
-        name: Optional[Union[str, Any]]=None,
-        ds100: Optional[Union[str, Any]]=None
+            self,
+            date: datetime.datetime,
+            name: Optional[Union[str, Iterator[str]]] = None,
+            ds100: Optional[Union[str, Iterator[str]]] = None,
     ) -> Union[int, pd.Series]:
         """
         Get eva from name or ds100
@@ -69,33 +170,24 @@ class StationPhillip:
             int - the single eva matching name or ds100
             pd.Series: Series with the evas matching name or ds100. Contains NaNs
             if no eva was found for a given name or ds100.
-        """        
+        """
         if name is not None and ds100 is not None:
-            raise ValueError("Either name or ds100 must be defined not none")
+            raise ValueError("Either name or ds100 must be supplied not both")
+        elif name is None and ds100 is None:
+            raise ValueError("Either name or ds100 must be supplied not none")
 
-        if name is not None:
-            if isinstance(name, str):
-                return self.name_index_stations.at[name, 'eva']
-            else:
-                evas = pd.Series(index=name, name='eva', dtype=int)
-                evas.loc[:] = self.name_index_stations.loc[:, 'eva']
-                return evas
+        eva = self._get_station(date=date, name=name, ds100=ds100).loc[:, 'eva']
+        if isinstance(date, datetime.datetime):
+            eva = eva.item()
 
-        elif ds100 is not None:
-            if isinstance(ds100, str):
-                return self.ds100_index_stations.at[ds100, 'eva']
-            else:
-                evas = pd.Series(index=ds100, name='eva', dtype=int)
-                evas.loc[:] = self.ds100_index_stations.loc[:, 'eva']
-                return evas
-        else:
-            raise ValueError("Either name or ds100 must be defined not none")
+        return eva
 
     def get_name(
         self,
-        eva: Optional[Union[int, Any]]=None,
-        ds100: Optional[Union[str, Any]]=None
-    ) -> Union[int, pd.Series]:
+        date: datetime.datetime,
+        eva: Optional[Union[int, Iterator[int]]] = None,
+        ds100: Optional[Union[str, Iterator[str]]] = None,
+    ) -> Union[str, pd.Series]:
         """
         Get name from eva or ds100
 
@@ -110,108 +202,89 @@ class StationPhillip:
         -------
         str | pd.Series
             str - the single name matching eva or ds100
-            pd.Series: Series with the names matching evas or ds100ths. Contains NaNs
+            pd.Series: Series with the names matching eva or ds100. Contains NaNs
             if no name was found for a given eva or ds100.
-        """        
+        """
         if eva is not None and ds100 is not None:
-            raise ValueError("Either eva or ds100 must be defined not none")
+            raise ValueError("Either eva or ds100 must be supplied not both")
+        elif eva is None and ds100 is None:
+            raise ValueError("Either eva or ds100 must be supplied not none")
 
-        if eva is not None:
-            if isinstance(eva, int):
-                return self.eva_index_stations.at[eva, 'name']
-            else:
-                names = pd.Series(index=eva, name='name', dtype=str)
-                names.loc[:] = self.eva_index_stations.loc[:, 'name']
-                return names
+        name = self._get_station(date=date, eva=eva, ds100=ds100).loc[:, 'name']
+        if isinstance(date, datetime.datetime):
+            name = name.item()
 
-        elif ds100 is not None:
-            if isinstance(ds100, str):
-                return self.ds100_index_stations.at[ds100, 'name']
-            else:
-                names = pd.Series(index=ds100, name='name', dtype=str)
-                names.loc[:] = self.ds100_index_stations.loc[:, 'name']
-                return names
-        else:
-            raise ValueError("Either name or ds100 must be defined not none")
+        return name
 
     def get_ds100(
         self,
-        name: Optional[Union[str, Any]]=None,
-        eva: Optional[Union[int, Any]]=None
+        date: datetime.datetime,
+        eva: Optional[Union[int, Iterator[int]]] = None,
+        name: Optional[Union[str, Iterator[str]]] = None,
     ) -> Union[str, pd.Series]:
         """
-        Get ds100 from name or eva
+        Get ds100 from eva or name
 
         Parameters
         ----------
-        name : str or ArrayLike[str], optional
-            The name or names to get the ds100 or ds100ths from, by default None
         eva : int or ArrayLike[int], optional
             The eva or evas to get the ds100 or ds100ths from, by default None
+        name : str or ArrayLike[str], optional
+            The name or names to get the ds100 or ds100ths from, by default None
 
         Returns
         -------
         str | pd.Series
-            str - the single ds100 matching name or eva
-            pd.Series: Series with the ds100ths matching name or eva. Contains NaNs
-            if no ds100 was found for a given name or eva.
-        """        
-        if name is not None and eva is not None:
-            raise ValueError("Either name or eva must be defined not none")
+            str - the single ds100 matching eva or name
+            pd.Series: Series with the ds100 matching eva or name. Contains NaNs
+            if no ds100 was found for a given eva or name.
+        """
+        if eva is not None and name is not None:
+            raise ValueError("Either eva or name must be supplied not both")
+        elif eva is None and name is None:
+            raise ValueError("Either eva or name must be supplied not none")
 
-        if name is not None:
-            if isinstance(name, str):
-                return self.name_index_stations.at[name, 'ds100']
-            else:
-                ds100ths = pd.Series(index=name, name='ds100', dtype=str)
-                ds100ths.loc[:] = self.name_index_stations.loc[:, 'ds100']
-                return ds100ths
+        ds100 = self._get_station(date=date, eva=eva, name=name).loc[:, 'ds100']
+        if isinstance(date, datetime.datetime):
+            ds100 = ds100.item()
 
-        elif eva is not None:
-            if isinstance(eva, int):
-                return self.eva_index_stations.at[eva, 'ds100']
-            else:
-                ds100ths = pd.Series(index=eva, name='ds100', dtype=str)
-                ds100ths.loc[:] = self.eva_index_stations.loc[:, 'ds100']
-                return ds100ths
-        else:
-            raise ValueError("Either name or eva must be defined not none")
+        return ds100
 
     def get_location(
         self,
-        name: Optional[Union[str, Any]]=None,
-        eva: Optional[Union[int, Any]]=None,
-        ds100: Optional[Union[str, Any]]=None
-    ) -> Union[Tuple[float, float], pd.DataFrame]:
+        date: datetime.datetime,
+        eva: Optional[Union[int, Iterator[int]]] = None,
+        name: Optional[Union[str, Iterator[str]]] = None,
+        ds100: Optional[Union[str, Iterator[str]]] = None,
+    ) -> Union[Tuple[int, int], pd.DataFrame]:
         """
-        Get the location (lon, lat) of a station or multiple stations
+        Get location from eva, name or ds100
 
         Parameters
         ----------
-        name : str | ArrayLike[str], optional
-            Name or names of the station or stations, by default None
-        eva : int | ArrayLike[int], optional
-            Eva or evas of the station or stations, by default None
-        ds100 : str | ArrayLike[str], optional
-            ds100 or ds100ths of the station or stations, by default None
+        eva : int or ArrayLike[int], optional
+            The eva or evas to get the location or locations from, by default None
+        name : str or ArrayLike[str], optional
+            The name or names to get the location or locations from, by default None
+        ds100 : str or ArrayLike[str], optional
+            The ds100 or ds100ths to get the location or locations from, by default None
 
         Returns
         -------
-        Tuple[float, float] | pd.DataFrame
-            Tuple[float, float]: longitude and latitude of the station
-            pd.DataFrame: DataFrame with a lon and a lat column with the
-            location of the stations
+        pd.DataFrame
+            DataFrame with the locations matching eva, name or ds100. Contains NaNs
+            if no location was found for a given eva, name or ds100.
         """
-        if name is None:
-            return self.get_location(name=self.get_name(eva=eva, ds100=ds100))
-        else:
-            if isinstance(name, str):
-                return (self.name_index_stations.at[name, 'lon'],
-                        self.name_index_stations.at[name, 'lat'])
-            else:
-                locations = pd.DataFrame(index=name, columns=['lon', 'lat'])
-                locations.loc[:, ['lon', 'lat']] = self.name_index_stations.loc[:, ['lon', 'lat']]
-                return locations
+        if eva is not None and name is not None and ds100 is not None:
+            raise ValueError("Either eva, name or ds100 must be supplied not all")
+        elif eva is None and name is None and ds100 is None:
+            raise ValueError("Either eva, name or ds100 must be supplied not none")
+
+        location = self._get_station(date=date, eva=eva, name=name, ds100=ds100).loc[:, ['lon', 'lat']]
+        if isinstance(date, datetime.datetime):
+            location = (location['lon'].item(), location['lat'].item())
+
+        return location
 
     @staticmethod
     def search_station(search_term):
@@ -232,7 +305,8 @@ class StationPhillip:
         matches = list(xml_to_json(match) for match in matches)
         return matches
 
-    def read_stations_from_derf_Travel_Status_DE_IRIS(self):
+    @staticmethod
+    def read_stations_from_derf_Travel_Status_DE_IRIS():
         import requests
 
         derf_stations = requests.get(
@@ -256,18 +330,26 @@ class StationPhillip:
     def add_number_of_events(self):
         from data_analysis.per_station import PerStationAnalysis
         # Fail if cache does not exist
+        # TODO: This function does probably not work anymore
         per_station = PerStationAnalysis(None)
 
-        self.name_index_stations['number_of_events'] = (
-            per_station.data[('ar_delay', 'count')] + per_station.data[('dp_delay', 'count')]
+        self.stations['number_of_events'] = (
+                per_station.data[('ar_delay', 'count')] + per_station.data[('dp_delay', 'count')]
         )
 
     def push_to_db(self):
-        self.name_index_stations.to_sql('stations', DB_CONNECT_STRING, if_exists='replace', method='multi')
+        self.stations.to_sql('stations', DB_CONNECT_STRING, if_exists='replace', method='multi')
 
 
 if __name__ == "__main__":
     import helpers.fancy_print_tcp
+
     stations = StationPhillip(prefer_cache=False)
+    print(stations.sta_list[:10])
+    print(stations._get_station(name=pd.Series(['Tübingen Hbf', 'Köln Hbf']), date=pd.Series([datetime.datetime.now(), datetime.datetime.today()])))
+    # print(stations._get_station(eva=pd.Series([8000141, 8000141]), date=pd.Series([datetime.datetime.now(), datetime.datetime.today()])))
+
+    print(stations.get_location(eva=8000141, date=datetime.datetime.now()))
+    print(stations.get_location(ds100=pd.Series(['TT', 'KK']), date=pd.Series([datetime.datetime.now(), datetime.datetime.today()])))
 
     print('len:', len(stations))

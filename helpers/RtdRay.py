@@ -209,7 +209,8 @@ def _add_station_coordinates(rtd: dd.DataFrame) -> dd.DataFrame:
 
     for station in rtd['station'].unique():
         try:
-            lon, lat = stations.get_location(name=station)
+            # TODO: This should probably be done during parsing
+            lon, lat = stations.get_location(name=station, date=datetime.datetime.now())
         except KeyError:
             lon, lat = 0, 0
             print(station)

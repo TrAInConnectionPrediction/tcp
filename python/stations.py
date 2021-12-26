@@ -7,6 +7,8 @@ import requests
 import json
 from helpers import StationPhillip
 
+# TODO: This file does not work at the time. 
+
 def add_station(eva):
 
     name_data = requests.get('https://marudor.de/api/hafas/v1/station/{station}'.format(station=eva)).json()

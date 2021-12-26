@@ -144,8 +144,8 @@ def add_change(stop: dict, change: dict) -> dict:
 
 def add_route_info(stop: dict) -> dict:
     if stop['ar_cpth'] is not None:
-        stop['distance_to_last'] = obstacles.route_length([stop['ar_cpth'][-1]] + [stop['station']])
-        stop['distance_to_start'] = obstacles.route_length(stop['ar_cpth'] + [stop['station']])
+        stop['distance_to_last'] = obstacles.route_length([stop['ar_cpth'][-1]] + [stop['station']], date=stop['date_id'])
+        stop['distance_to_start'] = obstacles.route_length(stop['ar_cpth'] + [stop['station']], date=stop['date_id'])
 
         path_obstacles = obstacles.obstacles_of_path(stop['ar_cpth'] + [stop['station']], stop['ar_pt'])
         stop['obstacles_priority_24'] = path_obstacles['priority_24']
@@ -166,8 +166,8 @@ def add_route_info(stop: dict) -> dict:
         stop['obstacles_priority_80'] = 0
 
     if stop['dp_cpth'] is not None:
-        stop['distance_to_next'] = obstacles.route_length([stop['station']] + [stop['dp_cpth'][0]])
-        stop['distance_to_end'] = obstacles.route_length([stop['station']] + stop['dp_cpth'])
+        stop['distance_to_next'] = obstacles.route_length([stop['station']] + [stop['dp_cpth'][0]], date=stop['date_id'])
+        stop['distance_to_end'] = obstacles.route_length([stop['station']] + stop['dp_cpth'], date=stop['date_id'])
     else:
         stop['distance_to_next'] = 0
         stop['distance_to_end'] = 0

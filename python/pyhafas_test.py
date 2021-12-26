@@ -15,8 +15,8 @@ hafas = HafasClient(DBProfile())
 
 
 journeys = hafas.journeys(
-    origin=stations.get_eva(name='Tübingen Hbf'),
-    destination=stations.get_eva(name='Köln Hbf'),
+    origin=stations.get_eva(name='Tübingen Hbf', date=datetime.datetime.now()),
+    destination=stations.get_eva(name='Köln Hbf', date=datetime.datetime.now()),
     date=datetime.datetime.now(),
 )
 

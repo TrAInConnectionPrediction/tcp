@@ -8,7 +8,10 @@ from config import ENCODER_PATH, MODEL_PATH
 
 
 def from_utc(utc_time: str) -> datetime.datetime:
-    return datetime.datetime.strptime(utc_time, "%Y-%m-%dT%H:%M:%S.%f%z").astimezone(timezone("Europe/Berlin"))
+    return datetime.datetime.strptime(
+        utc_time,
+        "%Y-%m-%dT%H:%M:%S.%f%z"
+    ).astimezone(timezone("Europe/Berlin")).replace(tzinfo=None)
 
 
 class Predictor:
@@ -114,10 +117,22 @@ class Predictor:
             ar_data.at[i, 'stop_id'] = segment['ar_stop_id']
             dp_data.at[i, 'stop_id'] = segment['dp_stop_id']
 
-            ar_data.at[i, 'distance_to_start'] = streckennetz.route_length(segment['full_trip'][:ar_data.at[i, 'stop_id'] + 1])
-            ar_data.at[i, 'distance_to_end'] = streckennetz.route_length(segment['full_trip'][ar_data.at[i, 'stop_id']:])
-            dp_data.at[i, 'distance_to_start'] = streckennetz.route_length(segment['full_trip'][:dp_data.at[i, 'stop_id'] + 1])
-            dp_data.at[i, 'distance_to_end'] = streckennetz.route_length(segment['full_trip'][dp_data.at[i, 'stop_id']:])
+            ar_data.at[i, 'distance_to_start'] = streckennetz.route_length(
+                segment['full_trip'][:ar_data.at[i, 'stop_id'] + 1],
+                date=segment['dp_pt']
+            )
+            ar_data.at[i, 'distance_to_end'] = streckennetz.route_length(
+                segment['full_trip'][ar_data.at[i, 'stop_id']:],
+                date=segment['dp_pt']
+            )
+            dp_data.at[i, 'distance_to_start'] = streckennetz.route_length(
+                segment['full_trip'][:dp_data.at[i, 'stop_id'] + 1],
+                date=segment['dp_pt']
+            )
+            dp_data.at[i, 'distance_to_end'] = streckennetz.route_length(
+                segment['full_trip'][dp_data.at[i, 'stop_id']:],
+                date=segment['dp_pt']
+            )
 
             ar_data.at[i, 'minute'] = segment['ar_ct'].time().minute + segment['ar_ct'].time().hour * 60
             ar_data.at[i, 'day'] = segment['ar_ct'].weekday()
