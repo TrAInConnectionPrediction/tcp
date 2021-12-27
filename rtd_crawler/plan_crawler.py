@@ -39,9 +39,6 @@ def date_in_five_hours() -> int:
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
     stations = StationPhillip()
-    # TODO: make evas and names update automatically
-    evas = stations.stations['eva'].unique().tolist()
-    names = stations.get_name(eva=evas, date=[datetime.datetime.now() for _ in evas])
     dd = SimplestDownloader()
     hour = hour_in_five_hours() - 1
     plan_by_station = Plan()
@@ -52,6 +49,8 @@ if __name__ == '__main__':
         if hour == hour_in_five_hours():
             time.sleep(20)
         else:
+            evas = stations.get_eva(date=datetime.datetime.now()).to_list()
+            names = stations.get_name(eva=evas, date=datetime.datetime.now()).to_list()
             date = date_in_five_hours()
             hour = hour_in_five_hours()
             str_date = date.strftime('%y%m%d')
