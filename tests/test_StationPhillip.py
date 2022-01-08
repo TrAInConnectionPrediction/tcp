@@ -95,89 +95,6 @@ def test_get_ds100():
     assert stations.get_ds100(eva=8000141, date=datetime.datetime(2021, 1, 1)) == 'TT'
     assert stations.get_ds100(eva=8000207, date=datetime.datetime(2021, 1, 1)) == 'KK'
 
-    assert (def test_get_eva():
-    assert (
-        stations.get_eva(name='Tübingen Hbf', date=datetime.datetime(2021, 1, 1))
-        == 8000141
-    )
-    assert (
-        stations.get_eva(name='Köln Hbf', date=datetime.datetime(2021, 1, 1)) == 8000207
-    )
-
-    assert stations.get_eva(ds100='TT', date=datetime.datetime(2021, 1, 1)) == 8000141
-    assert stations.get_eva(ds100='KK', date=datetime.datetime(2021, 1, 1)) == 8000207
-
-    evas = stations.get_eva(
-        ds100=pd.Series(['TT', 'KK']),
-        date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
-    )
-
-    assert isinstance(evas, pd.Series)
-    assert 'eva' == evas.name
-    assert ['ds100', 'date'] == evas.index.names
-    assert evas.dtype == int
-    assert evas[('TT', datetime.datetime(2021, 1, 1))] == 8000141
-    assert evas[('KK', datetime.datetime(2021, 1, 1))] == 8000207
-
-    evas = stations.get_eva(
-        name=pd.Series(['Tübingen Hbf', 'Köln Hbf']),
-        date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
-    )
-
-    assert isinstance(evas, pd.Series)
-    assert 'eva' == evas.name
-    assert ['name', 'date'] == evas.index.names
-    assert evas.dtype == int
-    assert evas[('Tübingen Hbf', datetime.datetime(2021, 1, 1))] == 8000141
-    assert evas[('Köln Hbf', datetime.datetime(2021, 1, 1))] == 8000207
-
-
-def test_get_name():
-    assert (
-        stations.get_name(eva=8000141, date=datetime.datetime(2021, 1, 1))
-        == 'Tübingen Hbf'
-    )
-    assert (
-        stations.get_name(eva=8000207, date=datetime.datetime(2021, 1, 1)) == 'Köln Hbf'
-    )
-
-    assert (
-        stations.get_name(ds100='TT', date=datetime.datetime(2021, 1, 1))
-        == 'Tübingen Hbf'
-    )
-    assert (
-        stations.get_name(ds100='KK', date=datetime.datetime(2021, 1, 1)) == 'Köln Hbf'
-    )
-
-    names = stations.get_name(
-        eva=(8000141, 8000207),
-        date=(datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)),
-    )
-
-    assert isinstance(names, pd.Series)
-    assert 'name' == names.name
-    assert ['eva', 'date'] == names.index.names
-    assert names.dtype == pd.StringDtype()
-    assert names[(8000141, datetime.datetime(2021, 1, 1))] == 'Tübingen Hbf'
-    assert names[(8000207, datetime.datetime(2021, 1, 1))] == 'Köln Hbf'
-
-    names = stations.get_name(
-        ds100=pd.Series(['TT', 'KK']),
-        date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
-    )
-
-    assert isinstance(names, pd.Series)
-    assert 'name' == names.name
-    assert ['ds100', 'date'] == names.index.names
-    assert names.dtype == pd.StringDtype()
-    assert names[('TT', datetime.datetime(2021, 1, 1))] == 'Tübingen Hbf'
-    assert names[('KK', datetime.datetime(2021, 1, 1))] == 'Köln Hbf'
-
-
-def test_get_ds100():
-    assert stations.get_ds100(eva=8000141, date=datetime.datetime(2021, 1, 1)) == 'TT'
-    assert stations.get_ds100(eva=8000207, date=datetime.datetime(2021, 1, 1)) == 'KK'
-
     assert (
         stations.get_ds100(name='Tübingen Hbf', date=datetime.datetime(2021, 1, 1))
         == 'TT'
@@ -297,7 +214,7 @@ def test_get_location():
     np.testing.assert_allclose(
         locations.loc[('KK', datetime.datetime(2021, 1, 1))], (6.958729, 50.943030)
     )
-
+    assert (
         stations.get_ds100(name='Tübingen Hbf', date=datetime.datetime(2021, 1, 1))
         == 'TT'
     )
