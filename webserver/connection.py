@@ -9,7 +9,7 @@ from pytz import timezone
 from webserver import streckennetz
 from concurrent.futures import ThreadPoolExecutor
 import datetime
-from helpers import lru_cache_time
+from helpers import ttl_lru_cache
 from . import client
 
 
@@ -232,7 +232,7 @@ def parse_connections(connections):
 
 # This information does change over time, so a permanent cache would give
 # wrong results. Thus, we only cache the result for 3 minutes.
-@lru_cache_time(time_to_last=180, maxsize=500)
+@ttl_lru_cache(seconds_to_live=180, maxsize=500)
 def get_trip_of_train(jid):
     trip = client.trip(jid)
     waypoints = [stopover.stop.name for stopover in trip.stopovers]

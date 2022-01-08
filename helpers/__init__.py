@@ -1,5 +1,5 @@
 from .profiler import profile
-from .lru_cache_time import lru_cache_time
+from .ttl_lru_cache import ttl_lru_cache
 from .logger import logging
 from .groupby_index_to_flat import groupby_index_to_flat
 from .StationPhillip import StationPhillip

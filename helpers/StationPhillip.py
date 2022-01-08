@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import cached_table_fetch, DB_CONNECT_STRING
-from helpers import lru_cache_time
+from helpers import ttl_lru_cache
 from config import CACHE_TIMEOUT_SECONDS
 import pandas as pd
 from typing import Tuple, Optional, Union, List, Literal
@@ -20,7 +20,7 @@ class StationPhillip:
         self.kwargs = kwargs
 
     @property
-    @lru_cache_time(CACHE_TIMEOUT_SECONDS, 1)
+    @ttl_lru_cache(CACHE_TIMEOUT_SECONDS, 1)
     def stations(self) -> pd.DataFrame:
         stations = cached_table_fetch('stations', **self.kwargs)
         if 'valid_from' not in stations.columns:
@@ -42,7 +42,7 @@ class StationPhillip:
         return stations
 
     @property
-    @lru_cache_time(CACHE_TIMEOUT_SECONDS, 1)
+    @ttl_lru_cache(CACHE_TIMEOUT_SECONDS, 1)
     def name_index_stations(self) -> pd.DataFrame:
         name_index_stations = cached_table_fetch('stations', **self.kwargs).set_index(
             'name'
@@ -51,7 +51,7 @@ class StationPhillip:
         return name_index_stations
 
     @property
-    @lru_cache_time(CACHE_TIMEOUT_SECONDS, 1)
+    @ttl_lru_cache(CACHE_TIMEOUT_SECONDS, 1)
     def sta_list(self) -> List[str]:
         return list(
             self.stations.sort_values(by='number_of_events', ascending=False)[
@@ -73,20 +73,31 @@ class StationPhillip:
         """
         yield from self.stations['name'].unique()
 
-    def to_gpd(self):
+    def to_gdf(self, date: DateSelector = None, index_cols: Tuple[str, ...] = None):
         """
-        Convert stations to geopandas DataFrame.
+        Convert stations to geopandas GeoDataFrame.
 
         Returns
         -------
-        geopandas.DataFrame
-            Stations with coordinates as geometry for geopandas.DataFrame.
+        geopandas.GeoDataFrame
+            Stations with coordinates as geometry for geopandas.GeoDataFrame.
         """
         import geopandas as gpd
 
+        if date is not None:
+            stations = self._get_station(date)
+        else:
+            stations = self.stations
+        if index_cols is None:
+            index_cols = ('name', 'eva', 'ds100', 'date')
+
+        for level in stations.index.names:
+            if level not in index_cols:
+                stations = stations.droplevel(level=level)
+
         return gpd.GeoDataFrame(
-            self.stations,
-            geometry=gpd.points_from_xy(self.stations.lon, self.stations.lat),
+            stations,
+            geometry=gpd.points_from_xy(stations['lon'], stations['lat']),
         ).set_crs('EPSG:4326')
 
     @staticmethod
