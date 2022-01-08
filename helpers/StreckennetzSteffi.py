@@ -13,6 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql
 import random
 import time
+import datetime
 
 
 Base = declarative_base()
@@ -61,7 +62,7 @@ class StreckennetzSteffi(StationPhillip):
 
         self.get_length = lambda edge: self.streckennetz_igraph.es[edge]["length"]
 
-    def route_length(self, waypoints) -> float:
+    def route_length(self, waypoints, date: datetime.datetime) -> float:
         """
         Calculate approximate length of a route, e.g. the sum of the distances between the waypoints.
 
@@ -69,6 +70,8 @@ class StreckennetzSteffi(StationPhillip):
         ----------
         waypoints: list
             List of station names that describe the route.
+        date: datetime.datetime
+            Date of the route.
 
         Returns
         -------
@@ -79,12 +82,12 @@ class StreckennetzSteffi(StationPhillip):
         length = 0
         for i in range(len(waypoints) - 1):
             try:
-                length += self.distance(waypoints[i], waypoints[i + 1])
+                length += self.distance(waypoints[i], waypoints[i + 1], date)
             except KeyError:
                 pass
         return length
 
-    def eva_route_length(self, waypoints) -> float:
+    def eva_route_length(self, waypoints, date: datetime.datetime) -> float:
         """
         Calculate approximate length of a route, e.g. the sum of the distances between the waypoints.
 
@@ -92,6 +95,8 @@ class StreckennetzSteffi(StationPhillip):
         ----------
         waypoints: list
             List of station evas that describe the route.
+        date: datetime.datetime
+            Date of the route.
 
         Returns
         -------
@@ -104,9 +109,10 @@ class StreckennetzSteffi(StationPhillip):
             try:
                 length += self.distance(
                     *sorted(
-                        self.get_name(eva=waypoints[i]),
-                        self.get_name(eva=waypoints[i + 1]),
-                    )
+                        self.get_name(eva=waypoints[i], date=date),
+                        self.get_name(eva=waypoints[i + 1], date=date),
+                    ),
+                    date=date,
                 )
             except KeyError:
                 pass
@@ -168,7 +174,12 @@ class StreckennetzSteffi(StationPhillip):
             retry = True
             while retry:
                 try:
-                    cached_table_push(cache_df, tablename="edge_path_persistent_cache", fast=False, dtype={"path": postgresql.ARRAY(sqlalchemy.types.INT)})
+                    cached_table_push(
+                        cache_df,
+                        tablename="edge_path_persistent_cache",
+                        fast=False,
+                        dtype={"path": postgresql.ARRAY(sqlalchemy.types.INT)}
+                    )
                     retry = False
                 except sqlalchemy.exc.ProgrammingError:
                     # Try again after random delay
@@ -180,7 +191,7 @@ class StreckennetzSteffi(StationPhillip):
             self.original_persistent_path_cache_len = len(self.persistent_path_cache)
 
     @functools.lru_cache(maxsize=None)
-    def distance(self, u: str, v: str) -> float:
+    def distance(self, u: str, v: str, date: datetime.datetime) -> float:
         """
         Calculate approx distance between two stations. Uses the Streckennetz if u and v are part of it,
         otherwise it usese geopy.distance.distance.
@@ -191,6 +202,8 @@ class StreckennetzSteffi(StationPhillip):
             Station name
         v: str
             Station name
+        date: datetime.datetime
+            Date to use for the calculation
 
         Returns
         -------
@@ -203,8 +216,8 @@ class StreckennetzSteffi(StationPhillip):
             return sum(map(self.get_length, path))
         else:
             try:
-                u_coords = self.get_location(name=u)
-                v_coords = self.get_location(name=v)
+                u_coords = self.get_location(name=u, date=date)
+                v_coords = self.get_location(name=v, date=date)
                 return geopy.distance.distance(u_coords, v_coords).meters
             except KeyError:
                 return 0
@@ -215,7 +228,7 @@ if __name__ == "__main__":
 
     streckennetz_steffi = StreckennetzSteffi(prefer_cache=True)
 
-    print("Tübingen Hbf - Altingen(Württ):", streckennetz_steffi.route_length(["Tübingen Hbf", "Altingen(Württ)"]))
-    print("Tübingen Hbf - Reutlingen Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Reutlingen Hbf"]))
-    print("Tübingen Hbf - Stuttgart Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Stuttgart Hbf"]))
-    print("Tübingen Hbf - Ulm Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Ulm Hbf"]))
+    print("Tübingen Hbf - Altingen(Württ):", streckennetz_steffi.route_length(["Tübingen Hbf", "Altingen(Württ)"], date=datetime.datetime.now()))
+    print("Tübingen Hbf - Reutlingen Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Reutlingen Hbf"], date=datetime.datetime.now()))
+    print("Tübingen Hbf - Stuttgart Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Stuttgart Hbf"], date=datetime.datetime.now()))
+    print("Tübingen Hbf - Ulm Hbf:", streckennetz_steffi.route_length(["Tübingen Hbf", "Ulm Hbf"], date=datetime.datetime.now()))

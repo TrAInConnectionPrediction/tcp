@@ -42,7 +42,7 @@ if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
     stations = StationPhillip()
-    eva_list = stations.eva_index_stations.index.to_list()
+    eva_list = stations.stations['eva'].unique().tolist()
     eva_list = [
         eva_list[i:i + station_to_monitor_per_thread]
         for i

@@ -177,8 +177,8 @@ def add_distance(rtd):
         ar_cpth = rtd.at[i, 'ar_cpth']
         station = rtd.at[i, 'station']
         if isinstance(ar_cpth, list):
-            rtd.at[i, 'distance_to_last'] = obstacles.route_length([ar_cpth[-1]] + [station])
-            rtd.at[i, 'distance_to_start'] = obstacles.route_length(ar_cpth + [station])
+            rtd.at[i, 'distance_to_last'] = obstacles.route_length([ar_cpth[-1]] + [station], date=rtd.at[i, 'date_id'])
+            rtd.at[i, 'distance_to_start'] = obstacles.route_length(ar_cpth + [station], date=rtd.at[i, 'date_id'])
 
             path_obstacles = obstacles.obstacles_of_path(ar_cpth + [station], rtd.at[i, 'ar_pt'])
             if path_obstacles is not None:
@@ -195,8 +195,8 @@ def add_distance(rtd):
 
         dp_cpth = rtd.at[i, 'dp_cpth']
         if isinstance(dp_cpth, list):
-            rtd.at[i, 'distance_to_next'] = obstacles.route_length([station] + [dp_cpth[0]])
-            rtd.at[i, 'distance_to_end'] = obstacles.route_length([station] + dp_cpth)
+            rtd.at[i, 'distance_to_next'] = obstacles.route_length([station] + [dp_cpth[0]], date=rtd.at[i, 'date_id'])
+            rtd.at[i, 'distance_to_end'] = obstacles.route_length([station] + dp_cpth, date=rtd.at[i, 'date_id'])
         else:
             rtd.at[i, 'distance_to_next'] = 0
             rtd.at[i, 'distance_to_end'] = 0

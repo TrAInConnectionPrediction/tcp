@@ -209,10 +209,10 @@ def _add_station_coordinates(rtd: dd.DataFrame) -> dd.DataFrame:
 
     for station in rtd['station'].unique():
         try:
-            lon, lat = stations.get_location(name=station)
+            lon, lat = stations.get_location(name=station, date='latest')
         except KeyError:
             lon, lat = 0, 0
-            print(station)
+            print(f'No location found for {station}')
 
         replace_lon[station] = lon
         replace_lat[station] = lat

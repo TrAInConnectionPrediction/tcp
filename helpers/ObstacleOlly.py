@@ -54,6 +54,7 @@ class ObstacleOlly(StreckennetzSteffi):
             return 'LASJVLKEWLSK' 
 
     def simpler_obstacles_to_edge_obstacles(self):
+        # TODO: make this compatible with date based stations
         edge_obstacles = {
             'from_time': [],
             'to_time': [],

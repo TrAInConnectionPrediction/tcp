@@ -111,7 +111,7 @@ class PerStationAnalysis(StationPhillip):
 
         for i, station in enumerate(self.data.index):
             try:
-                x[i], y[i] = self.get_location(name=station)
+                x[i], y[i] = self.get_location(name=station, date='latest')
             except KeyError:
                 x[i], y[i] = 0, 0
 
@@ -137,7 +137,7 @@ class PerStationAnalysis(StationPhillip):
         self.cbar.ax.get_yaxis().labelpad = 15
         self.cbar.ax.set_ylabel("Ø Verspätung in Minuten", rotation=270)
         
-        plt.savefig('darkmap.png', dpi=300, transparent=False)
+        plt.savefig('darkmap.png', dpi=125, transparent=False)
 
         image_to_webp('darkmap.png')
 
@@ -175,6 +175,8 @@ class PerStationOverTime(StationPhillip):
         self.sc = self.ax.scatter(
             np.zeros(1),
             np.zeros(1),
+            marker='o',
+            edgecolors='none',
             c=np.zeros(1),
             s=np.zeros(1),
             cmap=self.cmap,
@@ -203,7 +205,7 @@ class PerStationOverTime(StationPhillip):
                 "station"
             ].astype("str")).apply(hash, meta=(None, 'int64'))
 
-            # Label encode station, as this speeds up the groupby tremendosly (10 minutes
+            # Label encode station, as this speeds up the groupby tremendously (10 minutes
             # instead of >24h)
             rtd['station'] = rtd['station'].cat.codes
             rtd = rtd.drop(columns=['ar_pt', 'dp_pt'])
@@ -247,7 +249,7 @@ class PerStationOverTime(StationPhillip):
             else:
                 self.ax.set_title(title, fontsize=16)
             memory_buffer = io.BytesIO()
-            self.fig.savefig(memory_buffer, dpi=300, transparent=True)
+            self.fig.savefig(memory_buffer, dpi=125, transparent=True)
             image_to_webp(memory_buffer, plotpath)
         return plotpath
 
@@ -347,7 +349,7 @@ class PerStationOverTime(StationPhillip):
 
             self.ax.set_title(plot_name.replace("_", ":").replace('-', ' - '), fontsize=12)
             memory_buffer = io.BytesIO()
-            self.fig.savefig(memory_buffer, dpi=300, transparent=True)
+            self.fig.savefig(memory_buffer, dpi=125, transparent=True, format='png')
             image_to_webp(memory_buffer, plot_path)
         else:
             plot_path = self.generate_default(title='no data available')

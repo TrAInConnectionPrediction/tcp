@@ -49,8 +49,8 @@ def get_connections(
         list : Parsed connections
     """    
     json = {
-        "start": str(streckennetz.get_eva(name=start)),
-        "destination": str(streckennetz.get_eva(name=destination)),
+        "start": str(streckennetz.get_eva(name=start, date=date)),
+        "destination": str(streckennetz.get_eva(name=destination, date=date)),
         "time": date.replace(tzinfo=timezone("CET")).isoformat(),
         "maxChanges": max_changes,
         "transferTime": transfer_time,
@@ -64,8 +64,8 @@ def get_connections(
         "https://marudor.de/api/hafas/v3/tripSearch?profile=db", json=json
     )
     # journeys = client.journeys(
-    #     str(streckennetz.get_eva(name=start)),
-    #     str(streckennetz.get_eva(name=destination)),
+    #     str(streckennetz.get_eva(name=start, date=date)),
+    #     str(streckennetz.get_eva(name=destination, date=date)),
     #     time.replace(tzinfo=timezone("CET")),
     #     max_journeys=6,
     # )
@@ -100,7 +100,8 @@ def parse_connection(connection):
 
     try:
         summary['dp_station'] = streckennetz.get_name(
-            eva=int(connection['segments'][0]['segmentStart']['id'])
+            eva=int(connection['segments'][0]['segmentStart']['id']),
+            date=from_utc(connection['segments'][0]['departure']['scheduledTime'])
         )
     except KeyError:
         summary['dp_station'] = ''
@@ -109,7 +110,8 @@ def parse_connection(connection):
     summary['dp_ct'] = from_utc(connection['segments'][0]['departure']['time'])
     try:
         summary['ar_station'] = streckennetz.get_name(
-            eva=int(connection['segments'][-1]['segmentDestination']['id'])
+            eva=int(connection['segments'][-1]['segmentDestination']['id']),
+            date=from_utc(connection['segments'][-1]['arrival']['scheduledTime'])
         )
     except KeyError:
         summary['ar_station'] = ''
@@ -156,13 +158,15 @@ def parse_connection(connection):
         }
         try:
             parsed_segment['dp_station'] = streckennetz.get_name(
-                eva=int(segment['segmentStart']['id'])
+                eva=int(segment['segmentStart']['id']),
+                date=parsed_segment['dp_pt']
             )
         except KeyError:
             parsed_segment['dp_station'] = ''
         try:
             parsed_segment['ar_station'] = streckennetz.get_name(
-                eva=int(segment['segmentDestination']['id'])
+                eva=int(segment['segmentDestination']['id']),
+                date=parsed_segment['dp_pt']
             )
         except KeyError:
             parsed_segment['ar_station'] = ''
@@ -226,6 +230,8 @@ def parse_connections(connections):
     return parsed
 
 
+# This information does change over time, so a permanent cache would give
+# wrong results. Thus, we only cache the result for 3 minutes.
 @lru_cache_time(time_to_last=180, maxsize=500)
 def get_trip_of_train(jid):
     trip = client.trip(jid)
