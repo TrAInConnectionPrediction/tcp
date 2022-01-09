@@ -1,9 +1,11 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+if os.path.isfile("/mnt/config/config.py"):
+    sys.path.append("/mnt/config/")
+
 # Print Logo
 import helpers.fancy_print_tcp
-from config import n_dask_workers
 
 if __name__ == '__main__':
 

@@ -6,7 +6,7 @@ metadata:
   name: updatebutler
   namespace: default
 spec:
-  schedule: "0 3 * * *"
+  schedule: "0 2 * * *"
   jobTemplate:
     spec:
       template:
@@ -16,16 +16,20 @@ spec:
               image: trainconnectionprediction/tcp:update_butler
               imagePullPolicy: Always
               volumeMounts:
-                - mountPath: /usr/src/app/config.py
-                  name: config
-                  subPath: config.py
+                - name: tz-berlin # set timezone to CEST
+                  mountPath: /etc/localtime
+                - name: config-pvc-storage
+                  mountPath: /mnt/config
                 - name: cache-pvc-storage
                   mountPath: /usr/src/app/cache
           restartPolicy: Never
           volumes:
-            - name: config
-              configMap:
-                name: tcp-config
+            - name: config-pvc-storage
+              persistentVolumeClaim:
+                claimName: config-pvc
             - name: cache-pvc-storage
               persistentVolumeClaim:
                 claimName: cache-pvc
+            - name: tz-berlin # set timezone to CEST
+              hostPath:
+                path: /usr/share/zoneinfo/Europe/Berlin
