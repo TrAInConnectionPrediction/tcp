@@ -24,9 +24,20 @@ def test_get_eva():
     assert stations.get_eva(ds100='TT', date=datetime.datetime(2021, 1, 1)) == 8000141
     assert stations.get_eva(ds100='KK', date=datetime.datetime(2021, 1, 1)) == 8000207
 
+    stations.get_eva(
+        ds100=pd.Series(['TT', 'KK']),
+        date='latest',
+    )
+
     evas = stations.get_eva(
         ds100=pd.Series(['TT', 'KK']),
         date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
+    )
+
+    pd.testing.assert_series_equal(
+        evas,
+        stations.get_eva(ds100=['TT', 'KK'], date='latest'),
+        check_index=False
     )
 
     assert isinstance(evas, pd.Series)
@@ -39,6 +50,12 @@ def test_get_eva():
     evas = stations.get_eva(
         name=pd.Series(['Tübingen Hbf', 'Köln Hbf']),
         date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
+    )
+
+    pd.testing.assert_series_equal(
+        evas,
+        stations.get_eva(name=['Tübingen Hbf', 'Köln Hbf'], date='latest'),
+        check_index=False
     )
 
     assert isinstance(evas, pd.Series)
@@ -71,6 +88,12 @@ def test_get_name():
         date=(datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)),
     )
 
+    pd.testing.assert_series_equal(
+        names,
+        stations.get_name(eva=[8000141, 8000207], date='latest'),
+        check_index=False
+    )
+
     assert isinstance(names, pd.Series)
     assert 'name' == names.name
     assert ['eva', 'date'] == names.index.names
@@ -81,6 +104,12 @@ def test_get_name():
     names = stations.get_name(
         ds100=pd.Series(['TT', 'KK']),
         date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
+    )
+
+    pd.testing.assert_series_equal(
+        names,
+        stations.get_name(ds100=['TT', 'KK'], date='latest'),
+        check_index=False
     )
 
     assert isinstance(names, pd.Series)
@@ -108,6 +137,12 @@ def test_get_ds100():
         date=(datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)),
     )
 
+    pd.testing.assert_series_equal(
+        ds100s,
+        stations.get_ds100(eva=[8000141, 8000207], date='latest'),
+        check_index=False
+    )
+
     assert isinstance(ds100s, pd.Series)
     assert 'ds100' == ds100s.name
     assert ['eva', 'date'] == ds100s.index.names
@@ -118,6 +153,12 @@ def test_get_ds100():
     ds100s = stations.get_ds100(
         name=pd.Series(['Tübingen Hbf', 'Köln Hbf']),
         date=pd.Series([datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)]),
+    )
+
+    pd.testing.assert_series_equal(
+        ds100s,
+        stations.get_ds100(name=['Tübingen Hbf', 'Köln Hbf'], date='latest'),
+        check_index=False
     )
 
     assert isinstance(ds100s, pd.Series)

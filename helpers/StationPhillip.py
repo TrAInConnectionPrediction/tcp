@@ -39,6 +39,7 @@ class StationPhillip:
             inplace=True,
         )
         stations.index.set_names(['name', 'eva', 'ds100'], inplace=True)
+        stations = stations.sort_index()
         return stations
 
     @property
@@ -105,6 +106,7 @@ class StationPhillip:
         date: DateSelector,
         stations_to_filter: pd.DataFrame,
     ):
+        stations_to_filter = stations_to_filter.sort_index()
         if isinstance(date, str) and date == 'latest':
             date = stations_to_filter['valid_from'].groupby(level=[0, 1, 2]).max()
             date.name = 'date'
