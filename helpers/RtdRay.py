@@ -195,27 +195,21 @@ def _add_station_coordinates(rtd: dd.DataFrame) -> dd.DataFrame:
 
     Parameters
     ----------
-    rtd : dd.DataFrame or pd.DataFrame
+    rtd : dd.DataFrame
         Data to add the coordinates to
 
     Returns
     -------
-    pd.DataFrame
+    dd.DataFrame
         DataFrame with columns lon and lat
     """
     stations = StationPhillip()
-    replace_lon = {}
-    replace_lat = {}
 
-    for station in rtd['station'].unique():
-        try:
-            lon, lat = stations.get_location(name=station, date='latest')
-        except KeyError:
-            lon, lat = 0, 0
-            print(f'No location found for {station}')
-
-        replace_lon[station] = lon
-        replace_lat[station] = lat
+    unique_stations = rtd['station'].unique().compute().tolist()
+    coordinates = stations.get_location(name=unique_stations, date='latest')
+    coordinates = coordinates.droplevel('date')
+    replace_lon = coordinates['lon'].to_dict()
+    replace_lat = coordinates['lat'].to_dict()
 
     rtd['lon'] = rtd['station'].copy()
     rtd['lat'] = rtd['station'].copy()
