@@ -108,7 +108,7 @@ class StationPhillip:
     ):
         stations_to_filter = stations_to_filter.sort_index()
         if isinstance(date, str) and date == 'latest':
-            date = stations_to_filter['valid_from'].groupby(level=[0, 1, 2]).max()
+            date = stations_to_filter['valid_from'].groupby(level=stations_to_filter.index.names).max()
             date.name = 'date'
         elif not isinstance(date, datetime.datetime):
             date = pd.Series(
