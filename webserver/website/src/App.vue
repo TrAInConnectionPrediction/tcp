@@ -84,7 +84,7 @@
       </div>
       <br />
       <span
-        >© 2021 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
+        >© 2022 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
         Deutschen Bahn und ihren Tochter-Unternehmen.
       </span>
     </footer>
