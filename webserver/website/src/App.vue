@@ -275,42 +275,6 @@ i {
   content: "\eab0";
 }
 
-// Custom font (https://icomoon.io/app/#/select)
-// @font-face {
-//   font-family: 'tcp_custom_font';
-//   src: url('./fonts/tcp_custom_font.ttf?1p3u8g') format('truetype'),
-//     url('./fonts/tcp_custom_font.woff?1p3u8g') format('woff'),
-//     url('./fonts/tcp_custom_font.svg?1p3u8g#tcp_custom_font') format('svg');
-//   font-weight: normal;
-//   font-style: normal;
-//   font-display: block;
-// }
-
-// i {
-//   /* use !important to prevent issues with browser extensions that change fonts */
-//   font-family: 'tcp_custom_font' !important;
-//   speak: never;
-//   font-style: normal;
-//   font-weight: normal;
-//   font-variant: normal;
-//   text-transform: none;
-//   line-height: 1;
-
-//   /* Better Font Rendering =========== */
-//   -webkit-font-smoothing: antialiased;
-//   -moz-osx-font-smoothing: grayscale;
-// }
-
-// .tcp-train:before {
-//   content: '\e92b';
-// }
-// .tcp-calendar:before {
-//   content: '\e953';
-// }
-// .tcp-github:before {
-//   content: '\eab0';
-// }
-
 h1,
 h2,
 h3,
@@ -696,7 +660,7 @@ span.flatpickr-weekday,
 }
 
 .stats-image {
-  width: 100%;
+  max-height: 70vh;
   max-width: 50em;
   margin: auto;
   display: block;

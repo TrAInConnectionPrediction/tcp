@@ -32,17 +32,20 @@ def image_to_webp(buffer: io.BytesIO, path: str) -> None:
     image = image.convert('RGBA')
     image.save(path, 'webp')
 
+
+# Bounding Box of Germany
+MIN_LON = 5.67
+MAX_LON = 15.64
+MIN_LAT = 47.06
+MAX_LAT = 55.06
+
+
 def dark_fig_ax_germany(crs):
-    # Bounding Box of Germany
-    left = 5.67
-    right = 15.64
-    bottom = 47.06
-    top = 55.06
 
     fig, ax = plt.subplots(subplot_kw = {'projection': crs})
 
-    ax.set_extent((left, right, bottom, top))
-    ax.coastlines()
+    ax.set_extent((MIN_LON, MAX_LON, MIN_LAT, MAX_LAT), crs=ccrs.Geodetic())
+    # ax.coastlines()
     ax.add_feature(cartopy.feature.OCEAN, facecolor='#191a1a')
     ax.add_feature(cartopy.feature.LAND, facecolor='#343332', edgecolor='#5c5b5b')
     ax.add_feature(cartopy.feature.LAKES, facecolor='#191a1a', edgecolor='#5c5b5b')
@@ -137,7 +140,7 @@ class PerStationAnalysis(StationPhillip):
         self.cbar.ax.get_yaxis().labelpad = 15
         self.cbar.ax.set_ylabel("Ø Verspätung in Minuten", rotation=270)
         
-        plt.savefig('darkmap.png', dpi=125, transparent=False)
+        plt.savefig('darkmap.png', dpi=250, transparent=False)
 
         image_to_webp('darkmap.png')
 
@@ -148,7 +151,11 @@ class PerStationOverTime(StationPhillip):
     FREQ_HOURS = int(24 * 1)
     FREQ = str(FREQ_HOURS) + 'H'
     DEFAULT_PLOTS = ["no data available", "default"]
-    MAP_CRS = ccrs.Miller()
+    MAP_CRS = ccrs.Mercator(
+        central_longitude = MAX_LON - (MAX_LON - MIN_LON) / 2,
+        min_latitude = MIN_LAT,
+        max_latitude = MAX_LAT,
+    )
 
     def __init__(self, rtd, **kwargs):
         super().__init__(**kwargs)
@@ -184,7 +191,7 @@ class PerStationOverTime(StationPhillip):
             vmax=7,
             alpha=0.5,
             zorder=10,
-            transform=ccrs.PlateCarree()
+            transform=self.MAP_CRS
         )
 
         self.colorbar = self.fig.colorbar(self.sc)
@@ -249,7 +256,7 @@ class PerStationOverTime(StationPhillip):
             else:
                 self.ax.set_title(title, fontsize=16)
             memory_buffer = io.BytesIO()
-            self.fig.savefig(memory_buffer, dpi=125, transparent=True)
+            self.fig.savefig(memory_buffer, bbox_inches='tight', dpi=250, transparent=True)
             image_to_webp(memory_buffer, plotpath)
         return plotpath
 
@@ -341,7 +348,7 @@ class PerStationOverTime(StationPhillip):
             color = current_data.loc[:, ["ar_delay_mean"]].to_numpy().astype(float)[:, 0]            
 
             # change the positions 
-            self.sc.set_offsets(np.c_[current_data['lon'], current_data['lat']])
+            self.sc.set_offsets(self.MAP_CRS.transform_points(ccrs.Geodetic(), current_data['lon'], current_data['lat'])[:, :2])
             # change the sizes
             self.sc.set_sizes(size)
             # change the color
@@ -349,7 +356,7 @@ class PerStationOverTime(StationPhillip):
 
             self.ax.set_title(plot_name.replace("_", ":").replace('-', ' - '), fontsize=12)
             memory_buffer = io.BytesIO()
-            self.fig.savefig(memory_buffer, dpi=125, transparent=True, format='png')
+            self.fig.savefig(memory_buffer, bbox_inches='tight', dpi=250, transparent=True, format='png')
             image_to_webp(memory_buffer, plot_path)
         else:
             plot_path = self.generate_default(title='no data available')
@@ -382,7 +389,7 @@ if __name__ == "__main__":
     import time
 
     start = time.time()
-    per_station_time = PerStationOverTime(rtd_df, generate=True, prefer_cache=False)
+    per_station_time = PerStationOverTime(rtd_df, generate=False, prefer_cache=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )
