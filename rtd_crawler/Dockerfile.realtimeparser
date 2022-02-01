@@ -1,3 +1,13 @@
+## realtimeparser docker instructions
+## build
+# DOCKER_BUILDKIT=1 docker build -f rtd_crawler/Dockerfile.realtimeparser . -t realtimeparser
+## run
+# docker run -v $(pwd)/server_config.py:/mnt/config/config.py -v $(pwd)/cache:/usr/src/app/cache realtimeparser
+## push
+# docker tag realtimeparser trainconnectionprediction/tcp:realtimeparser
+# docker push trainconnectionprediction/tcp:realtimeparser
+# kubectl rollout restart deployment.apps/realtimeparser
+
 FROM python:3.9-slim-buster
 RUN apt-get update -y && apt-get install -y gcc build-essential
 
