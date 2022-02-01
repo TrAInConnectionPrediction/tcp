@@ -9,7 +9,7 @@
         :lazy="true"
         :tooltip="'always'"
       ></vue-slider>
-      <input class="pretty_button" type="button" value="Plot generieren" v-on:click="updatePlot" />
+      <input class="btn btn-primary" type="button" value="Plot generieren" v-on:click="updatePlot" />
     </div>
     <img
       class="stats-image"
@@ -27,43 +27,6 @@ import VueSlider from 'vue-slider-component'
 import 'vue-slider-component/theme/default.css'
 const dayjs = require('dayjs')
 
-// const limits = await fetch(window.location.protocol + '//' + window.location.host + '/api/stationplot/limits', {
-//   method: 'GET',
-//   headers: {
-//     'Content-Type': 'application/json'
-//   }
-// })
-//   .then((response) => this.$parent.display_fetch_error(response))
-//   .then((response) => {
-//     return response.json()
-//   })
-
-// let dates = [dayjs(limits.min)]
-// while (dates[dates.length -1] < limits.max) {
-//   dates.push(dates[dates.length -1].add(2, 'days'))
-// }
-
-// for (let i = 0; 0 < dates.length; i++) {
-//   dates[i] = dates[i].format('DD.MM.YYYY')
-// }
-
-// const date1 = new Date(2021, 0, 1)
-// const date2 = new Date().setHours(0, 0, 0, 0)
-// const diffDays = Math.ceil(Math.abs(date2 - date1) / (1000 * 60 * 60))
-// const dates = []
-// let lastDate = date1
-
-// for (let i = 0; i < diffDays; i++) {
-//   lastDate = new Date(lastDate.getTime() + 60 * 60 * 1000)
-//   dates.push(
-//     lastDate.toLocaleString('de', {
-//       day: '2-digit',
-//       month: '2-digit',
-//       year: 'numeric'
-//     })
-//   )
-// }
-// const randomDate = Math.floor(Math.random() * dates.length)
 export default {
   components: {
     VueSlider
@@ -76,7 +39,7 @@ export default {
     }
   },
   created () {
-    this.$parent.start_progress()
+    this.$store.commit('start_progress')
     fetch(window.location.protocol + '//' + window.location.host + '/api/stationplot/limits', {
       method: 'GET',
       headers: {
@@ -112,17 +75,17 @@ export default {
         this.values[1].replace(/,/g, '') +
         '.webp'
       if (new_url !== this.plotURL) {
-        this.$parent.start_progress()
+        this.$store.commit('start_progress')
         this.plotURL = new_url
       }
     },
     loaded_img () {
-      this.$parent.stop_progress()
+      this.$store.commit('stop_progress')
       document.getElementById('stats_image').scrollIntoView({ behavior: 'smooth' })
     },
     replaceByDefault () {
       this.plotURL = window.location.protocol + '//' + window.location.host + '/api/stationplot/default.webp'
-      this.$parent.start_progress()
+      this.$store.commit('start_progress')
     }
   }
 }

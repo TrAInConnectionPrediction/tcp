@@ -2,10 +2,11 @@
   <div>
     <div style="margin: auto;">
       <div v-if="price === -1"></div>
-      <a v-else v-bind:href="link" target="_blank" rel="noopener" v-on:click.stop class='pretty_button text-nowrap' style="margin: 10px; display: block;">{{ (price / 100).toFixed(2) }}€</a>
+      <a v-else v-bind:href="link" target="_blank" rel="noopener" v-on:click.stop class='btn btn-primary text-nowrap' style="margin: 10px; display: block;">{{ (price / 100).toFixed(2) }}€</a>
     </div>
   </div>
 </template>
+
 <script>
 export default {
   name: 'affiliateLink',

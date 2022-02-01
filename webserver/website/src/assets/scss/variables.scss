@@ -1,11 +1,58 @@
+
+
 $page_background: black;
 $page_gray: #212529;
 $page_lighter_gray: #2d2f31;
 $page_even_lighter_gray: #3b3e41;
 $page_accent: #3f51b5;
 $page_accent_darker: #344295;
-$page_light_text: lightgray;
+$text_color: lightgray;
 $page_gray_text: gray;
 $page_dark_text: black;
 $page_outdated_text: #686868;
 $page_warning: #bb0000;
+
+
+
+$primary: #3f51b5;
+// $secondary: ;
+// $success: ;
+$info: $page_gray_text;
+// $warning: ;
+$danger: $page_warning;
+$light: $text_color;
+$dark: $page_gray;
+
+// $text-color: $text_color;
+$enable-rounded: false;
+
+// $btn-primary-color: lightgray;
+
+$btn-padding-y: 0.7rem;
+$btn-padding-x: 1rem;
+
+.btn-primary {
+    color: $text_color
+}
+
+$input-bg: $page_lighter_gray;
+$input-disabled-bg: $page_lighter_gray;
+$input-color: $text_color;
+$input-border-width: 1px;
+$input-border-color: $page_lighter_gray;
+$input-placeholder-color: $page_gray_text;
+$input-padding-y: $btn-padding-y;
+$input-padding-x: $btn-padding-x;
+
+$input-focus-box-shadow: none;
+$input-focus-border-color: $page_accent;
+// $input-focus-box-shadow: 0 0 0 1px $primary;; 
+
+$input-group-addon-size: 2rem;
+
+.input-group-text {
+    font-size: $input-group-addon-size;
+}
+$input-group-addon-bg: $page_lighter_gray;
+$input-group-addon-padding-x: 0.3rem;
+$input-group-addon-padding-y: $input-group-addon-padding-x;

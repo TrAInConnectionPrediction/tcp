@@ -1,6 +1,17 @@
 module.exports = {
   runtimeCompiler: true,
 
+  css: {
+    loaderOptions: {
+      sass: {
+        additionalData: `
+          @import 'src/assets/scss/variables';
+          @import 'bootstrap/scss/_functions.scss'; @import 'bootstrap/scss/_variables.scss'; @import 'bootstrap/scss/_mixins.scss';
+        `
+      }
+    }
+  },
+
   pwa: {
     name: 'TrAIn_Connection_Prediction',
     themeColor: '#3f51b5',

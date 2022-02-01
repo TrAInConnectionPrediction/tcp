@@ -1,12 +1,13 @@
 <template>
-  <div class="dropdown" style="position:relative">
+  <div class="dropdown flex-fill">
     <input
-      class="pretty_textbox"
+      class="form-control"
+      :class="{'is-invalid': is_invalid}"
       type="text"
       autocomplete="off"
       :placeholder="placeholder"
       :name="name"
-      v-model="user_search"
+      v-model="internal_value"
       @keydown.enter="enter"
       @keydown.down="down"
       @keydown.up="up"
@@ -17,13 +18,13 @@
     />
     <ul
       class="dropdown-menu dropdown-menu-dark"
-      v-bind:class="{ show: openSuggestion }"
+      v-bind:class="{ show: open_suggestions }"
       style="width:100%"
     >
       <li
         v-for="(suggestion, index) in matches"
         :key="index"
-        @click="suggestionClick(index)"
+        @click="suggestion_click(index)"
         @mousedown="mousedown_prevent"
       >
         <a
@@ -42,15 +43,11 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'autosuggest',
-  data () {
-    return {
-      open: false,
-      current: 0,
-      user_search: ''
-    }
-  },
-
   props: {
+    value: {
+      type: String,
+      required: true
+    },
     placeholder: {
       type: String,
       required: false
@@ -58,6 +55,24 @@ export default {
     name: {
       type: String,
       required: false
+    },
+    is_invalid: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
+  },
+  data () {
+    return {
+      open: false,
+      current: 0,
+      internal_value: ''
+    }
+  },
+
+  watch: {
+    value: function (new_value) {
+      this.internal_value = new_value
     }
   },
 
@@ -71,13 +86,13 @@ export default {
           }
           return false
         },
-        { count: 0, search: this.user_search.toLowerCase() }
+        { count: 0, search: this.internal_value.toLowerCase() }
       )
     },
 
-    openSuggestion () {
+    open_suggestions () {
       return (
-        this.user_search !== '' &&
+        this.internal_value !== '' &&
         this.matches.length !== 0 &&
         this.open === true
       )
@@ -89,9 +104,9 @@ export default {
     enter (event) {
       if (this.open) {
         event.preventDefault()
-        this.user_search = this.matches[this.current]
+        this.internal_value = this.matches[this.current]
         this.open = false
-        this.$emit('input', this.user_search)
+        this.$emit('input', this.internal_value)
       }
     },
 
@@ -103,7 +118,7 @@ export default {
       if (this.current < this.matches.length - 1) this.current++
     },
 
-    isActive (index) {
+    is_active (index) {
       return index === this.current
     },
 
@@ -112,7 +127,7 @@ export default {
         this.open = true
         this.current = 0
       }
-      this.$emit('input', this.user_search)
+      this.$emit('input', this.internal_value)
     },
 
     tab (event) {
@@ -130,13 +145,13 @@ export default {
 
     loose_focus () {
       this.open = false
-      this.$emit('input', this.user_search)
+      this.$emit('input', this.internal_value)
     },
 
-    suggestionClick (index) {
-      this.user_search = this.matches[index]
+    suggestion_click (index) {
+      this.internal_value = this.matches[index]
       this.open = false
-      this.$emit('input', this.user_search)
+      this.$emit('input', this.internal_value)
     }
   }
 }
