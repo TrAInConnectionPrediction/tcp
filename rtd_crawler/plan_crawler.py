@@ -41,7 +41,7 @@ if __name__ == '__main__':
     stations = StationPhillip()
     dd = SimplestDownloader()
     hour = hour_in_five_hours() - 1
-    plan_by_station = Plan()
+    # plan_by_station = Plan()
     plan_by_id = PlanById()
     unparsed_plan = UnparsedPlan()
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
                     for station, plan in zip(names, plans):
                         if plan is not None:
                             plan = preparse_plan(plan, station)
-                            plan_by_station.add_plan(session, plan=plan, bhf=station, date=date, hour=hour)
+                            # plan_by_station.add_plan(session, plan=plan, bhf=station, date=date, hour=hour)
                             plans_by_id.update(plan)
                     plan_by_id.add_plan(session, plan=plans_by_id)
                     unparsed_plan.add(session, plans_by_id.keys())
