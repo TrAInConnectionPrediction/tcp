@@ -16,22 +16,22 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <router-link class="nav-link" to="/">Verbindungssuche</router-link>
+              <router-link class="nav-link" to="/connections">Verbindungen</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" :to="{ path: '/about', hash: '#content' }">Über uns</router-link>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" data-toggle="dropdown">Daten</a>
+              <router-link class="nav-link dropdown-toggle" data-toggle="dropdown" :to="{ path: '/stats', hash: '#content' }">Statistiken</router-link>
               <ul class="dropdown-menu">
                 <li>
-                  <router-link class="dropdown-item" :to="{ path: '/data/stats', hash: '#content' }"
+                  <router-link class="dropdown-item" :to="{ path: '/stats/overview', hash: '#content' }"
                     >Übersicht</router-link
                   >
                 </li>
                 <li>
-                  <router-link class="dropdown-item" :to="{ path: '/data/stations', hash: '#content' }"
-                    >Stationen</router-link
+                  <router-link class="dropdown-item" :to="{ path: '/stats/stations', hash: '#content' }"
+                    >Bahnhöfe</router-link
                   >
                 </li>
                 <!-- <li>
