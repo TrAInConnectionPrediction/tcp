@@ -5,7 +5,7 @@
       <div class="d-flex justify-content-center align-items-center" style="height: 100%">
         <div class="hero-layout">
             <div class="slogan d-flex flex-column justify-content-center align-items-center">
-            <h2>Nächstes mal pünktlich</h2>
+            <h2>Nächstes Mal pünktlich</h2>
             <p>
               <strong>Dank TrAIn_Connection_Prediction</strong>
             </p>
