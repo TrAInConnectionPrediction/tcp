@@ -7,7 +7,7 @@
             <div class="slogan d-flex flex-column justify-content-center align-items-center">
             <h2>Nächstes mal pünktlich</h2>
             <p>
-              <strong>Dank unserem Verbindungsranking</strong>
+              <strong>Dank TrAIn_Connection_Prediction</strong>
             </p>
           </div>
           <searchform class="search hover shadow"> </searchform>
