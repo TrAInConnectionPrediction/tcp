@@ -82,8 +82,6 @@ export default {
 </script>
 
 <style lang="scss">
-@import 'src/assets/scss/variables';
-
 .details_grid {
   margin: 20px;
   display: inline-grid;

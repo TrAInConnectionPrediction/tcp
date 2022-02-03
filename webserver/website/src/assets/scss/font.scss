@@ -1,0 +1,45 @@
+@font-face {
+    font-family: 'tcp_custom_font';
+    src:
+      url('fonts/tcp_custom_font.ttf?qyw01m') format('truetype'),
+      url('fonts/tcp_custom_font.woff?qyw01m') format('woff'),
+      url('fonts/tcp_custom_font.svg?qyw01m#tcp_custom_font') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }
+  
+  i {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'tcp_custom_font' !important;
+    speak: never;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+  
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  .tcp-calendar:before {
+    content: "\e900";
+  }
+  .tcp-github:before {
+    content: "\e901";
+  }
+  .tcp-gitlab:before {
+    content: "\e902";
+  }
+  .tcp-pedestrian:before {
+    content: "\e903";
+  }
+  .tcp-swap:before {
+    content: "\e904";
+  }
+  .tcp-train:before {
+    content: "\e905";
+  }
+  

@@ -20,8 +20,6 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
-@import 'src/assets/scss/variables';
-
 .toggle_container {
   min-width: max-content;
 
