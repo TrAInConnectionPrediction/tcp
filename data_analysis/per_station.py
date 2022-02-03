@@ -233,13 +233,24 @@ class PerStationOverTime(StationPhillip):
             )
             del rtd
 
-            data = groupby_index_to_flat(data)
-            # remove rows where ar_happened_sum is 0 and dp_happened_sum is 0
-            data = data.loc[
-                (data['ar_happened_sum'] > 0) 
-                | (data['dp_happened_sum'] > 0)
-            ]
-            return data
+        data = groupby_index_to_flat(data)
+        # remove rows where ar_happened_sum is 0 and dp_happened_sum is 0
+        data = data.loc[
+            (data['ar_happened_sum'] > 0) 
+            | (data['dp_happened_sum'] > 0)
+        ]
+        data_types = {
+            'ar_delay_mean': 'float16',
+            'ar_happened_sum': 'int32',
+            'dp_delay_mean': 'float16',
+            'dp_happened_sum': 'int32',
+            'stop_hour': 'datetime64[ns]',
+            'station': 'int16',
+            'lat': 'float16',
+            'lon': 'float16',
+        }
+        data = data.astype(data_types)
+        return data
 
     def limits(self):
         return {
@@ -389,7 +400,7 @@ if __name__ == "__main__":
     import time
 
     start = time.time()
-    per_station_time = PerStationOverTime(rtd_df, generate=False, prefer_cache=True)
+    per_station_time = PerStationOverTime(rtd_df, generate=True, prefer_cache=True)
     per_station_time.generate_plot(
         datetime.datetime(2021, 3, 1, hour=0), datetime.datetime(2021, 3, 10, hour=0)
     )
