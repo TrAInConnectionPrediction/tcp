@@ -11,7 +11,7 @@
         :tooltip="'always'"
       ></vue-slider>
       <input
-        class="pretty_button"
+        class="btn btn-primary"
         type="button"
         value="Plot generieren"
         v-on:click="updatePlot"
@@ -80,12 +80,12 @@ export default {
         this.value[1].replace(/,/g, '') +
         '.png'
       if (new_url !== this.plotURL) {
-        this.$parent.start_progress()
+        this.$store.commit('start_progress')
         this.plotURL = new_url
       }
     },
     loaded_img () {
-      this.$parent.stop_progress()
+      this.$store.commit('stop_progress')
       document
         .getElementById('stats_image')
         .scrollIntoView({ behavior: 'smooth' })

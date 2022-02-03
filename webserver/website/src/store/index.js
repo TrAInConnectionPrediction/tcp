@@ -6,7 +6,8 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     stations: [],
-    connections: []
+    connections: [],
+    progressing: false
   },
   mutations: {
     set_stations (state, stations) {
@@ -14,6 +15,12 @@ export default new Vuex.Store({
     },
     set_connections (state, connections) {
       state.connections = connections
+    },
+    start_progress (state) {
+      state.progressing = true
+    },
+    stop_progress (state) {
+      state.progressing = false
     }
   },
   actions: {

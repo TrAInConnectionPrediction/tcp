@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div v-if="show" class="snackbar-center">
-      <div id="snackbar" class="pretty_shadow">
+      <div id="snackbar" class="shadow">
         <div :class="[{ 'layout small': layout === 'small', 'layout multiline': layout === 'multiline'}, style_class ]">
           <div>
             <slot></slot>
@@ -57,8 +57,6 @@ export default Vue.extend({
 </script>
 
 <style lang="scss">
-@import 'src/assets/scss/variables';
-
 .snackbar-center {
   width: 100%;
   display: flex;

@@ -1,57 +1,56 @@
 <template>
-  <form v-on:submit="get_connections" class="pretty_form">
+  <form v-on:submit="get_connections" class="bg-dark">
     <!-- Heading -->
     <h3 style="text-align: center;">
-      <strong>Verbindung finden</strong>
+      <strong>Verbindungen bewerten</strong>
     </h3>
+
     <!-- Start Bhf Form-->
-    <div style="display: flex; align-items: end;">
-      <i class="tcp-train" style="font-size: 2.7rem;"></i>
-      <div style="width: 100%;">
-      <label for="start">Von</label><br />
+    <label for="start" class="form-label">Von</label>
+    <div class="input-group mb-3 flex-nowrap">
+      <span class="input-group-text"><i class="tcp-train"></i></span>
       <autosuggest
         name="start"
         placeholder="Bahnhof"
-        @input="update_start"
-        v-bind:class="{invalid: start_invalid}"
+        v-model="start"
+        :is_invalid="start_invalid"
       >
       </autosuggest>
-      </div>
     </div>
+
     <!-- End Bhf Form -->
-    <div style="display: flex; align-items: end;">
-      <i class="tcp-train" style="font-size: 2.7rem;"></i>
-      <div style="width: 100%;">
-      <label for="destination">Nach</label><br />
+    <label for="destination" class="form-label">Nach</label>
+    <div class="input-group mb-3 flex-nowrap">
+      <span class="input-group-text"><i class="tcp-train"></i></span>
       <autosuggest
         name="destination"
         placeholder="Bahnhof"
-        @input="update_destination"
-        v-bind:class="{invalid: destination_invalid}"
+        v-model="destination"
+        :is_invalid="destination_invalid"
       >
       </autosuggest>
-      </div>
+      <span class="btn btn-primary" @click="swap_stations"><i class="tcp-swap"></i></span>
     </div>
+
     <!-- Date Form -->
-    <div style="display: flex; align-items: end;">
-      <i class="tcp-calendar" style="font-size: 2.7rem;"></i>
-      <div style="width: 100%;">
-      <label for="datetime">Datum</label><br />
+    <label for="datetime" class="form-label">Datum und Uhrzeit</label>
+    <div class="input-group mb-3">
+      <span class="input-group-text"><i class="tcp-calendar"></i></span>
       <flat-pickr
         v-model="date"
         :config="config"
-        class="pretty_textbox"
-        placeholder="Select date"
-        name="date"
+        class="form-control"
+        placeholder="Datum und Uhrzeit auswählen"
+        name="datetime"
       >
       </flat-pickr>
-      </div>
-      <toggleSwitch style="padding: 6px 12px;" v-model="search_for_arrival"></toggleSwitch>
+      <toggleSwitch class="align-self-center" style="padding: 6px 12px;" v-model="search_for_arrival"></toggleSwitch>
     </div>
+
     <!-- Submit Button -->
     <div class="text-center">
       <input
-        class="pretty_button"
+        class="btn btn-primary"
         id=""
         name="submit"
         type="submit"
@@ -134,6 +133,9 @@ export default {
     },
     update_destination (station) {
       this.destination = station
+    },
+    swap_stations () {
+      [this.start, this.destination] = [this.destination, this.start]
     }
   },
   computed: {
@@ -146,3 +148,36 @@ export default {
   }
 }
 </script>
+
+<style lang="scss">
+.flatpickr-calendar,
+.flatpickr-calendar.arrowTop,
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month,
+span.flatpickr-weekday,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  background: $page_gray;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.startRange.inRange,
+.flatpickr-day.endRange.inRange,
+.flatpickr-day.selected:focus,
+.flatpickr-day.startRange:focus,
+.flatpickr-day.endRange:focus,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover,
+.flatpickr-day.selected.prevMonthDay,
+.flatpickr-day.startRange.prevMonthDay,
+.flatpickr-day.endRange.prevMonthDay,
+.flatpickr-day.selected.nextMonthDay,
+.flatpickr-day.startRange.nextMonthDay,
+.flatpickr-day.endRange.nextMonthDay {
+  background: $page_accent;
+  border-color: $page_accent;
+}
+</style>

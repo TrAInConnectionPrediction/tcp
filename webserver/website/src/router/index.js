@@ -6,8 +6,8 @@ Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/',
-    name: 'Home',
+    path: '/connections',
+    name: 'Verbindungen',
     component: connectionDisplay
   },
   {
@@ -26,13 +26,18 @@ const routes = [
     component: () => import('../views/privacy.vue')
   },
   {
-    path: '/data/stats',
+    path: '/stats',
     name: 'Statistiken',
     component: () => import('../views/stats/Stats.vue')
   },
   {
-    path: '/data/stations',
-    name: 'Stations Statistiken',
+    path: '/stats/overview',
+    name: 'Übersichtsstatistik',
+    component: () => import('../views/stats/Overview.vue')
+  },
+  {
+    path: '/stats/stations',
+    name: 'Bahnhofs-Statistiken',
     component: () => import('../views/stats/Stations.vue')
   }
   // {
@@ -44,11 +49,13 @@ const routes = [
 
 const router = new VueRouter({
   mode: 'history',
+  linkActiveClass: 'active',
+  linkExactActiveClass: 'exact-active',
   routes: routes,
   scrollBehavior (to, from, savedPosition) {
     if (to.hash) {
       Vue.nextTick(() => {
-        document.getElementById(to.hash.substring(1)).scrollIntoView({ behavior: 'smooth' })
+        document.getElementById(to.hash.substring(1)).scrollIntoView({ behavior: 'smooth', block: 'center' })
       })
       // Does not work but it's the vue way
       return { selector: to.hash }
