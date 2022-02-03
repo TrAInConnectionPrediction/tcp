@@ -149,7 +149,9 @@ TrAIn_Connection_Prediction ║   ║
           if (this.$route.path !== '/connections') {
             this.$router.push('/connections')
           }
-          document.getElementById('content').scrollIntoView({ behavior: 'smooth', block: 'center' })
+          this.$nextTick(() => {
+            document.getElementById('content').scrollIntoView({ behavior: 'smooth', block: 'center' })
+          })
         })
     }
   }
