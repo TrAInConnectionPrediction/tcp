@@ -1,5 +1,5 @@
 <template>
-    <button v-if="showInstallButton" @click="install" class="btn btn-primary">App installieren</button>
+    <button v-if="showInstallButton" @click="install" class="btn btn-primary">Als App installieren</button>
 </template>
 
 <script>
