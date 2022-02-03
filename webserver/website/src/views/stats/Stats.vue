@@ -11,11 +11,17 @@
       <router-link class="btn btn-primary" :to="{ path: '/stats/overview', hash: '#content' }">Übersicht</router-link>
       <router-link class="btn btn-primary" :to="{ path: '/stats/stations', hash: '#content' }">Bahnhöfe</router-link>
     </div>
-    <div>
-      Vorsicht: Alle diese Daten sind eine Beobachtung von dritten und nicht von der Bahn selber. Wir können die
+    <div class="fst-italic disclaimer">
+      Disclaimer: Alle diese Daten sind eine Beobachtung von dritten und nicht von der Bahn selber. Wir können die
       Richtigkeit der Daten nicht garantieren. In den vielen von uns erstellten Auswertungen der Daten haben wir einige
       kleinere Fehler gefunden. Diese können wir nicht korrigieren, da wir nicht an bessere Daten herankommen. Wer
       belastbare Statistiken sucht, muss selber direkt bei der Bahn nachfragen.
     </div>
   </div>
 </template>
+
+<style lang='scss'>
+.disclaimer {
+  color: $gray-500;
+}
+</style>
