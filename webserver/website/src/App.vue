@@ -14,7 +14,7 @@
         </div>
       </div>
     </div>
-    <div class="main_background">
+    <div class="container-fluid d-flex flex-column align-items-center py-5 main_background">
       <main id="main">
         <router-view id="content" />
       </main>
@@ -168,21 +168,13 @@ TrAIn_Connection_Prediction ║   ║
   max-width: 1200px;
 }
 
-.main_background {
-  width: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  box-shadow: 0px 0px 17px 50px rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.shadow-xxxl {
+  box-shadow: 0 0 3em 2em $page_background;
 }
 
-.dark_background {
-  background-color: $page_background;
-  box-shadow: 0px 0px 17px 50px $page_background;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.main_background {
+  background-color: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 2em 4em rgba(0, 0, 0, 0.8);
 }
 
 html,
