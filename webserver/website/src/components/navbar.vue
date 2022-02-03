@@ -15,8 +15,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <router-link class="navbar-brand" to="#search">TCP</router-link>
             <li class="nav-item">
-              <router-link class="nav-link" to="/connections">Verbindungen</router-link>
+              <router-link class="nav-link" :to="{ path: '/connections', hash: '#content' }">Verbindungen</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" :to="{ path: '/about', hash: '#content' }">Über uns</router-link>

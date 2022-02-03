@@ -10,7 +10,7 @@
               <strong>Dank TrAIn_Connection_Prediction</strong>
             </p>
           </div>
-          <searchform class="search hover shadow"> </searchform>
+          <searchform id="search" class="search hover shadow"> </searchform>
         </div>
       </div>
     </div>

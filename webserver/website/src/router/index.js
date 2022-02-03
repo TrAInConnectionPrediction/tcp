@@ -55,7 +55,7 @@ const router = new VueRouter({
   scrollBehavior (to, from, savedPosition) {
     if (to.hash) {
       Vue.nextTick(() => {
-        document.getElementById(to.hash.substring(1)).scrollIntoView({ behavior: 'smooth' })
+        document.getElementById(to.hash.substring(1)).scrollIntoView({ behavior: 'smooth', block: 'center' })
       })
       // Does not work but it's the vue way
       return { selector: to.hash }
