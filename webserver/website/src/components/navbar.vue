@@ -1,6 +1,6 @@
 <template>
   <div class="fixed-top">
-    <nav class="navbar navbar-expand-lg navbar-dark shadow">
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark shadow">
       <div class="container-fluid">
         <button
           class="navbar-toggler"
@@ -23,22 +23,17 @@
             </li>
             <li class="nav-item dropdown">
               <router-link class="nav-link dropdown-toggle" data-toggle="dropdown" :to="{ path: '/stats', hash: '#content' }">Statistiken</router-link>
-              <ul class="dropdown-menu">
+              <ul class="dropdown-menu dropdown-menu-dark bg-dark">
                 <li>
-                  <router-link class="dropdown-item" :to="{ path: '/stats/overview', hash: '#content' }"
+                  <router-link class="nav-link" :to="{ path: '/stats/overview', hash: '#content' }"
                     >Übersicht</router-link
                   >
                 </li>
                 <li>
-                  <router-link class="dropdown-item" :to="{ path: '/stats/stations', hash: '#content' }"
+                  <router-link class="nav-link" :to="{ path: '/stats/stations', hash: '#content' }"
                     >Bahnhöfe</router-link
                   >
                 </li>
-                <!-- <li>
-                    <router-link class="dropdown-item" :to="{ path: '/data/obstacles', hash: '#stats' }"
-                      >Zug-Hindernisse</router-link
-                    >
-                  </li> -->
               </ul>
             </li>
           </ul>
@@ -96,25 +91,12 @@ export default {
 </script>
 
 <style lang="scss">
-.navbar {
-  background-color: $page_lighter_gray;
-}
-
-.top-nav-collapse {
-  background-color: $page_gray;
-}
-
-.navbar .nav-item .dropdown-item {
-  color: $text_color;
-}
-.navbar .nav-item .dropdown-item:hover,
-.dropdown-item:focus,
-.dropdown-item:active {
-  background-color: transparent;
-}
 .navbar .dropdown-menu {
   display: block;
-  background-color: transparent;
+}
+
+.dropdown-menu .nav-link {
+  padding-left: 1rem !important;
 }
 
 @include media-breakpoint-up(md) {
@@ -126,12 +108,6 @@ export default {
   }
   .navbar .nav-item .dropdown-menu {
     margin-top: 0;
-    background-color: $page_gray !important;
-  }
-  .navbar .nav-item .dropdown-item:hover,
-  .dropdown-item:focus,
-  .dropdown-item:active {
-    background-color: $page_gray;
   }
 }
 
