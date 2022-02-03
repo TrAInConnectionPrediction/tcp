@@ -32,7 +32,7 @@ const routes = [
   },
   {
     path: '/stats/overview',
-    name: 'Statistiken',
+    name: 'Übersichtsstatistik',
     component: () => import('../views/stats/Overview.vue')
   },
   {
