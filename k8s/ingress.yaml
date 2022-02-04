@@ -37,16 +37,6 @@ metadata:
       {
         rewrite ^ https://bahnvorhersage.de$request_uri permanent;
       }
-      set $redirect_next_tcp 0;
-      if ($host ~ "next.trainconnectionprediction.de") {
-        set $redirect_next_tcp 1;
-      }
-      location /.well-known/acme-challenge/ {
-        set $redirect_next_tcp 0;
-      }
-      if ($redirect_next_tcp = 1) {
-        rewrite ^ https://next.bahnvorhersage.de$request_uri permanent;
-      }
 
 spec:
   tls:

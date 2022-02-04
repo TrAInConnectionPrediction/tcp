@@ -15,7 +15,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <router-link class="navbar-brand" to="#search">TCP</router-link>
+            <li class="nav-item">
+              <router-link class="nav-link fw-bold" to="#search">SUCHE</router-link>
+            </li>
             <li class="nav-item">
               <router-link class="nav-link" :to="{ path: '/connections', hash: '#content' }">Verbindungen</router-link>
             </li>
@@ -72,6 +74,9 @@ export default {
     ...mapState(['progressing'])
   },
   mounted: function () {
+    if (window.location.hostname.indexOf('next.trainconnectionprediction.de') !== -1) {
+      window.location.hostname = 'next.bahnvorhersage.de'
+    }
     this.progress = new ProgressBar.Line('#pgr_bar', {
       strokeWidth: 0.8,
       color: '#3f51b5',
