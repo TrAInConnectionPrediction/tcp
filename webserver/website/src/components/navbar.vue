@@ -15,9 +15,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <router-link class="nav-link fw-bold" to="#search">SUCHE</router-link>
-            </li>
+            <router-link class="navbar-brand" to="#search"><img src="../assets/img/IC.svg" height="24"></router-link>
             <li class="nav-item">
               <router-link class="nav-link" :to="{ path: '/connections', hash: '#content' }">Verbindungen</router-link>
             </li>
@@ -25,7 +23,12 @@
               <router-link class="nav-link" :to="{ path: '/about', hash: '#content' }">Über uns</router-link>
             </li>
             <li class="nav-item dropdown">
-              <router-link class="nav-link dropdown-toggle" data-toggle="dropdown" :to="{ path: '/stats', hash: '#content' }">Statistiken</router-link>
+              <router-link
+                class="nav-link dropdown-toggle"
+                data-toggle="dropdown"
+                :to="{ path: '/stats', hash: '#content' }"
+                >Statistiken</router-link
+              >
               <ul class="dropdown-menu dropdown-menu-dark bg-dark">
                 <li>
                   <router-link class="nav-link" :to="{ path: '/stats/overview', hash: '#content' }"
