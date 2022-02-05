@@ -13,13 +13,13 @@ module.exports = {
   },
 
   pwa: {
-    name: 'TrAIn_Connection_Prediction',
+    name: 'Bahn-Vorhersage',
     themeColor: '#3f51b5',
     msTileColor: '#212121',
     manifestOptions: {
       background_color: '#212121',
-      short_name: 'TCP'
+      short_name: 'Bahn-Vorhersage'
     },
-    assetsVersion: '0.2.9'
+    assetsVersion: '0.3.0'
   }
 }

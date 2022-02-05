@@ -5,10 +5,9 @@
       <div class="d-flex justify-content-center align-items-center" style="height: 100%">
         <div class="hero-layout">
             <div class="slogan d-flex flex-column justify-content-center align-items-center">
-            <h2>Nächstes Mal pünktlich</h2>
-            <p>
-              <strong>Dank TrAIn_Connection_Prediction</strong>
-            </p>
+            <h6 class="display-6 fw-bold">TrAIn Connection Prediction</h6>
+            <h6 class="display-6">heißt jetzt</h6>
+            <h1 class="display-4 fw-bold">Bahn-Vorhersage</h1>
           </div>
           <searchform id="search" class="search hover shadow"> </searchform>
         </div>
@@ -26,7 +25,7 @@
       </div>
       <br />
       <span
-        >© 2022 TrAIn_Connection_Prediction ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
+        >© 2022 Bahn-Vorhersage ist ein unabhängiger Service. Dieser steht in keiner Verbindung mit der
         Deutschen Bahn und ihren Tochter-Unternehmen.
       </span>
     </footer>
