@@ -80,7 +80,7 @@ export default {
   mounted: function () {
     if (window.location.hostname.indexOf('next.trainconnectionprediction.de') !== -1) {
       update.methods.clearCache()
-      window.location.hostname = 'next.bahnvorhersage.de'
+      window.location.href = 'https://next.bahnvorhersage.de/?rebrand=true'
     }
     this.progress = new ProgressBar.Line('#pgr_bar', {
       strokeWidth: 0.8,

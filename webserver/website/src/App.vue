@@ -4,9 +4,14 @@
     <div id="intro" class="container-md">
       <div class="d-flex justify-content-center align-items-center" style="height: 100%">
         <div class="hero-layout">
-            <div class="slogan d-flex flex-column justify-content-center align-items-center">
+          <div v-if="'rebrand' in this.$route.query && this.$route.query['rebrand'] === 'true'" class="slogan d-flex flex-column justify-content-center align-items-center">
             <h6 class="display-6 fw-bold">TrAIn Connection Prediction</h6>
             <h6 class="display-6">heißt jetzt</h6>
+            <h1 class="display-4 fw-bold">Bahn-Vorhersage</h1>
+          </div>
+          <div v-else class="slogan d-flex flex-column justify-content-center align-items-center">
+            <h6 class="display-6">Verspätungen vermeiden</h6>
+            <h6 class="display-6">mit</h6>
             <h1 class="display-4 fw-bold">Bahn-Vorhersage</h1>
           </div>
           <searchform id="search" class="search hover shadow"> </searchform>
