@@ -37,6 +37,12 @@ export default {
       if (!this.registration || !this.registration.waiting) return
       // send message to SW to skip the waiting and activate the new SW
       this.registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+    },
+
+    clearCache () {
+      caches.keys().then(function (names) {
+        for (let name of names) { caches.delete(name) }
+      })
     }
   }
 }

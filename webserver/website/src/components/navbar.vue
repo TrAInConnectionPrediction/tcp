@@ -59,6 +59,7 @@
 
 <script>
 import installButton from './installButton.vue'
+import update from '../assets/js/update.js'
 import { mapState } from 'vuex'
 const ProgressBar = require('progressbar.js')
 
@@ -75,6 +76,7 @@ export default {
   },
   mounted: function () {
     if (window.location.hostname.indexOf('next.trainconnectionprediction.de') !== -1) {
+      update.methods.clearCache()
       window.location.hostname = 'next.bahnvorhersage.de'
     }
     this.progress = new ProgressBar.Line('#pgr_bar', {
