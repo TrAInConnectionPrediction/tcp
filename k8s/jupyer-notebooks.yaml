@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter-notebook
+  labels:
+    app: jupyter-notebook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter-notebook
+  template:
+    metadata:
+      labels:
+        app: jupyter-notebook
+    spec:
+      containers:
+      - name: minimal-notebook
+        image: jupyter/minimal-notebook:latest
+        ports:
+        - containerPort: 8888
+        command: ["start-notebook.sh"]
+        args: ["--NotebookApp.token=''"]
+        volumeMounts:
+        - name: tz-berlin # set timezone to CEST
+          mountPath: /etc/localtime
+        - mountPath: /mnt/config
+          name: config-pvc-storage
+        - mountPath: /mnt/cache
+          name: cache-pvc-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config-pvc-storage
+        persistentVolumeClaim:
+          claimName: config-pvc
+      - name: cache-pvc-storage
+        persistentVolumeClaim:
+          claimName: cache-pvc
+      - name: tz-berlin  # set timezone to CEST
+        hostPath:
+          path: /usr/share/zoneinfo/Europe/Berlin
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: jupyter-notebook
+spec:
+  type: NodePort
+  selector:
+    app: jupyter-notebook
+  ports:
+  - protocol: TCP
+    nodePort: 30040
+    port: 8888
+    targetPort: 8888
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: jupyter-notebook
+#   namespace:
+#   annotations:
+#     # kubernetes.io/tls-acme: "true"
+#     kubernetes.io/ingress.class: "nginx"
+#     nginx.ingress.kubernetes.io/rewrite-target: /
+# spec:
+#   rules:
+#   - http:
+#       paths:
+#       - path: /jupyter
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: jupyter-notebook
+#             port:
+#               number: 8888
