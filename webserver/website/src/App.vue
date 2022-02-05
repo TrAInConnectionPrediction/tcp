@@ -80,23 +80,34 @@ export default {
   },
   mixins: [update],
   mounted () {
-    console.log(`
-                            ╔═══╗                           
-   ╔════════════════════════╩═══╩════════════════════════╗  
-   ║            ████████    ██████   ██████              ║  
-   ║               ██      ██        ██   ██             ║  
-   ║               ██      ██        ██████              ║  
-   ║               ██      ██        ██                  ║  
-   ║               ██       ██████   ██                  ║  
-   ╚════════════════════════╦═══╦════════════════════════╝  
-                    \\''''───║   ╟───''''/                   
-                     )__,--─║   ╟─--,__(                    
-                            ║   ║                           
-      Your friendly         ║   ║                           
-TrAIn_Connection_Prediction ║   ║                           
-          Service           ║   ║                           
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^╜   ╙^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      `)
+    const styles = {
+      light_grey: 'color: #e5e5e5;',
+      light_grey_bg_black: 'color: #e5e5e5;background-color: #000;font-weight: bold;',
+      light_grey_bg_red: 'color: #e5e5e5;background-color: #b43836;',
+      dark_grey: 'color: #666666;'
+    }
+    console.log(
+      '%c████████████████████████████████████▇▆▅▃▁\n' +
+      '%c       Bahn-Vorhersage      ███████▙  ▜' +
+      '%c██▆▁\n' +
+      '%c███████████████████████████████████████████▃\n' +
+      '%c▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀' +
+      '%c█████▄' +
+      '%c▖\n' +
+      '%c█████████████████████████████████████████████\n' +
+      '%c ▜█▀▀▜█▘                       ▜█▀▀▜█▘' +
+      '%c   ▀▀▀',
+      styles.light_grey,
+      styles.light_grey_bg_black,
+      styles.light_grey,
+      styles.light_grey,
+      styles.light_grey_bg_red,
+      styles.light_grey,
+      styles.dark_grey,
+      styles.light_grey,
+      styles.dark_grey,
+      styles.light_grey
+    )
   },
   methods: {
     display_fetch_error: function (response) {
