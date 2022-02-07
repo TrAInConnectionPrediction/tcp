@@ -14,7 +14,7 @@ from webserver.connection import (
 )
 from webserver import predictor, streckennetz, per_station_time
 from webserver.db_logger import log_activity
-from data_analysis import data_stats
+from data_analysis import data_stats, ml_stats
 from config import CACHE_PATH
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -220,3 +220,19 @@ def obstacle_plot(date_range):
     return send_file(
         f"{CACHE_PATH}/plot_cache/{plot_name}.png", mimetype="image/png"
     )
+
+@bp.route("/ml_stats")
+@log_activity
+def stats_ml():
+    """
+    Retrives stats for the machine learning models
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    The statisics for the ml models
+    """
+
+    ml_stats.load_stats()

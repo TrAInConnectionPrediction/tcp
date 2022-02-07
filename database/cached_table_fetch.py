@@ -14,6 +14,7 @@ def cached_table_fetch(
         prefer_cache: Optional[bool] = False,
         generate: Optional[bool] = False,
         table_generator: Optional[Callable[[], pd.DataFrame]] = None,
+        if_exists: Optional[str] = 'replace',
         push: Optional[bool] = True,
         **kwargs
 ) -> pd.DataFrame:
@@ -32,6 +33,9 @@ def cached_table_fetch(
         Whether to use table_generator to generate the DataFrame and not look for cache or database, by default False
     table_generator : Callable[[], pd.DataFrame], optional
         Callable that generates the data of table tablename, by default None
+    if_exists : {'fail', 'replace', 'append'}, default 'replace'
+        What to do if the table exits
+        See https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
     push : bool, optional
         Whether to push data to the db after calling table_generator, by default False
 
@@ -51,7 +55,7 @@ def cached_table_fetch(
             raise ValueError('Cannot generate if no table_generator was supplied')
         df = table_generator()
         if push:
-            cached_table_push(df, tablename)
+            cached_table_push(df, tablename, if_exists = if_exists)
         return df
 
     if prefer_cache:
@@ -126,7 +130,7 @@ def pd_to_psql(df, uri, table_name, schema_name=None, if_exists='fail', sep=',')
     return True
 
 
-def cached_table_push(df: pd.DataFrame, tablename: str, fast: bool = True, **kwargs):
+def cached_table_push(df: pd.DataFrame, tablename: str, fast: Optional[bool] = True, if_exists: Optional[str] = 'replace', **kwargs):
     """
     Save df to local cache file and replace the table in the database.
 
@@ -140,12 +144,16 @@ def cached_table_push(df: pd.DataFrame, tablename: str, fast: bool = True, **kwa
         Whether to use a faster push method or not, by default False
         True: use the fast method, which might not be as accurate
         False: use the slow method, which is more accurate
+    if_exists : {'fail', 'replace', 'append'}, default 'replace'
+        What to do if the table exits
+        See https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
+
     """
     cache_path = CACHE_PATH + '/' + tablename + '.pkl'
     df.to_pickle(cache_path)
     # d6stack is way faster than pandas at inserting data to sql.
     # It exports the dataframe to a csv and then inserts it to the database.
     if fast:
-        pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists='replace')
+        pd_to_psql(df, DB_CONNECT_STRING, tablename, if_exists = if_exists)
     else:
-        df.to_sql(tablename, DB_CONNECT_STRING, if_exists='replace', method='multi', chunksize=10_000, **kwargs)
+        df.to_sql(tablename, DB_CONNECT_STRING, if_exists = if_exists, method='multi', chunksize=10_000, **kwargs)
