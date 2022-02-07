@@ -63,13 +63,20 @@ spec:
   - host: "next.bahnvorhersage.de"
     http:
       paths:
-        - path: /
+        - path: /api/
           pathType: Prefix
           backend:
             service:
               name: next-webserver-service
               port:
                 number: 5000
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: next-frontend-service
+              port:
+                number: 80
   - host: "trainconnectionprediction.de"
     http:
       paths:
@@ -83,13 +90,20 @@ spec:
   - host: "next.trainconnectionprediction.de"
     http:
       paths:
-        - path: /
+        - path: /api/
           pathType: Prefix
           backend:
             service:
               name: next-webserver-service
               port:
                 number: 5000
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: next-frontend-service
+              port:
+                number: 80
   - host: "qkhrecvu4nfgijjt.myfritz.net"
     http:
       paths:
