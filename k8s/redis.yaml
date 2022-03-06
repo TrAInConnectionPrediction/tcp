@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+  name: redis
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2.6
+        command:
+          - redis-server
+          - "/redis-master/redis.conf"
+        env:
+        - name: MASTER
+          value: "true"
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: tz-berlin # set timezone to CEST
+          mountPath: /etc/localtime
+        - mountPath: /redis-master-data
+          name: data
+        - mountPath: /redis-master
+          name: config
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: example-redis-config
+            items:
+            - key: redis-config
+              path: redis.conf
+        - name: tz-berlin  # set timezone to CEST
+          hostPath:
+            path: /usr/share/zoneinfo/Europe/Berlin
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: redis
+spec:
+  type: NodePort
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    nodePort: 26379
+    port: 6379
+    targetPort: 6379

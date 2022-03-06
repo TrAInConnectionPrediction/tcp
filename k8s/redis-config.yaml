@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-redis-config
+data:
+  redis-config: |
+    maxmemory 3GB
+    maxmemory-policy allkeys-lru
+    requirepass *******enter-password-here*******
+    bind * -::*
