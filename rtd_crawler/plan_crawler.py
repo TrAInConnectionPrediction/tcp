@@ -9,12 +9,15 @@ from rtd_crawler.SimplestDownloader import SimplestDownloader
 from rtd_crawler.hash64 import hash64
 import time
 import datetime
-from database import Plan, PlanById, UnparsedPlan, sessionfactory, plan_by_id
+from redis import Redis
+from config import redis_url
+from database import PlanById, unparsed, sessionfactory
 from rtd_crawler.xml_parser import xml_to_json
 from concurrent.futures import ThreadPoolExecutor
 import traceback
 
 engine, Session = sessionfactory()
+
 
 def preparse_plan(plan, station):
     """
@@ -33,17 +36,18 @@ def get_plan(eva: int, str_date: str, hour: int) -> str:
 def hour_in_five_hours() -> int:
     return (datetime.datetime.now() + datetime.timedelta(hours=5)).time().hour
 
+
 def date_in_five_hours() -> int:
     return (datetime.datetime.now() + datetime.timedelta(hours=5)).date()
 
+
 if __name__ == '__main__':
-    import helpers.fancy_print_tcp
+    import helpers.bahn_vorhersage
     stations = StationPhillip()
     dd = SimplestDownloader()
     hour = hour_in_five_hours() - 1
-    # plan_by_station = Plan()
     plan_by_id = PlanById()
-    unparsed_plan = UnparsedPlan()
+    redis_client = Redis.from_url(redis_url)
 
     while True:
         if hour == hour_in_five_hours():
@@ -64,12 +68,10 @@ if __name__ == '__main__':
                     for station, plan in zip(names, plans):
                         if plan is not None:
                             plan = preparse_plan(plan, station)
-                            # plan_by_station.add_plan(session, plan=plan, bhf=station, date=date, hour=hour)
                             plans_by_id.update(plan)
                     plan_by_id.add_plan(session, plan=plans_by_id)
-                    unparsed_plan.add(session, plans_by_id.keys())
-                            
                     session.commit()
+                unparsed.add(redis_client, plans_by_id.keys())
 
                 print(datetime.datetime.now(), 'uploaded plan to db')
 

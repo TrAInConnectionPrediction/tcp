@@ -1,3 +1,13 @@
+# # build
+# DOCKER_BUILDKIT=1 docker build -f rtd_crawler/Dockerfile.recent_change_crawler . -t recent_change_crawler
+# # run
+# docker run -v $(pwd)/config.py:/mnt/config/config.py -v $(pwd)/cache:/usr/src/app/cache recent_change_crawler
+# # push
+# docker tag recent_change_crawler trainconnectionprediction/tcp:recent_change_crawler
+# docker push trainconnectionprediction/tcp:recent_change_crawler
+# kubectl rollout restart deployment.apps/recent-change-crawler
+
+
 FROM python:3.9-slim-buster
 RUN apt-get update -y && apt-get install -y gcc build-essential
 

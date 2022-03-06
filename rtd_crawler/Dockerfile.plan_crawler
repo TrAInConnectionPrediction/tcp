@@ -1,3 +1,12 @@
+# # build
+# DOCKER_BUILDKIT=1 docker build -f rtd_crawler/Dockerfile.plan_crawler . -t plan_crawler
+# # run
+# docker run -v $(pwd)/config.py:/mnt/config/config.py -v $(pwd)/cache:/usr/src/app/cache plan_crawler
+# # push
+# docker tag plan_crawler trainconnectionprediction/tcp:plan_crawler
+# docker push trainconnectionprediction/tcp:plan_crawler
+# kubectl rollout restart deployment.apps/plan-crawler
+
 # For more information, please refer to https://aka.ms/vscode-docker-python
 FROM python:3.9-slim-buster
 RUN apt-get update -y && apt-get install -y gcc build-essential

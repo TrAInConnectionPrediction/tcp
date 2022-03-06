@@ -7,20 +7,21 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 import traceback
-from database import Change, PlanById, UnparsedChange, UnparsedPlan, Rtd, sessionfactory, get_engine, session_scope, sql_types
+from database import Change, PlanById, unparsed, Rtd, sessionfactory, session_scope
 from helpers import ObstacleOlly
 import time
 import concurrent.futures
 import multiprocessing as mp
 import argparse
 from typing import Dict, List, Tuple, Union
-import sqlalchemy
+from config import redis_url
+from redis import Redis
 
 engine, Session = sessionfactory()
 
 parser = argparse.ArgumentParser(description='Parse train delay data')
 parser.add_argument('--parse_continues', help='Check for unparsed data every 60 seconds and parse it', action="store_true")
-parser.add_argument('--parse_all', help='Parse all raw data that is in the databse', action="store_true")
+parser.add_argument('--parse_all', help='Parse all raw data that is in the database', action="store_true")
 Rtd()
 obstacles = ObstacleOlly(prefer_cache=False)
 
@@ -28,7 +29,7 @@ obstacles = ObstacleOlly(prefer_cache=False)
 def db_to_datetime(dt: Union[str, None]) -> Union[datetime.datetime, None]:
     """
     Convert bahn time in format: '%y%m%d%H%M' to datetime.
-    As it it fastest to directly construct a datetime object from this, no strptime is used.
+    As it is fastest to directly construct a datetime object from this, no strptime is used.
 
     Args:
         dt (str): bahn time format
@@ -172,7 +173,7 @@ def add_route_info(stop: dict) -> dict:
         stop['distance_to_next'] = 0
         stop['distance_to_end'] = 0
 
-    # These columns are only used during parsing and are not longer needed
+    # These columns are only used during parsing and are no longer needed
     del stop['ar_ppth']
     del stop['ar_cpth']
     del stop['dp_ppth']
@@ -200,38 +201,22 @@ def parse_batch(hash_ids: List[int], plans: Dict[int, Dict] = None):
     if parsed:
         parsed = pd.DataFrame(parsed).set_index('hash_id')
         Rtd.upsert(parsed, engine)
-    
-    changes_without_plan = set(changes.keys()).difference(plans.keys())
-    session: sqlalchemy.orm.Session
-    with session_scope(Session) as session:
-        UnparsedChange.add(session, changes_without_plan)
-        session.commit()
 
 
-def parse_unparsed():
-    with session_scope(Session) as session:
-        unparsed_plan = UnparsedPlan.get_all(session)
-        unparsed_change = []
-        if unparsed_plan:
-            UnparsedPlan.remove(session, unparsed_plan)
-            UnparsedChange.remove(session, unparsed_plan)
-        else:
-            unparsed_change = UnparsedChange.get_all(session)
-            if unparsed_change:
-                UnparsedChange.remove(session, unparsed_change)
-        session.commit()
-    if unparsed_plan:
-        print('parsing', len(unparsed_plan), 'unparsed plans')
-        parse_batch(unparsed_plan)
-    elif unparsed_change:
-        print('parsing', len(unparsed_change), 'unparsed changes')
-        parse_batch(unparsed_change)
+def parse_unparsed(redis_client: Redis, last_stream_id: bytes) -> bytes:
+    last_stream_id, unparsed_hash_ids = unparsed.get(redis_client, last_stream_id)
+    if unparsed_hash_ids:
+        print('parsing', len(unparsed_hash_ids), 'unparsed events')
+        parse_batch(unparsed_hash_ids)
+    return last_stream_id
 
 
 def parse_unparsed_continues():
+    redis_client = Redis.from_url(redis_url)
+    last_stream_id = b'0-0'
     while True:
         try:
-            parse_unparsed()
+            last_stream_id = parse_unparsed(redis_client, last_stream_id)
         except Exception:
             traceback.print_exc(file=sys.stdout)
         time.sleep(60)
@@ -255,14 +240,9 @@ def parse_all():
     """Parse all raw data there is
     """
     with session_scope(Session) as session:
-        # Everything will be parsed, including the unparsed stuff -> remove it
-        # from the list of unparsed stuff
-        UnparsedPlan.remove_all(session)
-        UnparsedChange.remove_all(session)
-
         chunk_limits = PlanById.get_chunk_limits(session)
 
-    # # Non concurrent code for debuging
+    # # Non-concurrent code for debugging
     # for chunk in tqdm(chunk_limits, total=len(chunk_limits)):
     #     parse_chunk(chunk)
             
@@ -277,7 +257,7 @@ def parse_all():
 
 
 if __name__ == "__main__":
-    import helpers.fancy_print_tcp
+    import helpers.bahn_vorhersage
 
     args = parser.parse_args()
     if args.parse_all:

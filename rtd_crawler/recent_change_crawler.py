@@ -11,11 +11,10 @@ import datetime
 from helpers import StationPhillip
 from rtd_crawler.SimplestDownloader import SimplestDownloader
 from rtd_crawler.hash64 import hash64
-from database import Change, UnparsedChange, sessionfactory
+from database import Change, unparsed, sessionfactory
 from rtd_crawler.xml_parser import xml_to_json
-from config import station_to_monitor_per_thread
-
-engine, Session = sessionfactory()
+from config import station_to_monitor_per_thread, redis_url
+from redis import Redis
 
 
 def preparse_changes(changes):
@@ -37,17 +36,20 @@ def monitor_recent_change(evas: list):
     return new_changes
 
 
-dd = SimplestDownloader()
 if __name__ == '__main__':
-    import helpers.fancy_print_tcp
+    import helpers.bahn_vorhersage
 
+    dd = SimplestDownloader()
+    engine, Session = sessionfactory()
     stations = StationPhillip()
+    redis_client = Redis.from_url(redis_url)
     eva_list = stations.stations['eva'].unique().tolist()
     eva_list = [
         eva_list[i:i + station_to_monitor_per_thread]
         for i
         in range(0, len(eva_list), station_to_monitor_per_thread)
     ]
+
     while True:
         stats = {
             'count': 0,
@@ -68,8 +70,9 @@ if __name__ == '__main__':
                     new_changes = dict(chain.from_iterable(d.items() for d in new_changes))
                     with Session() as session:
                         Change.add_changes(session, new_changes)
-                        UnparsedChange.add(session, new_changes.keys())
                         session.commit()
+                    unparsed.add(redis_client, new_changes.keys())
+
                     stats['upload_time'] += time.time() - upload_start
 
                     stats['count'] += 1

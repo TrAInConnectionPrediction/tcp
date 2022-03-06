@@ -29,3 +29,5 @@ texttable==1.6.3
 toolz==0.11.1
 tqdm==4.61.2
 zope.interface==5.4.0
+pyhafas==0.3.0
+redis==4.1.4
