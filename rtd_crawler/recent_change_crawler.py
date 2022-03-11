@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
                     stats['count'] += 1
                     time.sleep(max(0.0, 120 - (time.time() - download_start)))
-            except TimeoutError:
+            except concurrent.futures.TimeoutError:
                 pass
 
         print(datetime.datetime.now(),
