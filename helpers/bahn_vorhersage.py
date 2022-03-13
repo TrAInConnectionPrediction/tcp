@@ -28,7 +28,7 @@ COLORFULL_ECO_ART = """
 # print('ART:')
 # print(ART)
 
-print('COLORFULL_ART:')
+# print('COLORFULL_ART:')
 print(COLORFULL_ART)
 
 # print('COLORFULL_ECO_ART:')
