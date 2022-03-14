@@ -53,13 +53,20 @@ spec:
   - host: "bahnvorhersage.de"
     http:
       paths:
-        - path: /
+        - path: /api/
           pathType: Prefix
           backend:
             service:
               name: webserver-service
               port:
                 number: 5000
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: frontend-service
+              port:
+                number: 80
   - host: "next.bahnvorhersage.de"
     http:
       paths:
