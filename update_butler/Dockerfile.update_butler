@@ -1,19 +1,16 @@
 # In order for this to work please set the BUILDKIT env variable using "export DOCKER_BUILDKIT=1"
 # To test the container locally you can run:
-# docker build -f update_butler/Dockerfile.update_butler . -t update_butler
+# DOCKER_BUILDKIT=1 docker build -f update_butler/Dockerfile.update_butler . -t update_butler
 # docker run -v $(pwd)/config.py:/usr/src/app/config.py -v $(pwd)/cache:/usr/src/app/cache update_butler
 # Though I would suggest that you have a seperate config for docker
 # If not so replace -v $(pwd)/config_docker.py:/usr/src/app/config.py with -v $(pwd)/config.py:/usr/src/app/config.py
 
 # This build file is from https://www.rockyourcode.com/create-a-multi-stage-docker-build-for-python-flask-and-postgres/
 
-## Base image
-FROM python:3.9 AS compile-image
+FROM osgeo/proj:8.2.0 as proj
 
-## Install dependencies (libgeos in order for basemap to work)
-RUN apt-get update
-RUN apt-get install -y libgeos++-dev
-RUN apt-get install -y libproj-dev
+## Base image
+FROM python:3.10 AS compile-image
 
 ## Virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -28,13 +25,12 @@ COPY ./update_butler/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 ## Build-image
-FROM python:3.9 AS runtime-image
+FROM python:3.10 AS runtime-image
 
-## Install libgeos
-# TODO: Copy libgeos from build image
-RUN apt-get update
-RUN apt-get install -y libgeos++-dev
-RUN apt-get install -y libproj-dev
+COPY --from=proj  /usr/share/proj/ /usr/share/proj/
+COPY --from=proj  /usr/include/ /usr/include/
+COPY --from=proj  /usr/bin/ /usr/bin/
+COPY --from=proj  /usr/lib/ /usr/lib/
 
 ## Copy Python dependencies from build image
 COPY --from=compile-image /opt/venv /opt/venv

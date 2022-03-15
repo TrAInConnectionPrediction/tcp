@@ -5,7 +5,7 @@ if os.path.isfile("/mnt/config/config.py"):
     sys.path.append("/mnt/config/")
 
 # Print Logo
-import helpers.fancy_print_tcp
+import helpers.bahn_vorhersage
 
 if __name__ == '__main__':
 
