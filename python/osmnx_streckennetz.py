@@ -6,7 +6,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import osmnx as ox
 import networkx as nx
 import shapely
-from shapely.geometry import LineString, MultiLineString, MultiPoint, Polygon
+import shapely.wkt
+from shapely.geometry import LineString, MultiLineString, MultiPoint
 import numpy as np
 import geopy.distance
 import itertools
@@ -18,6 +19,7 @@ import matplotlib.pyplot as plt
 import pickle
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
+from python.osmgdf import gdfs_from_polygon
 
 
 def get_streckennetz_from_osm(point_cloud=None, place=None, cache=True) -> nx.MultiGraph:
@@ -43,21 +45,23 @@ def get_streckennetz_from_osm(point_cloud=None, place=None, cache=True) -> nx.Mu
         if place:
             streckennetz = ox.graph_from_place(
                 place,
-                simplify=True,
-                network_type='none',
+                network_type='rail',
+                simplify=False,
                 truncate_by_edge=False,
+                retain_all=True,
                 custom_filter=rail_filter
             )
         else:
-            plt.plot(point_cloud[:,0], point_cloud[:,1], 'o')
-            plt.plot(*MultiPoint(point_cloud).convex_hull.exterior.xy)
-            plt.gca().set_aspect('equal', 'datalim')
-            plt.show()
+            # plt.plot(point_cloud[:,0], point_cloud[:,1], 'o')
+            # plt.plot(*MultiPoint(point_cloud).convex_hull.exterior.xy)
+            # plt.gca().set_aspect('equal', 'datalim')
+            # plt.show()
             streckennetz = ox.graph_from_polygon(
                 MultiPoint(point_cloud).convex_hull,
-                simplify=True,
-                network_type='none',
+                simplify=False,
+                network_type='rail',
                 truncate_by_edge=False,
+                retain_all=True,
                 custom_filter=rail_filter
             )
         print('projecting streckennetz')
@@ -104,9 +108,7 @@ def length_of_line(line) -> float:
         return None
 
 
-def simplify(streckennetz: nx.MultiGraph) -> nx.MultiGraph:
-    print('simplifying...')
-    
+def remove_parallel_edges(streckennetz: nx.MultiGraph) -> nx.MultiGraph:
     # Remove the shorter edge of two parallel edges
     edges_to_remove = []
     for edges_index in streckennetz.edges():
@@ -121,43 +123,73 @@ def simplify(streckennetz: nx.MultiGraph) -> nx.MultiGraph:
             edges_to_remove.append(list(edges_index) + [min_length_index])
     print('found', len(edges_to_remove), 'parallel edges')
     streckennetz.remove_edges_from(edges_to_remove)
+    return streckennetz
 
-    # Remove nodes, that only have a single edge
-    while True:
-        nodes_to_remove = []
-        for node in streckennetz.nodes():
-            if streckennetz.degree(node) < 2 and 'type' not in streckennetz.nodes[node]:
-                nodes_to_remove.append(node)
-        if nodes_to_remove:
-            print('found', len(nodes_to_remove), 'deadend nodes')
-            streckennetz.remove_nodes_from(nodes_to_remove)
+
+def simplify(streckennetz: nx.MultiGraph) -> nx.MultiGraph:
+    print('simplifying...')
+
+    simplified = True
+    # In some cases, one simplification step makes another simplification step necessary.
+    # So we repeat until no simplification step is possible.
+    while simplified:
+        simplified = False
+    
+        # Remove the shorter edge of two parallel edges
+        edges_to_remove = []
+        for edges_index in streckennetz.edges():
+            edges = streckennetz[edges_index[0]][edges_index[1]]
+            if len(edges) > 1:
+                min_length = edges[0]['length']
+                min_length_index = 0
+                for i in edges:
+                    if edges[i]['length'] < min_length:
+                        min_length = edges[i]['length']
+                        min_length_index = i
+                edges_to_remove.append(list(edges_index) + [min_length_index])
+        print('found', len(edges_to_remove), 'parallel edges')
+        if len(edges_to_remove) > 0:
+            streckennetz.remove_edges_from(edges_to_remove)
+            simplified = True
+
+        # Remove nodes, that only have a single edge
+        while True:
             nodes_to_remove = []
-        else:
-            break
-
-    # Concat edges of nodes that have a degree of 2
-    while True:
-        nodes_to_remove = []
-        edges_to_add = []
-        for node in streckennetz.nodes():
-            if streckennetz.degree(node) == 2 and 'type' not in streckennetz.nodes[node]:
-                u, v = streckennetz.neighbors(node)
-                if u not in nodes_to_remove and v not in nodes_to_remove:
+            for node in streckennetz.nodes():
+                if streckennetz.degree(node) < 2 and 'type' not in streckennetz.nodes[node]:
                     nodes_to_remove.append(node)
-                    edges_to_add.append[(
-                        u, v, {
-                            'length': list(streckennetz[node][v].values())[0]['length'] + list(streckennetz[node][v].values())[0]['length'],
-                            'geometry': shapely.ops.linemerge([list(streckennetz[node][v].values())[0]['geometry'], list(streckennetz[node][v].values())[0]['geometry']])
-                        }
-                    )]
-        if nodes_to_remove:
-            print(f'found {len(nodes_to_remove) * 2} edges that can be merged')
-            streckennetz.remove_nodes_from(nodes_to_remove)
+            if nodes_to_remove:
+                print('found', len(nodes_to_remove), 'deadend nodes')
+                streckennetz.remove_nodes_from(nodes_to_remove)
+                simplified = True
+                nodes_to_remove = []
+            else:
+                break
+
+        # Concat edges of nodes that have a degree of 2
+        while True:
             nodes_to_remove = []
-            streckennetz.add_edges_from(edges_to_add)
             edges_to_add = []
-        else:
-            break
+            for node in streckennetz.nodes():
+                if streckennetz.degree(node) == 2 and 'type' not in streckennetz.nodes[node]:
+                    u, v = streckennetz.neighbors(node)
+                    if u not in nodes_to_remove and v not in nodes_to_remove:
+                        nodes_to_remove.append(node)
+                        edges_to_add.append[(
+                            u, v, {
+                                'length': list(streckennetz[node][v].values())[0]['length'] + list(streckennetz[node][v].values())[0]['length'],
+                                'geometry': shapely.ops.linemerge([list(streckennetz[node][v].values())[0]['geometry'], list(streckennetz[node][v].values())[0]['geometry']])
+                            }
+                        )]
+            if nodes_to_remove:
+                print(f'found {len(nodes_to_remove) * 2} edges that can be merged')
+                streckennetz.remove_nodes_from(nodes_to_remove)
+                nodes_to_remove = []
+                streckennetz.add_edges_from(edges_to_add)
+                simplified = True
+                edges_to_add = []
+            else:
+                break
 
     return streckennetz
 
@@ -226,7 +258,7 @@ def plot_algorithm(
     closest_edge=None,
 ):
     fig, ax = plt.subplots()
-    ax.set_aspect('equal', 'datalim')
+    ax.axis('equal')
     ax.set_title(name)
     
     for index, edge in close_edges.iterrows():
@@ -357,6 +389,7 @@ def split_edge(
     else:
         return None
 
+
 def insert_station(name, station, edges, nodes, plot=False):
     # Get edges close to station using r-tree indexing (this is way faster than using GeoDataFrame.cx[])
     bbox = shapely.geometry.box(
@@ -455,10 +488,10 @@ def insert_station(name, station, edges, nodes, plot=False):
 if __name__ == '__main__':
     import helpers.fancy_print_tcp
 
-    stations = StationPhillip(prefer_cache=False)
-    betriebsstellen = BetriebsstellenBill(prefer_cache=False)
+    stations = StationPhillip(prefer_cache=True)
+    betriebsstellen = BetriebsstellenBill(prefer_cache=True)
 
-    stations_gdf = stations.to_gpd()
+    stations_gdf = stations.to_gdf(index_cols=['name'])
     stations_gdf['type'] = 'station'
     betriebsstellen_gdf = betriebsstellen.to_gdf()
     betriebsstellen_gdf['type'] = 'betriebsstelle'
@@ -470,10 +503,57 @@ if __name__ == '__main__':
     stations_gdf['x'] = stations_gdf.geometry.x
     stations_gdf['y'] = stations_gdf.geometry.y
 
-    ox.config(log_console=True, use_cache=True)
+    ox.config(
+        log_console=True,
+        use_cache=True,
+        all_oneway=True,
+    )
+    # point_cloud = stations_gdf.loc[['Tübingen Hbf', 'Köln Hbf', 'Mainz Hbf', 'Offenburg'], ['x', 'y']].to_numpy()
+    point_cloud = stations_gdf.loc[:, ['x', 'y']].to_numpy()
+    # plt.plot(point_cloud[:,0], point_cloud[:,1], 'o')
+    # plt.plot(*MultiPoint(point_cloud).convex_hull.exterior.xy)
+    # plt.gca().set_aspect('equal', 'datalim')
+    # plt.show()
+    import osmnx.projection as projection
+
+    polygon = MultiPoint(point_cloud).convex_hull
+    geometry_proj, crs_proj = projection.project_geometry(polygon, to_latlong=True) # crs='EPSG:4326')
+    # multipoly, _ = projection.project_geometry(multipoly, crs=crs_proj, to_latlong=True)
+
+    # place = "Canada"
+    # gdf = ox.geocode_to_gdf(place)
+    # geom = gdf['geometry'].iloc[0]
+    # crs = gdf.crs
+    # geom = polygon
+    geom = shapely.wkt.loads('POLYGON ((2.140369 41.378914, -3.666028 42.371166, -4.479815 48.387805, 0.320865 51.442894, 8.290385000000001 55.777294, 37.57981 55.776672, 26.074412 44.44677, 12.502788 41.900493, 2.140369 41.378914))')
+    crs = 'EPSG:4326'
+
+    dists = np.linspace(0, geom.exterior.length, 1000)
+    geom = shapely.geometry.Polygon(geom.exterior.interpolate(d) for d in dists)
+
+    # geom_proj, crs_proj = ox.projection.project_geometry(geom)
+    # geom2, _ = ox.projection.project_geometry(geom_proj, crs=crs_proj, to_crs=crs)
+    # print((geom - geom2).area)  # 4.568066650465099e-13
+    #
+    # geom_proj_cs = ox.utils_geo._consolidate_subdivide_geometry(geom_proj).buffer(0)
+    # print((geom_proj - geom_proj_cs).area)  # 0.0
+    #
+    # geom2_cs, _ = ox.projection.project_geometry(geom_proj_cs, crs=crs_proj, to_crs=crs)
+    # print((geom - geom2_cs).area)  # 10.497542394897875
+
+    streckennetz = gdfs_from_polygon(
+        geom,
+        simplify=False,
+        network_type='rail',
+        truncate_by_edge=False,
+        retain_all=True,
+        custom_filter='["railway"~"rail|tram|narrow_gauge|light_rail"]'
+    )
+
+
     streckennetz = get_streckennetz_from_osm(
         point_cloud=np.array(list(zip(stations_gdf['geometry'].x, stations_gdf['geometry'].y))),
-        cache=True,
+        cache=False,
     )
     nodes, edges = ox.graph_to_gdfs(streckennetz, fill_edge_geometry=True)
 
