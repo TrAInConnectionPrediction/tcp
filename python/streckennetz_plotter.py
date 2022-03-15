@@ -45,7 +45,7 @@ def annotate_station_names(ax, names, station_gdf):
 
 
 stations = StationPhillip(prefer_cache=True)
-station_gdf = stations.to_gpd()
+station_gdf = stations.to_gdf()
 
 betriebsstellen = BetriebsstellenBill(prefer_cache=True)
 betriebsstellen_gdf = betriebsstellen.to_gdf()
