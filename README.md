@@ -1,3 +1,7 @@
+**The project was moved to GitLab for futher development: https://gitlab.com/McToel/bahnvorhersage**
+
+---
+
 # TrAIn_Connection_Prediction: TCP [https://trainconnectionprediction.de/](https://trainconnectionprediction.de/)
 
 ```bash
