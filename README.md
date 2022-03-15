@@ -1,4 +1,4 @@
-**The project was moved to GitLab for futher development: https://gitlab.com/McToel/bahnvorhersage**
+**The project was moved to GitLab for futher development: https://gitlab.com/bahnvorhersage/bahnvorhersage**
 
 ---
 
