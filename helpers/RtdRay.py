@@ -434,6 +434,9 @@ def load_for_ml_model(return_date_id=False, label_encode=True, return_times=Fals
         Whether to label encode categorical columns, by default True
     return_times : bool, optional
         Whether to return planned and changed arrival and departure times, by default False
+    return_status : bool, optional
+        Whether to return the columns 'ar_cs', 'dp_cs', which contain the arrival/departure status of the train
+        for ex 'c' = canceled
 
     Returns
     -------

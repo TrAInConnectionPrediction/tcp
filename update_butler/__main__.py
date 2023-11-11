@@ -38,6 +38,17 @@ if __name__ == '__main__':
 
     print("--Done")
 
+    print("--ML Stats")
+
+    from data_analysis import ml_stats
+
+    ml_stats.load_stats(
+        table_generator=ml_stats.stats_generator,
+        generate=True,
+    )
+
+    print("--Done")
+
     print("--Per Station Data")
 
     import datetime
@@ -64,6 +75,6 @@ if __name__ == '__main__':
 
     print("Training ML Models...")
 
-    # TODO
+    
 
     print("Done")

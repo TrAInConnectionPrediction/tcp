@@ -143,8 +143,10 @@ def stats_generator() -> pd.DataFrame:
 def load_stats(**kwargs) -> dict:
     """Loads stats from database or local
 
-    Args:
-        **kwargs: passed to `cached_table_fetch`. See its docstring for more info.
+    Parameters
+    ----------
+    **kwargs : 
+        passed to `cached_table_fetch`. See its docstring for more info.
 
     Returns
     -------
